@@ -13,7 +13,6 @@ import SocketManager from "../services/socketManager";
 const manager = new SocketManager();
 const startGame = ref(false);
 const currActiveKey = ref("");
-
 manager.connect();
 
 provide("socketManager", manager);
