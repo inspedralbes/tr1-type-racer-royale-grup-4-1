@@ -26,7 +26,7 @@
   </main>
 </template>
 <script setup>
-import { ref, inject } from "vue";
+import { ref, inject, computed } from "vue";
 //Pinia for being able to retrieve username and roomNames after
 import { useGameStore } from "@/stores/gameStore";
 
