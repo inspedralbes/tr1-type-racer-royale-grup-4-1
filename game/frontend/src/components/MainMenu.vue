@@ -27,17 +27,22 @@
 </template>
 <script setup>
 import { ref, inject } from "vue";
+//Pinia for being able to retrieve username and roomNames after
+import { useGameStore } from "@/stores/gameStore";
 
 const username = ref("");
 const savedUsername = ref("");
 const players = ref([]);
 const emit = defineEmits(["gameStart"]);
+
+const store = useGameStore();
 const manager = inject("socketManager");
 
 //Saves username and emits to server
 function updateUsername() {
   if (username.value.trim() !== "") {
     savedUsername.value = username.value.trim();
+    store.setUsername(savedUsername);
     manager.emit("saveUsername", savedUsername.value);
   } else {
     alert("Please enter a valid username!");
