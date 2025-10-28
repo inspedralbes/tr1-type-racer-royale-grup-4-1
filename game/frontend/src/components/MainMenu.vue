@@ -4,35 +4,39 @@
     <input class="username" v-model="username" />
     <button class="btn-start" @click="updateUsername">Add username!</button>
   </main>
-  <main v-else-if="players" class="container">
-    <h1 class="title-smaller">You have been conected to the lobby!</h1>
-    <div class="container">
-      <h2 class="title-small-2">Players connected:</h2>
-      <ul class="player-list">
-        <li v-for="player in players" :key="player.id" class="player">
-          {{ player.username }}
-        </li>
-      </ul>
-      <button class="btn-start" @click="emit('gameStart')">
-        Start playing!
-      </button>
-    </div>
+  <main v-else-if="joinedRoom" class="container">
+    <h1 class="title">You have entered the room! Name: {{ roomName }}</h1>
+    <button class="btn-start" :disabled="!isRoomFull" @click="gameStart">
+      Start playing
+    </button>
   </main>
   <main v-else class="container">
-    <h1 class="title">Word Tetris</h1>
-    <button class="btn-start" @click="emit('gameStart')">
-      Start the game!
-    </button>
+    <h1 class="title">Join a room!</h1>
+    <input class="username" v-model="roomName" />
+    <button class="btn-start" @click="joinRoomViaName">Join room!</button>
   </main>
 </template>
 <script setup>
-import { ref, inject } from "vue";
+import { ref, inject, computed } from "vue";
 
 const username = ref("");
 const savedUsername = ref("");
 const players = ref([]);
-const emit = defineEmits(["gameStart"]);
+const rooms = ref([]);
+const roomName = ref("");
+const joinedRoom = ref(false);
 const manager = inject("socketManager");
+
+//Gets the room users
+const isRoomFull = computed(() => {
+  const room = rooms.value.find((r) => r.name === roomName.value);
+  let roomLenght = room.players.length;
+  let roomFull = false;
+  if (roomLenght > 3) {
+    roomFull = true;
+  }
+  return roomFull;
+});
 
 //Saves username and emits to server
 function updateUsername() {
@@ -44,12 +48,32 @@ function updateUsername() {
   }
 }
 
+function gameStart() {
+  manager.emit("gameStart");
+}
+
 function handlePlayers(data) {
   players.value = data;
-  console.log(data);
+}
+
+function handleRoomData(data) {
+  rooms.value = [...data];
+}
+
+function joinRoomViaName() {
+  manager.emit("joinRoom", roomName.value);
+}
+
+function handleRoomsData(data) {
+  rooms.value = [...data];
+  joinedRoom.value = true;
+  console.log(rooms.value);
 }
 
 manager.on("updatePlayerData", handlePlayers);
+manager.on("roomData", handleRoomData);
+manager.on("updateRoom", handleRoomData);
+manager.on("updateRooms", handleRoomsData);
 </script>
 <style scoped>
 .container {
