@@ -1,7 +1,7 @@
 <template>
   <GameEngine v-if="startGame" @activeKey="handleActiveKey" />
   <Keyboard v-if="startGame" :activeKey="currActiveKey" />
-  <MainMenu v-else @gameStart="handleGameStart" />
+  <MainMenu v-else />
 </template>
 <script setup>
 import { ref, provide } from "vue";
@@ -17,6 +17,7 @@ manager.connect();
 
 provide("socketManager", manager);
 
+manager.on("gameStart", handleGameStart);
 function handleGameStart() {
   startGame.value = true;
 }
