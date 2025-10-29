@@ -51,6 +51,24 @@ io.on("connection", (socket) => {
     io.emit("gameStart");
   });
 
+  socket.on("isRoomFull", (roomName) => {
+    let roomFull = false;
+    let room = rooms.find((r) => r.name === roomName);
+    if (!room) {
+      console.log("room doesn't exist");
+    } else if (room.players.length > 3) {
+      roomFull = true;
+    } else {
+      roomFull = false;
+    }
+    socket.emit("roomFull", roomFull);
+  });
+
+  //TODO: Add so that the server receives the emit of ready status
+  //socket.on("playerStatus", (status) => {
+  //  let playerInRoom = rooms.players.find((p) => p.id === socket.id);
+  //  playerInRoom.ready = status;
+  //});
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
     players = players.filter((p) => p.id !== socket.id);
