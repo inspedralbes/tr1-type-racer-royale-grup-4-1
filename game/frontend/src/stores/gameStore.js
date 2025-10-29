@@ -9,9 +9,18 @@ export const useGameStore = defineStore("rooms", () => {
   manager.connect();
   const roomFull = ref(false);
 
-  manager.on("isRoomFull", (data) => {
-    roomFull.value = data;
+  //Ensure that the listener is there
+  manager.socket.on("connect", () => {
+    console.log("Socket connected from store");
+
+    manager.on("roomFull", (data) => {
+      roomFull.value = data;
+    });
   });
+
+  function handleRoomFull(data) {
+    roomFull.value = data;
+  }
 
   function setUsername(name) {
     username.value = name;
@@ -30,5 +39,6 @@ export const useGameStore = defineStore("rooms", () => {
     setRoomName,
     isRoomFull,
     manager,
+    roomFull,
   };
 });

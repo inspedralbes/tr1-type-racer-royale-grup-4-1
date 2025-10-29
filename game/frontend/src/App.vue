@@ -4,19 +4,15 @@
   <MainMenu v-else />
 </template>
 <script setup>
-import { ref, provide } from "vue";
+import { ref } from "vue";
 import GameEngine from "./components/GameEngine.vue";
 import MainMenu from "./components/MainMenu.vue";
 import Keyboard from "./components/Keyboard.vue";
-import SocketManager from "../services/socketManager";
-
-const manager = new SocketManager();
+import { useGameStore } from "@/stores/gameStore.js";
 const startGame = ref(false);
 const currActiveKey = ref("");
-manager.connect();
-
-provide("socketManager", manager);
-
+const store = useGameStore();
+const manager = store.manager;
 manager.on("gameStart", handleGameStart);
 function handleGameStart() {
   startGame.value = true;

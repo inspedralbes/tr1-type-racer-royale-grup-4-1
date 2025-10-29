@@ -31,7 +31,7 @@ const rooms = ref([]);
 const roomName = ref("");
 const joinedRoom = ref(false);
 const manager = store.manager;
-const isRoomFull = ref(false);
+const isRoomFull = store.isRoomFull;
 
 //Waits till we get the manager
 onMounted(() => {
@@ -40,8 +40,6 @@ onMounted(() => {
     manager.on("updateRoom", handleRoomData);
     manager.on("updateRooms", handleRoomsData);
     manager.on("updatePlayerData", handlePlayers);
-    manager.on("roomFull", handleRoomFull);
-    //Check if the rooms is full or not
   } else {
     console.error("Socket manager not ready yet");
   }
@@ -71,9 +69,6 @@ function handleRoomData(data) {
   rooms.value = [...data];
 }
 
-function handleRoomFull(data) {
-  isRoomFull.value = data;
-}
 function joinRoomViaName() {
   manager.emit("joinRoom", roomName.value);
   store.setRoomName(roomName.value);
