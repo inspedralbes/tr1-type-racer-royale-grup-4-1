@@ -1,6 +1,9 @@
 <template>
   <div class="salas-container">
-    <h1>SALAS</h1>
+    <button class="back-button" aria-label="Volver" @click="emit('back')">
+      <i class="fa-solid fa-house"></i>
+    </button>
+    <h1 class="title">SALAS</h1>
     <br />
   <Config />
 
@@ -20,7 +23,7 @@
     <!-- Boton Unirse una vez selecionada la sala -->
     <div class="unirse-container">
       <button 
-        class="Button" 
+        class="btn" 
         :disabled="!salaSeleccionada"
         @click="unirseASala"
       >
@@ -33,6 +36,8 @@
 <script setup>
 import { ref, computed } from 'vue';
 import Config from './Config.vue';
+
+const emit = defineEmits(['back']);
 
 const maxJugadoresPorSala = ref(4);
 const maxSalas = ref(4);
@@ -76,69 +81,19 @@ const unirseASala = () => {
 
 
 <style scoped>
-
-.salas-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-}
-
-.sala-btn {
-  padding: 1rem;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  cursor: pointer;
-  background: white;
-  transition: all 0.2s;
-}
-
-.sala-btn:hover {
-  border-color: #888;
-}
-
-.sala-btn.selected {
-  border-color: #007bff;
-  background-color: #e6f0ff;
-}
-
-.unirse-container {
-  margin-top: 1rem;
-}
-
-.Button {
-  padding: 0.8rem 1.5rem;
-  background-color: #007bff;
-  border: none;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.Button:disabled {
-  background-color: #999;
-  cursor: not-allowed;
-}
-
 .salas-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #7b88c4 0%, #8a99d1 100%);
-  padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-h1 {
-  font-size: 3rem;
-  margin-bottom: 2rem;
-  color: #000;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 3rem;
+  position: relative;
 }
 
 .salas-grid {
   width: 100%;
   max-width: 600px;
-  margin-bottom: 2rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -148,53 +103,72 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #7c5dbf;
+  background-color: #ffffff;
+  color: #000000;
   padding: 1.2rem 2rem;
-  border: none;
+  border: 2px solid #d0d0d0;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s;
-}
-
-.Button {
-    padding: 1rem 3rem;
-    font-size: 1.5rem;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 600;
+  transition: all 0.3s ease;
+  font-weight: 600;
 }
 
 .sala-btn:hover {
-  background: #6b4da8;
+  background-color: #f0f0f0;
   transform: scale(1.02);
+  border-color: #4CAF50;
+}
+
+.sala-btn.selected {
+  background-color: #ffffff;
+  border-width: 3px;
+}
+
+.unirse-container {
+  margin-top: 1rem;
+}
+
+.btn:disabled {
+  background-color: #d0d0d0;
+  color: #666666;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.back-button {
+  position: absolute;
+  left: 5vw;
+  bottom: 6vh;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.back-button i {
+  font-size: 1.25rem;
 }
 
 .sala-nombre {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #000;
+  color: #222020;
 }
 
 .sala-capacidad {
   font-size: 1.5rem;
-  color: #000;
-}
-
-.actions {
-  width: 100%;
-  max-width: 600px;
-}
-
-.buscar-input {
-  padding: 0.8rem 1.5rem;
-  font-size: 1.2rem;
-  border: none;
-  border-radius: 8px;
-  width: 100%;
-  text-align: center;
+  color: #222020;
 }
 </style>

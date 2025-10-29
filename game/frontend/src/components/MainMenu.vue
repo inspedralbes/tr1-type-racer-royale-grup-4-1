@@ -1,19 +1,19 @@
 <template>
   <main v-if="!savedUsername" class="container">
     <h1 class="title">Word Tetris</h1>
-    <input class="username" v-model="username" />
-    <button class="btn-start" @click="updateUsername">Add username!</button>
+    <input class="name-input" v-model="username" placeholder="Introduce tu nombre" />
+    <button class="btn" @click="updateUsername">Add username!</button>
   </main>
   <main v-else-if="joinedRoom" class="container">
     <h1 class="title">You have entered the room! Name: {{ roomName }}</h1>
-    <button class="btn-start" :disabled="!isRoomFull" @click="gameStart">
+    <button class="btn" :disabled="!isRoomFull" @click="gameStart">
       Start playing
     </button>
   </main>
   <main v-else class="container">
     <h1 class="title">Join a room!</h1>
-    <input class="username" v-model="roomName" />
-    <button class="btn-start" @click="joinRoomViaName">Join room!</button>
+    <input class="name-input" v-model="roomName" placeholder="Nombre de sala" />
+    <button class="btn" @click="joinRoomViaName">Join room!</button>
   </main>
 </template>
 <script setup>
@@ -81,54 +81,15 @@ manager.on("updateRooms", handleRoomsData);
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-.title {
-  color: white;
-  font-size: 4em;
-  font-family: sans-serif;
-  margin-top: 30vh;
-}
-
-.btn-start {
-  color: black;
-  background-color: #e2b714;
-  padding: 20px 40px;
-  font-size: 2em;
-  border-radius: 20px;
-  border: none;
-  cursor: pointer;
-}
-
-.title-smaller {
-  color: white;
-  font-size: 3em;
-  font-family: sans-serif;
+  gap: 1.5rem;
   margin-top: 20vh;
 }
+
 .player-list {
-  color: white;
-  font-size: 2em;
   list-style-type: none;
-  border: 1px solid yellow;
+  border: 1px solid #d0d0d0;
   width: 300px;
   height: auto;
-}
-
-.title-small-2 {
-  color: white;
-  font-size: 2em;
-  font-family: sans-serif;
-}
-
-.username {
-  font-size: 2.5em;
-  color: white;
-  padding: 10px 20px;
-  z-index: 1;
-  border: 1px solid yellow;
-  border-radius: 10px;
-  width: 225px;
-  background-color: #323437;
-  margin-bottom: 30px;
+  padding: 0.5rem;
 }
 </style>

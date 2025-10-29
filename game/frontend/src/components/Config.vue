@@ -1,8 +1,8 @@
 <template>
   <div>
     <!-- Botón para abrir el popup -->
-    <button class="config-button" @click="isOpen = true">
-      ⚙️
+    <button class="config-button" aria-label="Configuración" @click="isOpen = true">
+      <i class="fa-solid fa-gear"></i>
     </button>
 
     <!-- Popup -->
@@ -21,8 +21,8 @@
         <h2>Jugador</h2>
 
         <div class="buttons">
-          <button>Cambiar foto</button>  
-          <button>Cambiar nombre</button>
+          <button class="btn">Cambiar foto</button>  
+          <button class="btn">Cambiar nombre</button>
         </div>
 
         <!-- Estadísticas -->
@@ -71,16 +71,29 @@ const changeVolume = () => {
 
 <style scoped>
 .config-button {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  width: 50px;
-  height: 50px;
-  font-size: 1.5rem;
-  background-color: rgba(255, 255, 255, 0.2);
+  position: absolute;
+  bottom: 6vh;
+  right: 5vw;
+  background: #ffffff;
+  color: #000000;
   border: none;
-  border-radius: 50%;
+  border-radius: 8px;
+  width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.config-button:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.config-button i {
+  font-size: 1.25rem;
 }
 
 .overlay {
@@ -97,13 +110,14 @@ const changeVolume = () => {
 
 .popup {
   background: white;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 2rem;
   width: 350px;
   text-align: center;
   position: relative;
   max-height: 80vh;
   overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .close-button {
@@ -141,21 +155,9 @@ h2 {
 
 .buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
   justify-content: center;
   margin-bottom: 1rem;
-}
-
-.buttons button {
-  padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background: white;
-  cursor: pointer;
-}
-
-.buttons button:hover {
-  background: #f5f5f5;
 }
 
 .stats {

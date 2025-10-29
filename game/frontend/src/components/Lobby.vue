@@ -1,0 +1,136 @@
+<template>
+  <div class="lobby">
+    <h1 class="title">Lobby</h1>
+
+    <input
+      v-model="playerName"
+      type="text"
+      placeholder="Introduce tu nombre"
+      class="name-input"
+      maxlength="20"
+    />
+
+    <div class="actions">
+      <button class="btn" @click="handleCreateRoom">CREAR SALA</button>
+      <button class="btn" @click="emit('joinRoom')">UNIRSE SALA</button>
+    </div>
+
+    <button class="back-button" aria-label="Volver" @click="emit('back')">
+      <i class="fa-solid fa-house" ></i>
+    </button>
+  </div>
+</template>
+
+<script setup>
+import { ref, inject } from "vue";
+
+const socketManager = inject("socketManager");
+const playerName = ref("");
+const emit = defineEmits(['back', 'createRoom', 'joinRoom']);
+
+function savePlayerName() {
+  if (playerName.value.trim()) {
+    socketManager.emit("saveUsername", playerName.value.trim());
+  }
+}
+
+function handleCreateRoom() {
+
+  savePlayerName();
+}
+
+function handleJoinRoom() {
+
+  savePlayerName();
+}
+
+</script>
+
+<style scoped>
+.lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 3rem;
+  position: relative;
+}
+
+.title {
+  /* Igual que FirstPage.vue */
+  font-size: 4rem;
+  color: #222020;
+  margin: 0;
+  font-weight: bold;
+}
+
+.name-input {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  background-color: #ffffff;
+  color: #000000;
+  border: 2px solid #d0d0d0;
+  border-radius: 8px;
+  text-align: center;
+  width: 300px;
+  transition: all 0.3s ease;
+}
+
+
+
+.actions {
+  display: flex;
+  gap: 6rem;
+}
+
+.btn {
+  /* Reusa estilos de .play-button en FirstPage.vue */
+  padding: 1rem 3rem;
+  font-size: 1.5rem;
+  background-color: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.btn:hover {
+  /* Igual que .play-button:hover */
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.btn:active {
+  /* Igual que .play-button:active */
+  transform: scale(0.98);
+}
+
+.back-button {
+  position: absolute;
+  left: 5vw;
+  bottom: 6vh;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.back-button i {
+  font-size: 1.25rem;
+}
+</style>
