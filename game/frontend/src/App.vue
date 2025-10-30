@@ -1,6 +1,7 @@
 <template>
-  <FirstPage v-if="!showMainMenu && !startGame && !showLobby && !showRoomsUserView" @lobby="showLobby = true" />
-  <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" />
+  <FirstPage v-if="!showMainMenu && !startGame && !showLobby && !showRoomsUserView && !showHostCreateLobby" @lobby="showLobby = true" />
+  <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
+  <HostCreateLobby v-else-if="showHostCreateLobby" @backToLobby="showHostCreateLobby = false" @roomCreated="handleRoomCreated" />
   <RoomsUserView v-else-if="showRoomsUserView" @back="handleBackFromRooms" />
   <MainMenu v-else-if="showMainMenu && !startGame" />
   <GameEngine v-if="startGame" @activeKey="handleActiveKey" />
@@ -17,11 +18,13 @@ import FirstPage from "./components/FirstPage.vue";
 import Lobby from "./components/Lobby.vue";
 import Config from "./components/Config.vue"; 
 import RoomsUserView from "./components/RoomsUserView.vue";
+import HostCreateLobby from "./components/HostCreateLobby.vue";
   
 const startGame = ref(false);
 const showMainMenu = ref(false);
 const showLobby = ref(false);
-const showConfig = ref(false); 
+const showConfig = ref(false);
+const showHostCreateLobby = ref(false); 
 const currActiveKey = ref("");
 const store = useGameStore();
 const manager = store.manager;
@@ -30,6 +33,17 @@ manager.on("gameStart", handleGameStart);
 function handleJoinRoom() {
   showLobby.value = false;
   showRoomsUserView.value = true;
+}
+
+function handleCreateRoom() {
+  showLobby.value = false;
+  showHostCreateLobby.value = true;
+}
+
+function handleRoomCreated(roomName) {
+  showHostCreateLobby.value = false;
+  showRoomsUserView.value = true;
+  console.log('Sala creada:', roomName);
 }
 
 function handleBackFromRooms() {
