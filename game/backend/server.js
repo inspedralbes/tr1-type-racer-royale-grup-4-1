@@ -81,6 +81,13 @@ io.on("connection", (socket) => {
     socket.emit("articlesData", articles);
   });
 
+  socket.on("userResults", (userResults) => {
+    console.log("Resultados recibidos de:", userResults.username);
+    console.log("Tiempo:", userResults.time, "ms");
+    console.log("Errores:", userResults.errors);
+    // Cambialo como quieras para almacenar los resultados. 
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
     players = players.filter((p) => p.id !== socket.id);

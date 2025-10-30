@@ -61,7 +61,16 @@ function handleTextInput() {
 }
 
 function stopGame(timeTaken) {
-  console.log(gameState.value.stats);
+  const userResults = {
+    username: gameStore.username,
+    time: timeTaken,
+    errors: gameState.value.totalErrors
+  };
+  
+  console.log('Resultados del usuario:', userResults);
+  
+  // Enviar resultados al servidor
+  gameStore.manager.emit('userResults', userResults);
 }
 
 function getLetterClass(index) {
