@@ -38,9 +38,12 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-start" @click="iniciarJuego" :disabled="jugadores.length < 2">
+      <button class="btn btn-start" @click="iniciarJuego" :disabled="jugadores.length < 4">
         Iniciar Juego
       </button>
+      <p v-if="jugadores.length < 4" class="info-text">
+        Se necesitan 4 jugadores para iniciar ({{ jugadores.length }}/4)
+      </p>
     </div>
   </div>
 </template>
@@ -49,7 +52,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useGameStore } from '../stores/gameStore';
 
-const emit = defineEmits(['back']);
+const emit = defineEmits(['back', 'startGame']);
 const gameStore = useGameStore();
 
 const maxJugadores = ref(4);
@@ -70,12 +73,15 @@ const actualizarJugadores = (rooms) => {
 };
 
 const iniciarJuego = () => {
-  if (jugadores.value.length < 2) {
-    alert('Se necesitan al menos 2 jugadores para iniciar');
+  if (jugadores.value.length < 4) {
+    alert('Se necesitan 4 jugadores para iniciar');
     return;
   }
+  // Emitir al servidor para que todos los jugadores inicien
   gameStore.manager.emit('gameStart');
   console.log('Iniciando juego...');
+  // Navegar localmente a GameEngine
+  emit('startGame');
 };
 
 onMounted(() => {
@@ -90,6 +96,12 @@ onMounted(() => {
   // Escuchar actualizaciones de salas
   gameStore.manager.on('updateRooms', actualizarJugadores);
   gameStore.manager.on('roomData', actualizarJugadores);
+  
+  // Escuchar cuando el servidor emite gameStart (otro jugador inició)
+  gameStore.manager.on('gameStart', () => {
+    console.log('Juego iniciado por otro jugador');
+    emit('startGame');
+  });
 });
 
 onUnmounted(() => {
@@ -206,6 +218,17 @@ onUnmounted(() => {
 
 .actions {
   margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.info-text {
+  color: #666666;
+  font-size: 1.1rem;
+  margin: 0;
+  font-style: italic;
 }
 
 .btn-start {

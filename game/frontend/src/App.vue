@@ -3,7 +3,7 @@
   <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
   <HostCreateLobby v-else-if="showHostCreateLobby" @backToLobby="showHostCreateLobby = false" @roomCreated="handleRoomCreated" />
   <RoomsUserView v-else-if="showRoomsUserView" @back="handleBackFromRooms" @joinedRoom="handleJoinedRoom" />
-  <UserLobby v-else-if="showUserLobby" @back="handleBackFromUserLobby" />
+  <UserLobby v-else-if="showUserLobby" @back="handleBackFromUserLobby" @startGame="handleGameStart" />
   <MainMenu v-else-if="showMainMenu && !startGame" />
   <GameEngine v-if="startGame" @activeKey="handleActiveKey" />
   <Keyboard v-if="startGame" :activeKey="currActiveKey" />
@@ -65,6 +65,14 @@ function handleBackFromUserLobby() {
 }
 
 function handleGameStart() {
+  console.log('Iniciando juego en App.vue');
+  // Ocultar todas las pantallas
+  showUserLobby.value = false;
+  showRoomsUserView.value = false;
+  showLobby.value = false;
+  showHostCreateLobby.value = false;
+  showMainMenu.value = false;
+  // Mostrar el juego
   startGame.value = true;
 }
 
