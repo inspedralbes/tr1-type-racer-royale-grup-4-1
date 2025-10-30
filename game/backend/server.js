@@ -15,6 +15,7 @@ app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 let players = [];
 let rooms = [];
+let leaderboard = [];
 
 // Configurable room capacity
 const ROOM_CAPACITY = 4;
@@ -31,20 +32,29 @@ function translateState(status) {
 
 // Socket.io logic
 io.on("connection", (socket) => {
-  const newPlayer = { id: socket.id, username: null, status: "waiting", room: null };
+  const newPlayer = {
+    id: socket.id,
+    username: null,
+    status: "waiting",
+    room: null,
+  };
   players.push(newPlayer);
-  console.log(`\n👤 User connected: ${socket.id} (${newPlayer.username || 'no-name'}) - ${translateState(newPlayer.status)}`);
+  console.log(
+    `\n👤 User connected: ${socket.id} (${newPlayer.username || "no-name"}) - ${translateState(newPlayer.status)}`,
+  );
   socket.on("saveUsername", (username) => {
     //Find the player
     let player = players.find((p) => p.id === socket.id);
     if (!player) return;
-  player.username = username;
-  player.status = "not-joined"; // Estado inicial al guardar nombre
-  console.log(`\n📝 Player ${socket.id} saved name: ${username}`);
-  console.log(`Status: ${translateState(player.status)}`);
-  // Also print the standard "User connected" line but with the username so it's visible in logs
-  console.log(`👤 User connected: ${socket.id} (${username}) - ${translateState(player.status)}`);
-    
+    player.username = username;
+    player.status = "not-joined"; // Estado inicial al guardar nombre
+    console.log(`\n📝 Player ${socket.id} saved name: ${username}`);
+    console.log(`Status: ${translateState(player.status)}`);
+    // Also print the standard "User connected" line but with the username so it's visible in logs
+    console.log(
+      `👤 User connected: ${socket.id} (${username}) - ${translateState(player.status)}`,
+    );
+
     io.emit("updatePlayerData", players);
     let existingRoom = rooms.find((r) => r.name === "testRoom");
     if (!existingRoom) {
@@ -68,22 +78,26 @@ io.on("connection", (socket) => {
       player.room = roomName;
       player.status = "waiting";
       room.players.push(player);
-      
+
       // Comprueba si la sala está llena (ROOM_CAPACITY jugadores)
-      console.log(`\n🎮 Player ${player.username || socket.id} joined room: ${roomName}`);
+      console.log(
+        `\n🎮 Player ${player.username || socket.id} joined room: ${roomName}`,
+      );
       console.log(`Status: ${translateState(player.status)}`);
       console.log(`Room players: ${room.players.length}/${ROOM_CAPACITY}`);
 
       if (room.players.length === ROOM_CAPACITY) {
         // Marca la sala como llena y solicita a los jugadores que confirmen 'ready'
         room.isFull = true;
-        console.log("\n🎯 Room is full! Waiting for all players to press ready...");
+        console.log(
+          "\n🎯 Room is full! Waiting for all players to press ready...",
+        );
         // Emite al frontend que la sala está llena y los clientes deben mostrar el botón 'Ready'
         io.to(roomName).emit("roomFull", true);
         io.to(roomName).emit("requestReady");
       }
     }
-    
+
     io.to(roomName).emit("updateRooms", rooms);
     io.to(roomName).emit("updateRoomPlayers", room.players);
 
@@ -115,7 +129,9 @@ io.on("connection", (socket) => {
     const room = rooms.find((r) => r.name === player.room);
     if (room) {
       io.to(room.name).emit("updateRoomPlayers", room.players);
-      console.log(`\n✅ Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`);
+      console.log(
+        `\n✅ Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`,
+      );
       logGameState(room);
       // Comprueba si todos los jugadores están listos para arrancar
       checkStartGame(room);
@@ -167,15 +183,20 @@ io.on("connection", (socket) => {
   });
 
   socket.on("userResults", (userResults) => {
-    console.log("Resultados recibidos de:", userResults.username);
-    console.log("Tiempo:", userResults.time, "ms");
-    console.log("Errores:", userResults.errors);
-    // Cambialo como quieras para almacenar los resultados. 
+    if (!userResults) return;
+    leaderboard.push({
+      name: userResults.name,
+      time: userResults.time,
+      errors: userResults.errors,
+    });
+    socket.emit("updateLeaderboard", leaderboard);
   });
 
   socket.on("disconnect", () => {
     const player = players.find((p) => p.id === socket.id);
-    console.log(`User disconnected: ${socket.id} (${player ? player.username || 'no-name' : 'unknown'})`);
+    console.log(
+      `User disconnected: ${socket.id} (${player ? player.username || "no-name" : "unknown"})`,
+    );
 
     players = players.filter((p) => p.id !== socket.id);
     // Remove the player from every room and emit updates per room
@@ -193,7 +214,7 @@ io.on("connection", (socket) => {
   });
   function logGameState(room) {
     console.log(`\n--- GAME STATE | ROOM: ${room.name} ---`);
-    room.players.forEach(p => {
+    room.players.forEach((p) => {
       console.log(`${p.username || p.id}: ${translateState(p.status)}`);
     });
     console.log("-------------------------------------\n");
