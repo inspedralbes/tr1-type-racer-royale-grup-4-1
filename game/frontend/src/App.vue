@@ -1,8 +1,9 @@
 <template>
-  <FirstPage v-if="!showMainMenu && !startGame && !showLobby && !showRoomsUserView && !showHostCreateLobby" @lobby="showLobby = true" />
+  <FirstPage v-if="!showMainMenu && !startGame && !showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
   <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
   <HostCreateLobby v-else-if="showHostCreateLobby" @backToLobby="showHostCreateLobby = false" @roomCreated="handleRoomCreated" />
-  <RoomsUserView v-else-if="showRoomsUserView" @back="handleBackFromRooms" />
+  <RoomsUserView v-else-if="showRoomsUserView" @back="handleBackFromRooms" @joinedRoom="handleJoinedRoom" />
+  <UserLobby v-else-if="showUserLobby" @back="handleBackFromUserLobby" />
   <MainMenu v-else-if="showMainMenu && !startGame" />
   <GameEngine v-if="startGame" @activeKey="handleActiveKey" />
   <Keyboard v-if="startGame" :activeKey="currActiveKey" />
@@ -19,16 +20,18 @@ import Lobby from "./components/Lobby.vue";
 import Config from "./components/Config.vue"; 
 import RoomsUserView from "./components/RoomsUserView.vue";
 import HostCreateLobby from "./components/HostCreateLobby.vue";
+import UserLobby from "./components/UserLobby.vue";
   
 const startGame = ref(false);
 const showMainMenu = ref(false);
 const showLobby = ref(false);
 const showConfig = ref(false);
 const showHostCreateLobby = ref(false); 
+const showUserLobby = ref(false);
 const currActiveKey = ref("");
 const store = useGameStore();
 const manager = store.manager;
-const showRoomsUserView = ref("");
+const showRoomsUserView = ref(false);
 manager.on("gameStart", handleGameStart);
 function handleJoinRoom() {
   showLobby.value = false;
@@ -49,6 +52,16 @@ function handleRoomCreated(roomName) {
 function handleBackFromRooms() {
   showRoomsUserView.value = false;
   showLobby.value = true;
+}
+
+function handleJoinedRoom() {
+  showRoomsUserView.value = false;
+  showUserLobby.value = true;
+}
+
+function handleBackFromUserLobby() {
+  showUserLobby.value = false;
+  showRoomsUserView.value = true;
 }
 
 function handleGameStart() {

@@ -41,7 +41,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Config from './Config.vue';
 import { useGameStore } from '../stores/gameStore';
 
-const emit = defineEmits(['back']);
+const emit = defineEmits(['back', 'joinedRoom']);
 const gameStore = useGameStore();
 
 const maxJugadoresPorSala = ref(4);
@@ -68,9 +68,14 @@ const unirseASala = () => {
   if (!salaSeleccionada.value) return;
   console.log('Unirse a sala:', salaSeleccionada.value);
   
-  // Emitir evento para unirse a la sala
-  gameStore.manager.emit('joinRoom', salaSeleccionada.value);
+  // Guardar el nombre de la sala en el store
   gameStore.setRoomName(salaSeleccionada.value);
+  
+  // Emitir evento para unirse a la sala en el servidor
+  gameStore.manager.emit('joinRoom', salaSeleccionada.value);
+  
+  // Navegar a UserLobby
+  emit('joinedRoom');
 };
 
 // Actualizar salas cuando el servidor envía datos
