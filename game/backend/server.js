@@ -77,8 +77,8 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("getQuestions", () => {
-    socket.emit(articles);
+  socket.on("getArticles", () => {
+    socket.emit("articlesData", articles);
   });
 
   socket.on("disconnect", () => {
