@@ -9,12 +9,13 @@ const io = new Server(server, {
   cors: { origin: "*" },
 });
 
+const articles = require("./data/data.json");
 // Serve Vue frontend build
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 let players = [];
 let rooms = [];
-
+console.log(articles);
 // Socket.io logic
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
@@ -69,6 +70,18 @@ io.on("connection", (socket) => {
   //  let playerInRoom = rooms.players.find((p) => p.id === socket.id);
   //  playerInRoom.ready = status;
   //});
+  //
+
+  socket.on("createRoom", (roomName) => {
+    let roomExists = rooms.find((r) => r.name === roomName);
+    if (!roomExists) {
+      rooms.push({ name: roomName, players: [] });
+      io.emit("updateRooms", rooms);
+    } else {
+      console.log("Room already exists!");
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
     players = players.filter((p) => p.id !== socket.id);
