@@ -6,8 +6,8 @@
   </main>
   <main v-else-if="joinedRoom" class="container">
     <h1 class="title">You have entered the room! Name: {{ roomName }}</h1>
-    <button class="btn" :disabled="!isRoomFull" @click="gameStart">
-      Start playing
+    <button class="btn-start" :disabled="!isRoomFull" @click="toggleReady">
+      {{ ready ? "Ready!" : "Not ready" }}
     </button>
   </main>
   <main v-else class="container">
@@ -17,39 +17,48 @@
   </main>
 </template>
 <script setup>
-import { ref, inject, computed } from "vue";
+import { ref, onMounted } from "vue";
+//Pinia for being able to retrieve username and roomNames after
+import { useGameStore } from "@/stores/gameStore";
 
 const username = ref("");
 const savedUsername = ref("");
 const players = ref([]);
+const emit = defineEmits(["gameStart"]);
+const ready = ref(false);
+const store = useGameStore();
 const rooms = ref([]);
 const roomName = ref("");
 const joinedRoom = ref(false);
-const manager = inject("socketManager");
+const manager = store.manager;
+const isRoomFull = store.isRoomFull;
 
-//Gets the room users
-const isRoomFull = computed(() => {
-  const room = rooms.value.find((r) => r.name === roomName.value);
-  let roomLenght = room.players.length;
-  let roomFull = false;
-  if (roomLenght > 3) {
-    roomFull = true;
+//Waits till we get the manager
+onMounted(() => {
+  if (manager) {
+    manager.on("roomData", handleRoomData);
+    manager.on("updateRoom", handleRoomData);
+    manager.on("updateRooms", handleRoomsData);
+    manager.on("updatePlayerData", handlePlayers);
+  } else {
+    console.error("Socket manager not ready yet");
   }
-  return roomFull;
 });
+
+function toggleReady() {
+  ready.value = !ready.value;
+  manager.emit("playerStatus", ready.value);
+}
 
 //Saves username and emits to server
 function updateUsername() {
   if (username.value.trim() !== "") {
     savedUsername.value = username.value.trim();
+    store.setUsername(savedUsername.value);
     manager.emit("saveUsername", savedUsername.value);
   } else {
     alert("Please enter a valid username!");
   }
-}
-
-function gameStart() {
-  manager.emit("gameStart");
 }
 
 function handlePlayers(data) {
@@ -62,18 +71,14 @@ function handleRoomData(data) {
 
 function joinRoomViaName() {
   manager.emit("joinRoom", roomName.value);
+  store.setRoomName(roomName.value);
 }
 
 function handleRoomsData(data) {
   rooms.value = [...data];
   joinedRoom.value = true;
-  console.log(rooms.value);
+  manager.emit("isRoomFull", roomName.value);
 }
-
-manager.on("updatePlayerData", handlePlayers);
-manager.on("roomData", handleRoomData);
-manager.on("updateRoom", handleRoomData);
-manager.on("updateRooms", handleRoomsData);
 </script>
 <style scoped>
 .container {

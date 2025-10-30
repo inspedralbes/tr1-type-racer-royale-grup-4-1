@@ -8,26 +8,24 @@
 </template>
 
 <script setup>
-import { ref, provide } from "vue";
-import FirstPage from "./components/FirstPage.vue";
+import { ref } from "vue";
 import GameEngine from "./components/GameEngine.vue";
 import MainMenu from "./components/MainMenu.vue";
 import Keyboard from "./components/Keyboard.vue";
+import { useGameStore } from "@/stores/gameStore.js";
+import FirstPage from "./components/FirstPage.vue";
 import Lobby from "./components/Lobby.vue";
-import SocketManager from "../services/socketManager";
 import Config from "./components/Config.vue"; 
 import RoomsUserView from "./components/RoomsUserView.vue";
-const manager = new SocketManager();
+  
 const startGame = ref(false);
 const showMainMenu = ref(false);
 const showLobby = ref(false);
 const showConfig = ref(false); 
 const currActiveKey = ref("");
-const showRoomsUserView = ref(false);
-manager.connect();
-
-provide("socketManager", manager);
-
+const store = useGameStore();
+const manager = store.manager;
+const showRoomsUserView = ref("");
 manager.on("gameStart", handleGameStart);
 function handleJoinRoom() {
   showLobby.value = false;
