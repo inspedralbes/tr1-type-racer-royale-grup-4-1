@@ -1,49 +1,52 @@
 <template>
   <div class="game-engine">
     <div class="container">
-      <div class="active-word">
-        <span v-for="(letter, i) in activeWord.text" :key="i">
-          {{ letter }}
-        </span>
+      <div v-if="gameState.isLoading" class="loading">
+        <p>Cargando texto...</p>
       </div>
-      <div class="input-word">
-        <span
-          v-for="(letter, i) in gameState.inputText"
-          :key="i"
-          :class="getLetterClass(i)"
-        >
-          {{ letter }}
-        </span>
-      </div>
-      <ul class="word-list">
-        <li v-for="(word, i) in visibleWordsReversed" :key="i">
-          {{ word.text }}
-        </li>
-      </ul>
+      <template v-else>
+        <div class="active-word">
+          <span v-for="(letter, i) in activeWord.text" :key="i">
+            {{ letter }}
+          </span>
+        </div>
+        <div class="input-word">
+          <span
+            v-for="(letter, i) in gameState.inputText"
+            :key="i"
+            :class="getLetterClass(i)"
+          >
+            {{ letter }}
+          </span>
+        </div>
+        <ul class="word-list">
+          <li v-for="(word, i) in visibleWordsReversed" :key="i">
+            {{ word.text }}
+          </li>
+        </ul>
+      </template>
     </div>
   </div>
 </template>
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { useGameStore } from '../stores/gameStore';
 
 const emit = defineEmits(["activeKey"]);
+const gameStore = useGameStore();
+
 const gameState = ref({
-  words: [
-    { id: 1, text: "component", completed: false },
-    { id: 2, text: "reactivitat", completed: false },
-    { id: 3, text: "javascript", completed: false },
-    { id: 4, text: "framework", completed: false },
-    { id: 5, text: "template", completed: false },
-  ],
+  words: [],
   activeWordIndex: 0,
   inputText: "",
   stats: [],
   totalErrors: 0,
   currentErrors: 0,
+  isLoading: true,
 });
 
 const activeWord = computed(() => {
-  return gameState.value.words[gameState.value.activeWordIndex];
+  return gameState.value.words[gameState.value.activeWordIndex] || { text: '' };
 });
 
 const visibleWordsReversed = computed(() => {
@@ -126,13 +129,46 @@ function handleKeyDown(event) {
   }
 }
 
+// Cargar artículos del servidor
+function loadArticles() {
+  console.log('Solicitando artículos al servidor...');
+  
+  // Escuchar la respuesta del servidor
+  gameStore.manager.on('articlesData', (articles) => {
+    console.log('Artículos recibidos:', articles);
+    
+    if (articles && articles.length > 0) {
+      // Seleccionar un artículo aleatorio
+      const randomArticle = articles[Math.floor(Math.random() * articles.length)];
+      console.log('Artículo seleccionado:', randomArticle);
+      
+      // Convertir el texto en palabras
+      const words = randomArticle.text.split(' ').map((word, index) => ({
+        id: index + 1,
+        text: word,
+        completed: false
+      }));
+      
+      gameState.value.words = words;
+      gameState.value.isLoading = false;
+      console.log('Palabras cargadas:', words.length);
+    }
+  });
+  
+  // Solicitar artículos al servidor
+  gameStore.manager.emit('getArticles');
+}
+
 // Lifecycle hooks for adding/removing global event listener
 onMounted(() => {
   document.addEventListener("keydown", handleKeyDown);
+  loadArticles();
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", handleKeyDown);
+  // Limpiar listener
+  delete gameStore.manager.callbacks['articlesData'];
 });
 </script>
 
@@ -186,5 +222,16 @@ onBeforeUnmount(() => {
 
 .incorrect-letter {
   color: red;
+}
+
+.loading {
+  font-size: 2em;
+  color: #222020;
+  text-align: center;
+}
+
+.loading p {
+  margin: 0;
+  font-weight: 600;
 }
 </style>

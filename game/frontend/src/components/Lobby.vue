@@ -71,7 +71,6 @@ function handleJoinRoom() {
   }
   
   // Registrar los listeners ANTES de guardar el nombre
-  // para capturar el evento roomData que el servidor enviará
   gameStore.manager.on('roomData', (rooms) => {
     console.log('roomData recibido en Lobby:', rooms);
     gameStore.setRooms(rooms);
@@ -84,14 +83,13 @@ function handleJoinRoom() {
   
   savePlayerName();
   
-  // Esperar a que lleguen las salas o timeout
-  const checkAndNavigate = () => {
-    setTimeout(() => {
-      emit('joinRoom');
-    }, 200);
-  };
+  // Crear sala por defecto si no existe
+  gameStore.manager.emit('createRoom', 'Sala Principal');
   
-  checkAndNavigate();
+  // Esperar a que lleguen las salas
+  setTimeout(() => {
+    emit('joinRoom');
+  }, 300);
 }
 
 </script>
