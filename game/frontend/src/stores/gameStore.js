@@ -8,6 +8,7 @@ export const useGameStore = defineStore("rooms", () => {
   const manager = new SocketManager();
   manager.connect();
   const roomFull = ref(false);
+  const rooms = ref([]);
 
   //Ensure that the listener is there
   manager.socket.on("connect", () => {
@@ -30,13 +31,20 @@ export const useGameStore = defineStore("rooms", () => {
     currentRoom.value = roomName;
   }
 
+  function setRooms(newRooms) {
+    rooms.value = newRooms;
+    console.log('Rooms actualizadas en store:', newRooms);
+  }
+
   const isRoomFull = computed(() => roomFull.value);
 
   return {
     currentRoom,
     username,
+    rooms,
     setUsername,
     setRoomName,
+    setRooms,
     isRoomFull,
     manager,
     roomFull,

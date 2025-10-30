@@ -9,38 +9,12 @@ const io = new Server(server, {
   cors: { origin: "*" },
 });
 
+const articles = require("./data/data.json");
 // Serve Vue frontend build
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 let players = [];
 let rooms = [];
-// Configurable room capacity
-const ROOM_CAPACITY = 4;
-
-// Fake bot player for testing
-let botPlayer = {
-  id: "BOT_1",
-  username: "Bot",
-  status: "waiting",
-  room: "testRoom",
-};
-
-// Ensure room exists
-rooms.push({ name: "testRoom", players: [botPlayer] });
-players.push(botPlayer);
-
-// Helper to translate internal status codes to human-friendly strings
-function translateState(status) {
-  switch(status) {
-    case "ready": return "Listo";
-    case "finished": return "Finalizado";
-    case "playing": return "Jugando";
-    default: return "Esperando";
-  }
-}
-
-console.log(`🤖 Bot '${botPlayer.username}' added to room '${botPlayer.room}' with status: ${botPlayer.status}`);
-console.log(`👤 User connected: ${botPlayer.id} (${botPlayer.username}) - ${translateState(botPlayer.status)}`);
 
 // Socket.io logic
 io.on("connection", (socket) => {
@@ -62,7 +36,7 @@ io.on("connection", (socket) => {
     let existingRoom = rooms.find((r) => r.name === "testRoom");
     if (!existingRoom) {
       rooms.push({ name: "testRoom", players: [] });
-    }
+    } //Broadcast for now the room id
     io.emit("roomData", rooms);
   });
   socket.on("joinRoom", (roomName) => {
@@ -163,6 +137,29 @@ io.on("connection", (socket) => {
   //  let playerInRoom = rooms.players.find((p) => p.id === socket.id);
   //  playerInRoom.ready = status;
   //});
+  //
+
+  socket.on("createRoom", (roomName) => {
+    let roomExists = rooms.find((r) => r.name === roomName);
+    if (!roomExists) {
+      rooms.push({ name: roomName, players: [] });
+      io.emit("updateRooms", rooms);
+    } else {
+      console.log("Room already exists!");
+    }
+  });
+
+  socket.on("getArticles", () => {
+    socket.emit("articlesData", articles);
+  });
+
+  socket.on("userResults", (userResults) => {
+    console.log("Resultados recibidos de:", userResults.username);
+    console.log("Tiempo:", userResults.time, "ms");
+    console.log("Errores:", userResults.errors);
+    // Cambialo como quieras para almacenar los resultados. 
+  });
+
   socket.on("disconnect", () => {
     const player = players.find((p) => p.id === socket.id);
     console.log(`User disconnected: ${socket.id} (${player ? player.username || 'no-name' : 'unknown'})`);

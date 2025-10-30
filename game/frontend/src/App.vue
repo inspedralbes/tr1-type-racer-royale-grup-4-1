@@ -1,10 +1,16 @@
 <template>
-  <FirstPage v-if="!showMainMenu && !startGame && !showLobby && !showRoomsUserView" @lobby="showLobby = true" />
-  <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" />
-  <RoomsUserView v-else-if="showRoomsUserView" @back="handleBackFromRooms" />
-  <MainMenu v-else-if="showMainMenu && !startGame" />
-  <GameEngine v-if="startGame" @activeKey="handleActiveKey" />
-  <Keyboard v-if="startGame" :activeKey="currActiveKey" />
+  <template v-if="!startGame">
+    <FirstPage v-if="!showMainMenu && !showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
+    <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
+    <HostCreateLobby v-else-if="showHostCreateLobby" @backToLobby="showHostCreateLobby = false" @roomCreated="handleRoomCreated" />
+    <RoomsUserView v-else-if="showRoomsUserView" @back="handleBackFromRooms" @joinedRoom="handleJoinedRoom" />
+    <UserLobby v-else-if="showUserLobby" @back="handleBackFromUserLobby" @startGame="handleGameStart" />
+    <MainMenu v-else-if="showMainMenu" />
+  </template>
+  <template v-else>
+    <GameEngine @activeKey="handleActiveKey" @back="handleBackFromGame" />
+    <Keyboard :activeKey="currActiveKey" />
+  </template>
 </template>
 
 <script setup>
@@ -17,19 +23,34 @@ import FirstPage from "./components/FirstPage.vue";
 import Lobby from "./components/Lobby.vue";
 import Config from "./components/Config.vue"; 
 import RoomsUserView from "./components/RoomsUserView.vue";
+import HostCreateLobby from "./components/HostCreateLobby.vue";
+import UserLobby from "./components/UserLobby.vue";
   
 const startGame = ref(false);
 const showMainMenu = ref(false);
 const showLobby = ref(false);
-const showConfig = ref(false); 
+const showConfig = ref(false);
+const showHostCreateLobby = ref(false); 
+const showUserLobby = ref(false);
 const currActiveKey = ref("");
 const store = useGameStore();
 const manager = store.manager;
-const showRoomsUserView = ref("");
+const showRoomsUserView = ref(false);
 manager.on("gameStart", handleGameStart);
 function handleJoinRoom() {
   showLobby.value = false;
   showRoomsUserView.value = true;
+}
+
+function handleCreateRoom() {
+  showLobby.value = false;
+  showHostCreateLobby.value = true;
+}
+
+function handleRoomCreated(roomName) {
+  showHostCreateLobby.value = false;
+  showRoomsUserView.value = true;
+  console.log('Sala creada:', roomName);
 }
 
 function handleBackFromRooms() {
@@ -37,8 +58,36 @@ function handleBackFromRooms() {
   showLobby.value = true;
 }
 
+function handleJoinedRoom() {
+  showRoomsUserView.value = false;
+  showUserLobby.value = true;
+}
+
+function handleBackFromUserLobby() {
+  showUserLobby.value = false;
+  showRoomsUserView.value = true;
+}
+
 function handleGameStart() {
+  console.log('Iniciando juego en App.vue');
+  // Ocultar todas las pantallas
+  showUserLobby.value = false;
+  showRoomsUserView.value = false;
+  showLobby.value = false;
+  showHostCreateLobby.value = false;
+  showMainMenu.value = false;
+  // Mostrar el juego
   startGame.value = true;
+}
+
+function handleBackFromGame() {
+  startGame.value = false;
+  // Mostrar FirstPage
+  showLobby.value = false;
+  showRoomsUserView.value = false;
+  showHostCreateLobby.value = false;
+  showUserLobby.value = false;
+  showMainMenu.value = false;
 }
 
 function handleActiveKey(key) {
