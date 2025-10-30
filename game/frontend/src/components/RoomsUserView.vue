@@ -9,6 +9,9 @@
 
     
     <div class="salas-grid">
+      <div v-if="salasFiltradas.length === 0" class="no-salas">
+        <p>No hay salas disponibles en este momento</p>
+      </div>
       <button 
         v-for="sala in salasFiltradas" 
         :key="sala.id"
@@ -34,34 +37,25 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Config from './Config.vue';
+import { useGameStore } from '../stores/gameStore';
 
 const emit = defineEmits(['back']);
+const gameStore = useGameStore();
 
 const maxJugadoresPorSala = ref(4);
-const maxSalas = ref(4);
-
-
-const salas = ref([
-  { id: 1, nombre: 'Sala 1', jugadores: 1 },
-  { id: 2, nombre: 'Sala 2', jugadores: 2 },
-  { id: 3, nombre: 'Sala 3', jugadores: 3 },
-  { id: 4, nombre: 'Sala 4', jugadores: 1 },
-
-]);
-
-const busqueda = ref('');
 
 // Sala actualmente seleccionada
 const salaSeleccionada = ref(null);
 
-// Filtrar salas por búsqueda
+// Usar las salas del store
 const salasFiltradas = computed(() => {
-  if (!busqueda.value) return salas.value;
-  return salas.value.filter(sala => 
-    sala.nombre.toLowerCase().includes(busqueda.value.toLowerCase())
-  );
+  return gameStore.rooms.map(sala => ({
+    id: sala.name,
+    nombre: sala.name,
+    jugadores: sala.players.length
+  }));
 });
 
 // Selecciona una sala al hacer click
@@ -73,12 +67,32 @@ const seleccionarSala = (salaId) => {
 const unirseASala = () => {
   if (!salaSeleccionada.value) return;
   console.log('Unirse a sala:', salaSeleccionada.value);
-  // Aquí va tu lógica de socket para unirse a la sala
-
-
+  
+  // Emitir evento para unirse a la sala
+  gameStore.manager.emit('joinRoom', salaSeleccionada.value);
+  gameStore.setRoomName(salaSeleccionada.value);
 };
-</script>
 
+// Actualizar salas cuando el servidor envía datos
+const actualizarSalas = (rooms) => {
+  gameStore.setRooms(rooms);
+  console.log('Salas actualizadas en RoomsUserView:', rooms);
+};
+
+onMounted(() => {
+  console.log('RoomsUserView montado. Salas actuales:', gameStore.rooms);
+  
+  // Escuchar eventos del servidor para futuras actualizaciones
+  gameStore.manager.on('roomData', actualizarSalas);
+  gameStore.manager.on('updateRooms', actualizarSalas);
+});
+
+onUnmounted(() => {
+  // Limpiar listeners cuando el componente se desmonte
+  delete gameStore.manager.callbacks['roomData'];
+  delete gameStore.manager.callbacks['updateRooms'];
+});
+</script>
 
 <style scoped>
 .salas-container {
@@ -170,5 +184,12 @@ const unirseASala = () => {
 .sala-capacidad {
   font-size: 1.5rem;
   color: #222020;
+}
+
+.no-salas {
+  text-align: center;
+  padding: 2rem;
+  color: #666666;
+  font-size: 1.2rem;
 }
 </style>
