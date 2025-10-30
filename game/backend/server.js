@@ -77,6 +77,10 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("getQuestions", () => {
+    socket.emit(articles);
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
     players = players.filter((p) => p.id !== socket.id);
