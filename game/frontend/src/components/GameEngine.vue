@@ -131,16 +131,16 @@ function handleKeyDown(event) {
 
 // Cargar artículos del servidor
 function loadArticles() {
-  console.log('Solicitando artículos al servidor...');
+  // Limpiar listener anterior si existe para evitar duplicados
+  if (gameStore.manager.callbacks['articlesData']) {
+    delete gameStore.manager.callbacks['articlesData'];
+  }
   
-  // Escuchar la respuesta del servidor
+  // Registrar listener para la respuesta
   gameStore.manager.on('articlesData', (articles) => {
-    console.log('Artículos recibidos:', articles);
-    
     if (articles && articles.length > 0) {
       // Seleccionar un artículo aleatorio
       const randomArticle = articles[Math.floor(Math.random() * articles.length)];
-      console.log('Artículo seleccionado:', randomArticle);
       
       // Convertir el texto en palabras
       const words = randomArticle.text.split(' ').map((word, index) => ({
@@ -151,7 +151,8 @@ function loadArticles() {
       
       gameState.value.words = words;
       gameState.value.isLoading = false;
-      console.log('Palabras cargadas:', words.length);
+    } else {
+      gameState.value.isLoading = false;
     }
   });
   

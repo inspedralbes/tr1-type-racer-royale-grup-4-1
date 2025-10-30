@@ -38,12 +38,17 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-start" @click="iniciarJuego" :disabled="jugadores.length < 4">
+      <!-- 
+        NOTA: El botón está habilitado para permitir pruebas rápidas con cualquier número de jugadores.
+        Comentar el :disabled para habilitar el botón para pruebas.
+      -->
+      <!-- <button class="btn btn-start" @click="iniciarJuego" :disabled="jugadores.length < 4"> -->
+      <button class="btn btn-start" @click="iniciarJuego">
         Iniciar Juego
       </button>
-      <p v-if="jugadores.length < 4" class="info-text">
+      <!-- <p v-if="jugadores.length < 4" class="info-text">
         Se necesitan 4 jugadores para iniciar ({{ jugadores.length }}/4)
-      </p>
+      </p> -->
     </div>
   </div>
 </template>
@@ -73,10 +78,15 @@ const actualizarJugadores = (rooms) => {
 };
 
 const iniciarJuego = () => {
+  // NOTA: Validación de 4 jugadores deshabilitada para permitir pruebas rápidas
+  // Descomentar las siguientes líneas para restaurar la validación en producción:
+  /*
   if (jugadores.value.length < 4) {
     alert('Se necesitan 4 jugadores para iniciar');
     return;
   }
+  */
+  
   // Emitir al servidor para que todos los jugadores inicien
   gameStore.manager.emit('gameStart');
   console.log('Iniciando juego...');
