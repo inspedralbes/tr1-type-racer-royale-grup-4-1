@@ -12,7 +12,7 @@
 
     <div class="actions">
       <button class="btn" @click="handleCreateRoom">CREAR SALA</button>
-      <button class="btn" @click="emit('joinRoom')">UNIRSE SALA</button>
+      <button class="btn" @click="handleJoinRoom">UNIRSE SALA</button>
     </div>
 
     <button class="back-button" aria-label="Volver" @click="emit('back')">
@@ -22,26 +22,60 @@
 </template>
 
 <script setup>
-import { ref, inject } from "vue";
+import { ref } from "vue";
+import { useGameStore } from '../stores/gameStore';
 
-const socketManager = inject("socketManager");
+const gameStore = useGameStore();
 const playerName = ref("");
 const emit = defineEmits(['back', 'createRoom', 'joinRoom']);
 
 function savePlayerName() {
   if (playerName.value.trim()) {
-    socketManager.emit("saveUsername", playerName.value.trim());
+    // Guardar en el store
+    gameStore.setUsername(playerName.value.trim());
+    // Emitir al servidor
+    gameStore.manager.emit("saveUsername", playerName.value.trim());
+    console.log('Username guardado:', playerName.value.trim());
   }
 }
 
 function handleCreateRoom() {
-
+  if (!playerName.value.trim()) {
+    alert('Por favor, introduce tu nombre');
+    return;
+  }
   savePlayerName();
+  emit('createRoom');
 }
 
 function handleJoinRoom() {
-
+  if (!playerName.value.trim()) {
+    alert('Por favor, introduce tu nombre');
+    return;
+  }
+  
+  // Registrar los listeners ANTES de guardar el nombre
+  // para capturar el evento roomData que el servidor enviará
+  gameStore.manager.on('roomData', (rooms) => {
+    console.log('roomData recibido en Lobby:', rooms);
+    gameStore.setRooms(rooms);
+  });
+  
+  gameStore.manager.on('updateRooms', (rooms) => {
+    console.log('updateRooms recibido en Lobby:', rooms);
+    gameStore.setRooms(rooms);
+  });
+  
   savePlayerName();
+  
+  // Esperar a que lleguen las salas o timeout
+  const checkAndNavigate = () => {
+    setTimeout(() => {
+      emit('joinRoom');
+    }, 200);
+  };
+  
+  checkAndNavigate();
 }
 
 </script>
