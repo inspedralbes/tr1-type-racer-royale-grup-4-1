@@ -26,11 +26,6 @@ io.on("connection", (socket) => {
     let player = players.find((p) => p.id === socket.id);
     player.username = username;
     io.emit("updatePlayerData", players);
-    let existingRoom = rooms.find((r) => r.name === "testRoom");
-    if (!existingRoom) {
-      rooms.push({ name: "testRoom", players: [] });
-    } //Broadcast for now the room id
-    io.emit("roomData", rooms);
   });
   socket.on("joinRoom", (roomName) => {
     socket.join(roomName);
