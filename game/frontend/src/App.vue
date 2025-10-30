@@ -8,7 +8,7 @@
     <MainMenu v-else-if="showMainMenu" />
   </template>
   <template v-else>
-    <GameEngine @activeKey="handleActiveKey" />
+    <GameEngine @activeKey="handleActiveKey" @back="handleBackFromGame" />
     <Keyboard :activeKey="currActiveKey" />
   </template>
 </template>
@@ -78,6 +78,16 @@ function handleGameStart() {
   showMainMenu.value = false;
   // Mostrar el juego
   startGame.value = true;
+}
+
+function handleBackFromGame() {
+  startGame.value = false;
+  // Mostrar FirstPage
+  showLobby.value = false;
+  showRoomsUserView.value = false;
+  showHostCreateLobby.value = false;
+  showUserLobby.value = false;
+  showMainMenu.value = false;
 }
 
 function handleActiveKey(key) {
