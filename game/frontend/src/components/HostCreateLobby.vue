@@ -1,33 +1,30 @@
 <template>
-	<div class="host-create-lobby">
-			<div class="panel">
-				<h2 class="heading">CREAR SALA</h2>
+  <div class="host-create-lobby">
+    <h1 class="title">CREAR SALA</h1>
 
-				<div class="content">
-					<input class="input" v-model="roomName" placeholder="Nombre de la sala" />
+    <div class="content">
+      <input class="name-input" v-model="roomName" placeholder="Nombre de la sala" />
+    </div>
 
-					<select class="input" v-model="mode">
-						<option value="normal">Normal</option>
-						<option value="timed">Contrarreloj</option>
-					</select>
-				</div>
+    <div class="actions">
+      <button class="btn" @click="goBack">ATRAS</button>
+      <button class="btn" @click="createRoom">CREAR</button>
+    </div>
 
-				<div class="actions">
-					<button class="play-button" @click="goBack">ATRAS</button>
-					<button class="play-button" @click="createRoom">CREAR</button>
-				</div>
-			</div>
-	</div>
+    <button class="back-button" aria-label="Volver" @click="goBack">
+      <i class="fa-solid fa-house"></i>
+    </button>
+  </div>
 </template>
 
 <script setup>
-import { ref, inject } from "vue";
+import { ref } from "vue";
+import { useGameStore } from '../stores/gameStore';
 
 const emit = defineEmits(["backToLobby", "roomCreated"]);
-const manager = inject("socketManager");
+const gameStore = useGameStore();
 
 const roomName = ref("");
-const mode = ref("normal");
 
 function goBack() {
   emit("backToLobby");
@@ -40,86 +37,112 @@ function createRoom() {
     return;
   }
 
-  if (manager && typeof manager.emit === "function") {
-    manager.emit("createRoom", { name, mode: mode.value });
-  }
+  // Emitir al servidor para crear la sala (el backend espera solo el nombre por ahora)
+  gameStore.manager.emit("createRoom", name);
 
   emit("roomCreated", name);
 }
 </script>
 
 <style scoped>
-
 .host-create-lobby {
-	width: 100vw;
-	height: 100vh;
-	background-color: #323437; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 3rem;
+  position: relative;
 }
 
-.panel {
-	width: 100%;
-	height: 100%;
-	background-color: transparent;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	position: relative;
-	color: #ffffff;
-}
-
-.heading {
-	margin-top: 2.5rem;
-	font-weight: 700;
-	font-size: 2.5rem;
-	color: #ffffff;
+.title {
+  font-size: 4rem;
+  color: #222020;
+  margin: 0;
+  font-weight: bold;
 }
 
 .content {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	margin-top: 5vh;
-	gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
 }
 
-.input {
-	width: 260px;
-	padding: 0.6rem 0.8rem;
-	border: none;
-	border-radius: 6px;
-	background-color: rgba(0,0,0,0.15);
-	color: #ffffff;
-	font-weight: 700;
+.name-input {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  background-color: #ffffff;
+  color: #000000;
+  border: 2px solid #d0d0d0;
+  border-radius: 8px;
+  text-align: center;
+  width: 300px;
+  transition: all 0.3s ease;
+}
+
+.name-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  transform: scale(1.02);
 }
 
 .actions {
-	position: absolute;
-	left: 2.5rem;
-	right: 2.5rem;
-	bottom: 3.5rem;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
+  display: flex;
+  gap: 6rem;
 }
 
-.play-button {
-	padding: 1rem 3rem;
-	font-size: 1.5rem;
-	background-color: #4CAF50;
-	color: white;
-	border: none;
-	border-radius: 8px;
-	cursor: pointer;
-	transition: all 0.3s ease;
-	font-weight: 600;
+.btn {
+  padding: 1rem 3rem;
+  font-size: 1.5rem;
+  background-color: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
 }
 
-.play-button:hover { background-color: #45a049; transform: scale(1.05); }
-.play-button:active { transform: scale(0.98); }
+.btn:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.back-button {
+  position: absolute;
+  left: 5vw;
+  bottom: 6vh;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.back-button i {
+  font-size: 1.25rem;
+}
 
 @media (max-width: 600px) {
-	.input { width: 200px; }
-	.play-button { padding: 0.8rem 1.6rem; font-size: 1rem }
+  .name-input { width: 250px; }
+  .btn { padding: 0.8rem 2rem; font-size: 1.2rem }
+  .title { font-size: 3rem; }
+  .actions { gap: 3rem; }
 }
-
 </style>
