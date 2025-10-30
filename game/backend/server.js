@@ -16,6 +16,19 @@ app.use(express.static(path.join(__dirname, "../frontend/dist")));
 let players = [];
 let rooms = [];
 
+// Configurable room capacity
+const ROOM_CAPACITY = 4;
+
+// Helper to translate internal status codes to human-friendly strings
+function translateState(status) {
+  switch(status) {
+    case "ready": return "Listo";
+    case "finished": return "Finalizado";
+    case "playing": return "Jugando";
+    default: return "Esperando";
+  }
+}
+
 // Socket.io logic
 io.on("connection", (socket) => {
   const newPlayer = { id: socket.id, username: null, status: "waiting", room: null };
