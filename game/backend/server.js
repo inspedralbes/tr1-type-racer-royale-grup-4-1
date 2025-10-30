@@ -15,6 +15,8 @@ app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 let players = [];
 let rooms = [];
+let leaderboard = [];
+
 console.log(articles);
 // Socket.io logic
 io.on("connection", (socket) => {
@@ -82,10 +84,13 @@ io.on("connection", (socket) => {
   });
 
   socket.on("userResults", (userResults) => {
-    console.log("Resultados recibidos de:", userResults.username);
-    console.log("Tiempo:", userResults.time, "ms");
-    console.log("Errores:", userResults.errors);
-    // Cambialo como quieras para almacenar los resultados. 
+    if (!userResults) return;
+    leaderboard.push({
+      name: userResults.name,
+      time: userResults.time,
+      errors: userResults.errors,
+    });
+    socket.emit("updateLeaderboard", leaderboard);
   });
 
   socket.on("disconnect", () => {
