@@ -43,25 +43,30 @@ watch(
   margin-top: 10vh;
 }
 .key {
-  color: rgba(0, 0, 0, 0.5);
-  background-color: #323437;
-  border: 1px solid yellow;
+  color: #000000;
+  background-color: #ffffff;
+  border: 2px solid #d0d0d0;
   font-size: 2.5em;
   padding: 10px;
   margin-left: 10px;
   margin-bottom: 10px;
   width: 50px;
-  border-radius: 10px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 600;
 }
 .active {
-  background-color: yellow;
-  color: rgba(0, 0, 0, 0.5);
-  border: 1px solid yellow;
+  background-color: #4CAF50;
+  color: #ffffff;
+  border: 2px solid #4CAF50;
   font-size: 2.5em;
   padding: 10px;
   margin-left: 10px;
   margin-bottom: 10px;
   width: 50px;
-  border-radius: 10px;
+  border-radius: 8px;
+  transform: scale(1.1);
+  transition: all 0.3s ease;
+  font-weight: 600;
 }
 </style>

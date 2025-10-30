@@ -144,14 +144,17 @@ onBeforeUnmount(() => {
   margin-top: 45vh;
   position: relative;
   font-family: sans-serif;
+  min-height: 50vh;
 }
 .word-list {
   position: absolute;
   font-size: 2.5em;
-  color: #616467;
+  color: #222020;
   list-style: none;
   width: 225px;
   bottom: 5vh;
+  margin: 0;
+  padding: 0;
 }
 
 .word-list > li {
@@ -160,12 +163,13 @@ onBeforeUnmount(() => {
 .active-word {
   position: absolute;
   font-size: 3em;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(0, 0, 0, 0.3);
   padding: 10px 35px;
   z-index: 1;
-  border: 1px solid yellow;
-  border-radius: 10px;
+  border: 2px solid #d0d0d0;
+  border-radius: 8px;
   width: 225px;
+  background-color: #f9f9f9;
 }
 
 .input-word {
