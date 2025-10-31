@@ -3,16 +3,16 @@
     <Config />
     
     <div class="scanlines"></div>
+    
+    <div class="pixel-stars">
+      <div class="pixel-star" v-for="n in 20" :key="n"></div>
+    </div>
 
     <button class="back-button" aria-label="Volver" @click="handleBack">
       <i class="fa-solid fa-house"></i>
     </button>
 
     <div class="title-container">
-      <div class="pixel-stars">
-        <div class="pixel-star" v-for="n in 8" :key="n"></div>
-      </div>
-      
       <h1 class="title">{{ nombreSala }}</h1>
     </div>
     
@@ -159,45 +159,80 @@ onUnmounted(() => {
 
 /* Title with glitch & float */
 .title-container {
-  position: relative; display: flex; flex-direction: column; align-items: center;
-  animation: glitchContainer 5s infinite; z-index: 5;
+  position: relative; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center;
+  animation: glitchContainer 5s infinite; 
+  z-index: 5;
+  margin-bottom: 2rem;
 }
 .title {
   font-size: 4rem; font-weight: 900; margin: 0; line-height: 1;
   text-transform: uppercase;
-  color: #fff;
+  color: #FFD700;
   text-shadow:
-    -2px -2px 0 #000, 0 -2px 0 #000, 2px -2px 0 #000, 2px 0 0 #000,
-    2px 2px 0 #000, 0 2px 0 #000, -2px 2px 0 #000, -2px 0 0 #000,
-    0 0 15px rgba(0,0,0,0.7);
+    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
+    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000,
+    0 0 8px rgba(0,0,0,0.5);
   animation: titleGlitch 3s infinite, titleFloat 4s ease-in-out infinite;
 }
 @keyframes glitchContainer { 0%,90%,100% {transform:translate(0,0);} 91%{transform:translate(-2px,1px);} 92%{transform:translate(2px,-1px);} 93%{transform:translate(-1px,2px);} 94%{transform:translate(1px,-2px);} }
 @keyframes titleGlitch { 0%,85%,100% { transform: skew(0deg); } 86% { transform: skew(-1deg); } 88% { transform: skew(1deg); } 90% { transform: skew(0deg); } }
 @keyframes titleFloat { 0%,100% {transform:translateY(0);} 50% {transform:translateY(-10px);} }
 
-/* Pixel stars */
+/* Pixel stars - Full screen particles */
 .pixel-stars {
-  position: absolute; width: 120%; height: 120%; pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
 }
+
 .pixel-star {
-  position: absolute; width: 12px; height: 12px;
+  position: absolute;
+  width: 8px;
+  height: 8px;
   background: #FFA500;
   box-shadow: 0 0 10px #FFA500, inset 0 0 5px #fff;
-  animation: pixelStarBlink 1.5s ease-in-out infinite;
+  animation: pixelStarBlink 3s ease-in-out infinite;
+  opacity: 0.7;
 }
+
+/* Generate random positions for stars */
 .pixel-star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
-.pixel-star:nth-child(2) { top: 20%; right: 15%; animation-delay: 0.3s; }
-.pixel-star:nth-child(3) { top: 70%; left: 15%; animation-delay: 0.6s; }
-.pixel-star:nth-child(4) { top: 80%; right: 20%; animation-delay: 0.9s; }
-.pixel-star:nth-child(5) { top: 30%; left: 5%; animation-delay: 0.2s; }
-.pixel-star:nth-child(6) { top: 50%; right: 10%; animation-delay: 0.5s; }
-.pixel-star:nth-child(7) { top: 15%; left: 85%; animation-delay: 0.8s; }
-.pixel-star:nth-child(8) { top: 65%; left: 80%; animation-delay: 0.4s; }
+.pixel-star:nth-child(2) { top: 20%; left: 20%; animation-delay: 0.5s; }
+.pixel-star:nth-child(3) { top: 30%; left: 30%; animation-delay: 1s; }
+.pixel-star:nth-child(4) { top: 40%; left: 40%; animation-delay: 1.5s; }
+.pixel-star:nth-child(5) { top: 50%; left: 50%; animation-delay: 2s; }
+.pixel-star:nth-child(6) { top: 60%; left: 60%; animation-delay: 2.5s; }
+.pixel-star:nth-child(7) { top: 70%; left: 70%; animation-delay: 3s; }
+.pixel-star:nth-child(8) { top: 80%; left: 80%; animation-delay: 0.8s; }
+.pixel-star:nth-child(9) { top: 90%; left: 20%; animation-delay: 1.2s; }
+.pixel-star:nth-child(10) { top: 15%; left: 75%; animation-delay: 1.8s; }
+.pixel-star:nth-child(11) { top: 25%; left: 5%; animation-delay: 2.2s; }
+.pixel-star:nth-child(12) { top: 35%; left: 85%; animation-delay: 0.3s; }
+.pixel-star:nth-child(13) { top: 45%; left: 15%; animation-delay: 1.7s; }
+.pixel-star:nth-child(14) { top: 55%; left: 90%; animation-delay: 2.8s; }
+.pixel-star:nth-child(15) { top: 65%; left: 10%; animation-delay: 0.6s; }
+.pixel-star:nth-child(16) { top: 75%; left: 95%; animation-delay: 1.9s; }
+.pixel-star:nth-child(17) { top: 85%; left: 5%; animation-delay: 2.4s; }
+.pixel-star:nth-child(18) { top: 5%; left: 50%; animation-delay: 0.9s; }
+.pixel-star:nth-child(19) { top: 25%; left: 60%; animation-delay: 2.1s; }
+.pixel-star:nth-child(20) { top: 45%; left: 30%; animation-delay: 1.3s; }
 @keyframes pixelStarBlink {
-  0%,50%,100% { opacity:1; transform: scale(1) rotate(0deg); }
-  25% { opacity:0.3; transform: scale(1.3) rotate(45deg); }
-  75% { opacity:0.5; transform: scale(0.8) rotate(-45deg); }
+  0%, 100% { 
+    opacity: 0.3; 
+    transform: scale(0.8) rotate(0deg); 
+  }
+  50% { 
+    opacity: 0.9; 
+    transform: scale(1.2) rotate(180deg); 
+  }
 }
 
 /* Subtitle */
