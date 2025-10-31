@@ -20,16 +20,6 @@ let leaderboard = [];
 // Configurable room capacity
 const ROOM_CAPACITY = 4;
 
-// Helper to translate internal status codes to human-friendly strings
-function translateState(status) {
-  switch(status) {
-    case "ready": return "Listo";
-    case "finished": return "Finalizado";
-    case "playing": return "Jugando";
-    default: return "Esperando";
-  }
-}
-
 // Socket.io logic
 io.on("connection", (socket) => {
   const newPlayer = {
@@ -38,30 +28,19 @@ io.on("connection", (socket) => {
     status: "waiting",
     room: null,
   };
+  //Push the player to the array
   players.push(newPlayer);
-  console.log(
-    `\n👤 User connected: ${socket.id} (${newPlayer.username || "no-name"}) - ${translateState(newPlayer.status)}`,
-  );
+
   socket.on("saveUsername", (username) => {
     //Find the player
     let player = players.find((p) => p.id === socket.id);
     if (!player) return;
     player.username = username;
     player.status = "not-joined"; // Estado inicial al guardar nombre
-    console.log(`\n📝 Player ${socket.id} saved name: ${username}`);
-    console.log(`Status: ${translateState(player.status)}`);
-    // Also print the standard "User connected" line but with the username so it's visible in logs
-    console.log(
-      `👤 User connected: ${socket.id} (${username}) - ${translateState(player.status)}`,
-    );
-
     io.emit("updatePlayerData", players);
-    let existingRoom = rooms.find((r) => r.name === "testRoom");
-    if (!existingRoom) {
-      rooms.push({ name: "testRoom", players: [] });
-    } //Broadcast for now the room id
     io.emit("roomData", rooms);
   });
+
   socket.on("joinRoom", (roomName) => {
     socket.join(roomName);
     let room = rooms.find((r) => r.name === roomName);
@@ -70,28 +49,20 @@ io.on("connection", (socket) => {
       return;
     }
     let player = players.find((p) => p.id === socket.id);
+
     if (!player) {
       console.log("Player not found:", socket.id);
       return;
     }
+
     if (!room.players.find((p) => p.id === socket.id)) {
       player.room = roomName;
       player.status = "waiting";
       room.players.push(player);
 
-      // Comprueba si la sala está llena (ROOM_CAPACITY jugadores)
-      console.log(
-        `\n🎮 Player ${player.username || socket.id} joined room: ${roomName}`,
-      );
-      console.log(`Status: ${translateState(player.status)}`);
-      console.log(`Room players: ${room.players.length}/${ROOM_CAPACITY}`);
-
       if (room.players.length === ROOM_CAPACITY) {
         // Marca la sala como llena y solicita a los jugadores que confirmen 'ready'
         room.isFull = true;
-        console.log(
-          "\n🎯 Room is full! Waiting for all players to press ready...",
-        );
         // Emite al frontend que la sala está llena y los clientes deben mostrar el botón 'Ready'
         io.to(roomName).emit("roomFull", true);
         io.to(roomName).emit("requestReady");
@@ -100,8 +71,6 @@ io.on("connection", (socket) => {
 
     io.to(roomName).emit("updateRooms", rooms);
     io.to(roomName).emit("updateRoomPlayers", room.players);
-
-    logGameState(room);
   });
 
   function checkStartGame(room) {
@@ -130,9 +99,8 @@ io.on("connection", (socket) => {
     if (room) {
       io.to(room.name).emit("updateRoomPlayers", room.players);
       console.log(
-        `\n✅ Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`,
+        `Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`,
       );
-      logGameState(room);
       // Comprueba si todos los jugadores están listos para arrancar
       checkStartGame(room);
     }
@@ -150,23 +118,6 @@ io.on("connection", (socket) => {
     }
     socket.emit("roomFull", roomFull);
   });
-
-  /*
-  socket.on("isRoomFull", (roomName) => {
-    let room = rooms.find((r) => r.name === roomName);
-    if (!room) return socket.emit("roomFull", false);
-
-    let roomFull = room.players.length >= 4; // Example limit
-    socket.emit("roomFull", roomFull);
-  });
-  */
-
-  //TODO: Add so that the server receives the emit of ready status
-  //socket.on("playerStatus", (status) => {
-  //  let playerInRoom = rooms.players.find((p) => p.id === socket.id);
-  //  playerInRoom.ready = status;
-  //});
-  //
 
   socket.on("createRoom", (roomName) => {
     let roomExists = rooms.find((r) => r.name === roomName);
@@ -206,21 +157,10 @@ io.on("connection", (socket) => {
       if (room.players.length !== before) {
         io.to(room.name).emit("updateRoom", room);
         io.to(room.name).emit("gameStateUpdate", room.players);
-        logGameState(room);
       }
     });
-    // Emit overall rooms list to everyone
     io.emit("updateRooms", rooms);
   });
-  function logGameState(room) {
-    console.log(`\n--- GAME STATE | ROOM: ${room.name} ---`);
-    room.players.forEach((p) => {
-      console.log(`${p.username || p.id}: ${translateState(p.status)}`);
-    });
-    console.log("-------------------------------------\n");
-  }
-
-  // translateState moved to top-level so it's available before io.on
 });
 
 server.listen(3000, () => console.log("Server running on port:3000"));
