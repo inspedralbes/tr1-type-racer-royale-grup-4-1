@@ -2,7 +2,9 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
-
+const sql = require("mysql2"); //To be able to connect to the database
+const bcrypt = require("bcrypt"); //Hash tool for passwords
+console.log(process.env.DB_USER);
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -10,9 +12,10 @@ const io = new Server(server, {
 });
 
 const articles = require("./data/data.json");
-// Serve Vue frontend build
+//Serve Vue frontend build
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
+//Inject the enviroment variables
 let players = [];
 let rooms = [];
 let leaderboard = [];
@@ -160,6 +163,25 @@ io.on("connection", (socket) => {
       }
     });
     io.emit("updateRooms", rooms);
+  });
+});
+
+//Db stuff
+//Connect to the database
+const mysqlconfig = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+};
+
+let con = null;
+con = sql.createConnection(mysqlconfig);
+con.connect(function (err) {
+  if (err) throw err;
+  con.query("SELECT NOW() AS now", function (err, results) {
+    if (err) throw err;
+    console.log(results);
   });
 });
 
