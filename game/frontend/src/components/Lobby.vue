@@ -116,63 +116,51 @@ function handleJoinRoom() {
 </script>
 
 <style scoped>
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
 
 body, html {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+  margin: 0; padding: 0; overflow: hidden;
+  font-family: 'Poppins', sans-serif;
 }
 
 .lobby {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  box-sizing: border-box;
-  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100vh; width: 100%;
+  box-sizing: border-box; position: relative;
   background-size: cover;
-  font-family: 'Poppins', sans-serif;
-  color: #333;
-  text-align: center;
-  width: 100%;
-  overflow: hidden;
+  color: #333; text-align: center;
   padding: 2rem 0;
+  overflow: hidden;
 }
 
+/* Scanlines CRT effect */
 .scanlines {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  pointer-events: none;
+  position: fixed; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.04) 0px,
+    rgba(0,0,0,0.04) 0px,
     transparent 1px,
     transparent 2px,
-    rgba(0, 0, 0, 0.04) 3px
+    rgba(0,0,0,0.04) 3px
   );
   animation: scanlineMove 8s linear infinite;
   z-index: 10;
 }
-
 @keyframes scanlineMove {
   0% { transform: translateY(0); }
   100% { transform: translateY(4px); }
 }
 
+/* Pixel stars */
 .pixel-stars {
-  position: absolute;
-  width: 120%;
-  height: 120%;
-  pointer-events: none;
-  z-index: 1;
+  position: absolute; width: 120%; height: 120%;
+  pointer-events: none; z-index: 1;
 }
 .pixel-star {
-  position: absolute;
-  width: 12px; height: 12px;
+  position: absolute; width: 12px; height: 12px;
   background: #FFA500;
-  box-shadow: 0 0 10px #FFA500, inset 0 0 5px #ffffff;
+  box-shadow: 0 0 10px #FFA500, inset 0 0 5px #fff;
   animation: pixelStarBlink 1.5s ease-in-out infinite;
 }
 .pixel-star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
@@ -183,37 +171,28 @@ body, html {
 .pixel-star:nth-child(6) { top: 50%; right: 10%; animation-delay: 0.5s; }
 .pixel-star:nth-child(7) { top: 15%; left: 85%; animation-delay: 0.8s; }
 .pixel-star:nth-child(8) { top: 65%; left: 80%; animation-delay: 0.4s; }
-
 @keyframes pixelStarBlink {
-  0%, 50%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  0%,50%,100% { opacity: 1; transform: scale(1) rotate(0deg); }
   25% { opacity: 0.3; transform: scale(1.3) rotate(45deg); }
   75% { opacity: 0.5; transform: scale(0.8) rotate(-45deg); }
 }
 
+/* Title with glitch and float */
 .title-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  position: relative; display: flex; flex-direction: column; align-items: center;
   animation: glitchContainer 5s infinite;
-  margin-bottom: 1rem;
-  margin-top: -1rem; /* Ajuste para subir un poco el título */
+  margin-bottom: 1rem; margin-top: -1rem;
 }
 @keyframes glitchContainer {
-  0%, 90%, 100% { transform: translate(0, 0); }
-  91% { transform: translate(-2px, 1px); }
-  92% { transform: translate(2px, -1px); }
-  93% { transform: translate(-1px, 2px); }
-  94% { transform: translate(1px, -2px); }
+  0%,90%,100% { transform: translate(0,0); }
+  91% { transform: translate(-2px,1px); }
+  92% { transform: translate(2px,-1px); }
+  93% { transform: translate(-1px,2px); }
+  94% { transform: translate(1px,-2px); }
 }
-
 .title {
-  font-size: 6rem;
-  font-weight: 900;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
+  font-size: 6rem; font-weight: 900; margin: 0;
+  display: flex; flex-direction: column; line-height: 1;
   text-transform: uppercase;
   animation: titleGlitch 3s infinite, titleFloat 4s ease-in-out infinite;
 }
@@ -225,56 +204,45 @@ body, html {
   color: #FFD700;
   text-shadow:
     -1px -1px 0 #000,
-    0   -1px 0 #000,
+    0 -1px 0 #000,
     1px -1px 0 #000,
-    1px  0   0 #000,
-    1px  1px 0 #000,
-    0    1px 0 #000,
-    -1px  1px 0 #000,
-    -1px  0   0 #000,
+    1px 0 0 #000,
+    1px 1px 0 #000,
+    0 1px 0 #000,
+    -1px 1px 0 #000,
+    -1px 0 0 #000,
     0 0 10px rgba(0,0,0,0.5);
   font-weight: 900;
 }
 @keyframes titleGlitch {
-  0%, 85%, 100% { transform: skew(0deg); }
+  0%,85%,100% { transform: skew(0deg); }
   86% { transform: skew(-1deg); }
   88% { transform: skew(1deg); }
   90% { transform: skew(0deg); }
 }
 @keyframes titleFloat {
-  0%, 100% { transform: translateY(0px); }
+  0%,100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
 @keyframes wordBlink {
-  0%, 100% { opacity: 1; }
+  0%,100% { opacity: 1; }
   50% { opacity: 0.8; }
 }
 
+/* Input group */
 .name-input-wrapper {
-  width: 100%;
-  display: flex;
-  justify-content: center;
+  width: 100%; display: flex; justify-content: center;
   margin: 1rem 0;
 }
-
 .name-input-container {
-  display: flex;
-  justify-content: center;
-  max-width: 500px;
-  width: 100%;
+  display: flex; justify-content: center;
+  max-width: 500px; width: 100%;
   padding: 0 1rem;
 }
-
 .input-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.2rem;
-  width: 100%;
-  max-width: 300px;
-  margin: 1rem 0;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 1.2rem; width: 100%; max-width: 300px; margin: 1rem 0;
 }
-
 .name-input {
   padding: 0.8rem 1.5rem;
   font-size: 1.2rem;
@@ -283,11 +251,12 @@ body, html {
   outline: none;
   width: 100%;
   text-align: center;
-  font-family: 'Poppins', sans-serif;
   box-sizing: border-box;
   height: 48px;
+  font-family: 'Poppins', sans-serif;
 }
 
+/* Submit button */
 .submit-button {
   padding: 0 1.5rem;
   font-size: 1rem;
@@ -308,45 +277,37 @@ body, html {
   align-items: center;
   justify-content: center;
 }
-
 .submit-button:hover {
   background: linear-gradient(90deg, #FFA500, #FFD700);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(255,140,0,0.4);
 }
-
 .submit-button:active {
   transform: translateY(1px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
-@keyframes buttonPulse {
-  0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-  50% { box-shadow: 0 6px 25px rgba(255,140,0,0.5); }
-}
+/* Welcome text */
 .welcome-text {
   font-size: 1.5rem;
-  color: #FF9500; /* Naranja vibrante */
+  color: #FF9500;  /* naranja vibrante */
   font-weight: 600;
-  margin: 0;
-  margin-top: 2rem;
+  margin: 0 0 2rem;
   text-shadow:
-    0 0 4px #FFB347,       /* brillo naranja suave */
-    0 0 1px rgba(0, 0, 0, 0.4); /* sombra sutil para contraste */
+    0 0 4px #FFB347,
+    0 0 1px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.03em;
 }
 
-
+/* Actions container */
 .actions {
-  display: flex;
-  gap: 6rem;
-  margin-top: 2rem;
+  display: flex; gap: 6rem; margin-top: 2rem;
 }
 .btn {
   padding: 1rem 3rem;
   font-size: 1.5rem;
   background-color: #FF8C00;
-  color: #ffffff;
+  color: #fff;
   border: none;
   border-radius: 50px;
   cursor: pointer;
@@ -360,15 +321,13 @@ body, html {
   animation: buttonPulse 1.5s ease-in-out infinite;
 }
 .button-text {
-  position: relative;
-  
-  z-index: 2;
+  position: relative; z-index: 2;
   display: inline-block;
   animation: textGlow 1.5s ease-in-out infinite;
 }
 @keyframes buttonPulse {
-  0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-  50% { box-shadow: 0 6px 25px rgba(255,140,0,0.5); }
+  0%,100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1);}
+  50% { box-shadow: 0 6px 25px rgba(255,140,0,0.5);}
 }
 .pixel-border {
   position: absolute;
@@ -379,22 +338,19 @@ body, html {
   pointer-events: none;
 }
 @keyframes borderDash {
-  0% { border-color: #FFA500; }
-  50% { border-color: #ffffff; }
-  100% { border-color: #FFA500; }
+  0%,100% { border-color: #FFA500; }
+  50% { border-color: #fff; }
 }
 .button-pixels {
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
   background: repeating-linear-gradient(
     90deg,
     transparent,
     transparent 3px,
-    rgba(255, 255, 255, 0.2) 3px,
-    rgba(255, 255, 255, 0.2) 6px
+    rgba(255,255,255,0.2) 3px,
+    rgba(255,255,255,0.2) 6px
   );
   animation: pixelScan 1.2s linear infinite;
   pointer-events: none;
@@ -412,26 +368,24 @@ body, html {
   animation: textFlicker 0.1s ease-in-out infinite;
 }
 @keyframes textFlicker {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.9;}
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.9; }
 }
 .play-button:active, .btn:active {
   transform: translateY(2px) translateX(1px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
+
+/* Back button */
 .back-button {
-  position: absolute;
-  left: 5vw;
-  bottom: 6vh;
-  background: #ffffff;
-  color: #000000;
+  position: absolute; left: 5vw; bottom: 6vh;
+  background: #fff;
+  color: #000;
   border: none;
   border-radius: 8px;
   width: 56px;
   height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 40;
@@ -444,10 +398,12 @@ body, html {
   font-size: 1.25rem;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .title { font-size: 4rem; }
   .actions { gap: 1.2rem; }
-  .actions .play-button { padding: 0.6rem 1.6rem; font-size: 0.9rem;}
+  .actions .play-button { padding: 0.6rem 1.6rem; font-size: 0.9rem; }
   .actions .button-text { font-size: 0.8rem; padding: 0.4rem 0.8rem; }
 }
+
 </style>

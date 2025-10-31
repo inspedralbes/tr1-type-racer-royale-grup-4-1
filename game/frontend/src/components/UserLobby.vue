@@ -137,124 +137,55 @@ onUnmounted(() => {
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
 
 .user-lobby-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  max-height: 100vh;
-  gap: 2rem;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100vh; max-height: 100vh; gap: 2rem;
+  position: fixed; inset: 0;
   overflow: hidden;
-  background-size: cover;
   font-family: 'Poppins', sans-serif;
   padding: 2rem;
-  margin: 0;
-  width: 100%;
+  background-size: cover;
   box-sizing: border-box;
+  width: 100%;
 }
 
-/* --- ANIMACIONES Y EFECTOS VISUALES --- */
-
-/* Efecto de líneas de escaneo CRT */
+/* Scanlines CRT effect */
 .scanlines {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.04) 0px,
-    transparent 1px,
-    transparent 2px,
-    rgba(0, 0, 0, 0.04) 3px
-  );
+  position: fixed; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, transparent 1px, transparent 2px, rgba(0,0,0,0.04) 3px);
   animation: scanlineMove 8s linear infinite;
   z-index: 10;
 }
+@keyframes scanlineMove { 0% { transform: translateY(0); } 100% { transform: translateY(4px); } }
 
-@keyframes scanlineMove {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(4px); }
-}
-
-/* Contenedor del título con animación de glitch */
+/* Title with glitch & float */
 .title-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: glitchContainer 5s infinite;
-  z-index: 5;
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  animation: glitchContainer 5s infinite; z-index: 5;
 }
-
-@keyframes glitchContainer {
-  0%, 90%, 100% { transform: translate(0, 0); }
-  91% { transform: translate(-2px, 1px); }
-  92% { transform: translate(2px, -1px); }
-  93% { transform: translate(-1px, 2px); }
-  94% { transform: translate(1px, -2px); }
-}
-
-/* --- TÍTULO --- */
-
 .title {
-  font-size: 4rem;
-  font-weight: 900;
-  margin: 0;
-  line-height: 1;
+  font-size: 4rem; font-weight: 900; margin: 0; line-height: 1;
   text-transform: uppercase;
   color: #fff;
-  text-shadow: 
-    -2px -2px 0 #000,
-     0   -2px 0 #000,
-     2px -2px 0 #000,
-     2px  0   0 #000,
-     2px  2px 0 #000,
-     0    2px 0 #000,
-    -2px  2px 0 #000,
-    -2px  0   0 #000,
+  text-shadow:
+    -2px -2px 0 #000, 0 -2px 0 #000, 2px -2px 0 #000, 2px 0 0 #000,
+    2px 2px 0 #000, 0 2px 0 #000, -2px 2px 0 #000, -2px 0 0 #000,
     0 0 15px rgba(0,0,0,0.7);
   animation: titleGlitch 3s infinite, titleFloat 4s ease-in-out infinite;
 }
+@keyframes glitchContainer { 0%,90%,100% {transform:translate(0,0);} 91%{transform:translate(-2px,1px);} 92%{transform:translate(2px,-1px);} 93%{transform:translate(-1px,2px);} 94%{transform:translate(1px,-2px);} }
+@keyframes titleGlitch { 0%,85%,100% { transform: skew(0deg); } 86% { transform: skew(-1deg); } 88% { transform: skew(1deg); } 90% { transform: skew(0deg); } }
+@keyframes titleFloat { 0%,100% {transform:translateY(0);} 50% {transform:translateY(-10px);} }
 
-@keyframes titleGlitch {
-  0%, 85%, 100% { transform: skew(0deg); }
-  86% { transform: skew(-1deg); }
-  88% { transform: skew(1deg); }
-  90% { transform: skew(0deg); }
-}
-
-@keyframes titleFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
-/* Estrellas pixel art */
+/* Pixel stars */
 .pixel-stars {
-  position: absolute;
-  width: 120%;
-  height: 120%;
-  pointer-events: none;
+  position: absolute; width: 120%; height: 120%; pointer-events: none;
 }
-
 .pixel-star {
-  position: absolute;
-  width: 12px;
-  height: 12px;
+  position: absolute; width: 12px; height: 12px;
   background: #FFA500;
-  box-shadow: 
-    0 0 10px #FFA500,
-    inset 0 0 5px #ffffff;
+  box-shadow: 0 0 10px #FFA500, inset 0 0 5px #fff;
   animation: pixelStarBlink 1.5s ease-in-out infinite;
 }
-
 .pixel-star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
 .pixel-star:nth-child(2) { top: 20%; right: 15%; animation-delay: 0.3s; }
 .pixel-star:nth-child(3) { top: 70%; left: 15%; animation-delay: 0.6s; }
@@ -263,349 +194,182 @@ onUnmounted(() => {
 .pixel-star:nth-child(6) { top: 50%; right: 10%; animation-delay: 0.5s; }
 .pixel-star:nth-child(7) { top: 15%; left: 85%; animation-delay: 0.8s; }
 .pixel-star:nth-child(8) { top: 65%; left: 80%; animation-delay: 0.4s; }
-
 @keyframes pixelStarBlink {
-  0%, 50%, 100% { 
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-  25% { 
-    opacity: 0.3;
-    transform: scale(1.3) rotate(45deg);
-  }
-  75% { 
-    opacity: 0.5;
-    transform: scale(0.8) rotate(-45deg);
-  }
+  0%,50%,100% { opacity:1; transform: scale(1) rotate(0deg); }
+  25% { opacity:0.3; transform: scale(1.3) rotate(45deg); }
+  75% { opacity:0.5; transform: scale(0.8) rotate(-45deg); }
 }
 
-/* --- SUBTITLE --- */
-
+/* Subtitle */
 .subtitle {
-  font-size: 1.8rem;
-  color: #fff;
-  margin: 0 0 1.5rem 0;
-  font-weight: 700;
-  text-shadow: 
-    -1px -1px 0 #000,
-     0   -1px 0 #000,
-     1px -1px 0 #000,
-     1px  0   0 #000,
-     1px  1px 0 #000,
-     0    1px 0 #000,
-    -1px  1px 0 #000,
-    -1px  0   0 #000,
+  font-size: 1.8rem; color: #fff; margin: 0 0 1.5rem; font-weight: 700;
+  text-shadow:
+    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
+    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000,
     0 0 10px rgba(0,0,0,0.5);
   z-index: 5;
 }
 
-/* --- CONTENEDOR DE JUGADORES --- */
-
+/* Players container and grid */
 .players-container {
-  width: 100%;
-  max-width: 800px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 5;
+  width: 100%; max-width: 800px; display: flex; flex-direction: column; align-items: center; z-index: 5;
 }
-
 .players-grid {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+  width: 100%; display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem;
 }
-
 .player-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  display: flex; align-items: center; gap: 1rem;
   background-color: rgba(255, 140, 0, 0.95);
-  padding: 1.5rem;
-  border: none;
-  border-radius: 25px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem; border-radius: 25px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   animation: cardPulse 2s ease-in-out infinite;
+  position: relative; overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
 @keyframes cardPulse {
-  0%, 100% { 
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  }
-  50% { 
-    box-shadow: 0 6px 20px rgba(255, 140, 0, 0.4);
-  }
+  0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+  50% { box-shadow: 0 6px 20px rgba(255,140,0,0.4); }
 }
-
 .player-card:not(.empty):hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(255, 140, 0, 0.6);
+  box-shadow: 0 8px 25px rgba(255,140,0,0.6);
 }
-
 .player-card.empty {
-  background-color: rgba(208, 208, 208, 0.6);
+  background-color: rgba(208,208,208,0.6);
   opacity: 0.7;
   animation: none;
 }
-
 .pixel-border-card {
-  position: absolute;
-  inset: 2px;
-  border-radius: 25px;
-  border: 2px dashed #FFA500;
+  position: absolute; inset: 2px;
+  border-radius: 25px; border: 2px dashed #FFA500;
   animation: borderDash 1s linear infinite;
 }
-
-.player-card.empty .pixel-border-card {
-  display: none;
-}
-
+.player-card.empty .pixel-border-card { display: none; }
 @keyframes borderDash {
-  0% { border-color: #FFA500; }
-  50% { border-color: #ffffff; }
-  100% { border-color: #FFA500; }
+  0%,100% { border-color: #FFA500; }
+  50% { border-color: #fff; }
 }
-
 .player-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 50px;
-  height: 50px;
-  background-color: #FFD700;
-  color: #000;
+  display: flex; align-items: center; justify-content: center;
+  width: 50px; height: 50px;
+  background-color: #FFD700; color: #000;
   border-radius: 50%;
-  font-weight: 900;
-  font-size: 1.5rem;
-  z-index: 2;
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+  font-weight: 900; font-size: 1.5rem; z-index: 2;
+  box-shadow: 0 0 15px rgba(255,215,0,0.6);
 }
-
 .player-card.empty .player-number {
-  background-color: #999999;
-  color: #666;
-  box-shadow: none;
+  background-color: #999; color: #666; box-shadow: none;
 }
-
 .player-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-  z-index: 2;
+  display: flex; align-items: center; gap: 0.75rem; flex: 1; z-index: 2;
 }
-
 .player-icon {
-  font-size: 1.8rem;
-  color: #ffffff;
+  font-size: 1.8rem; color: #fff;
 }
-
 .player-card.empty .player-icon {
-  color: #666666;
+  color: #666;
 }
-
 .player-name {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  font-size: 1.4rem; font-weight: 700; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
-
 .player-card.empty .player-name {
-  color: #666666;
-  font-style: italic;
-  text-shadow: none;
+  color: #666; font-style: italic; text-shadow: none;
 }
 
-/* --- ACCIONES --- */
-
+/* Actions & play button */
 .actions {
-  margin-top: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  z-index: 5;
+  margin-top: 2rem; display: flex; justify-content: center; z-index: 5;
 }
-
 .play-button {
-  padding: 1.2rem 4rem;
-  font-size: 1.6rem;
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  color: #ffffff;
-  background-color: #FF8C00;
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 1.2rem 4rem; font-size: 1.6rem; font-weight: 700;
+  color: #fff; background-color: #FF8C00; border: none; border-radius: 50px;
+  cursor: pointer; position: relative; overflow: hidden;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
   animation: buttonPulse 1.5s ease-in-out infinite;
 }
-
 @keyframes buttonPulse {
-  0%, 100% { 
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  }
-  50% { 
-    box-shadow: 0 6px 25px rgba(255, 140, 0, 0.5);
-  }
+  0%,100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+  50% { box-shadow: 0 6px 25px rgba(255,140,0,0.5); }
 }
-
 .play-button .pixel-border {
-  position: absolute;
-  inset: 2px;
+  position: absolute; inset: 2px;
   border-radius: 50px;
   border: 2px dashed #FFA500;
   animation: borderDash 1s linear infinite;
 }
-
 .button-text {
-  position: relative;
-  z-index: 2;
-  display: inline-block;
+  position: relative; z-index: 2;
   animation: textGlow 1.5s ease-in-out infinite;
 }
-
 @keyframes textGlow {
-  0%, 100% { text-shadow: 0 0 5px #fff; }
+  0%,100% { text-shadow: 0 0 5px #fff; }
   50% { text-shadow: 0 0 20px #fff; }
 }
-
 .button-pixels {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent 3px,
-    rgba(255, 255, 255, 0.2) 3px,
-    rgba(255, 255, 255, 0.2) 6px
-  );
+  position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.2) 3px, rgba(255,255,255,0.2) 6px);
   animation: pixelScan 1.2s linear infinite;
 }
-
 @keyframes pixelScan {
   0% { left: -100%; }
   100% { left: 100%; }
 }
-
 .play-button:hover {
   background-color: #FFA500;
   transform: translateY(-5px) translateX(-2px);
-  box-shadow: 0 8px 30px rgba(255, 140, 0, 0.6);
+  box-shadow: 0 8px 30px rgba(255,140,0,0.6);
 }
-
 .play-button:hover .button-text {
   animation: textFlicker 0.1s ease-in-out infinite;
 }
-
 @keyframes textFlicker {
-  0%, 100% { opacity: 1; }
+  0%,100% { opacity: 1; }
   50% { opacity: 0.9; }
 }
-
 .play-button:active {
   transform: translateY(2px) translateX(1px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
-
 .play-button:disabled {
-  background-color: #d0d0d0;
-  color: #666666;
-  cursor: not-allowed;
-  transform: none;
-  animation: none;
+  background-color: #d0d0d0; color: #666; cursor: not-allowed;
+  transform: none; animation: none;
 }
-
 .play-button:disabled .pixel-border,
 .play-button:disabled .button-pixels {
   display: none;
 }
 
-/* --- BOTÓN VOLVER --- */
-
+/* Back button */
 .back-button {
-  position: absolute;
-  left: 5vw;
-  bottom: 6vh;
-  background: rgba(255, 255, 255, 0.9);
-  color: #333;
-  border: none;
-  border-radius: 50px;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: absolute; left: 5vw; bottom: 6vh;
+  background: rgba(255,255,255,0.9); color: #333;
+  border: none; border-radius: 50px;
+  width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   z-index: 40;
 }
-
 .back-button:hover {
   background-color: #f0f0f0;
   transform: scale(1.05);
 }
-
 .back-button i {
-  font-size: 1.5rem;
-  color: #000000;
+  font-size: 1.5rem; color: #000;
 }
 
-/* --- RESPONSIVE DESIGN --- */
+/* Responsive */
 @media (max-width: 768px) {
-  .title {
-    font-size: 3rem;
-  }
-
-  .subtitle {
-    font-size: 1.4rem;
-  }
-  
-  .players-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .play-button {
-    padding: 1rem 3rem;
-    font-size: 1.3rem;
-  }
-  
-  .pixel-star {
-    width: 8px;
-    height: 8px;
-  }
-
-  .back-button {
-    left: 3vw;
-    bottom: 3vh;
-  }
-
-  .player-card {
-    padding: 1.2rem;
-  }
-
-  .player-number {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-  }
-
-  .player-name {
-    font-size: 1.2rem;
-  }
+  .title { font-size: 3rem; }
+  .subtitle { font-size: 1.4rem; }
+  .players-grid { grid-template-columns: 1fr; }
+  .play-button { padding: 1rem 3rem; font-size: 1.3rem; }
+  .pixel-star { width: 8px; height: 8px; }
+  .back-button { left: 3vw; bottom: 3vh; }
+  .player-card { padding: 1.2rem; }
+  .player-number { width: 40px; height: 40px; font-size: 1.2rem; }
+  .player-name { font-size: 1.2rem; }
 }
 </style>

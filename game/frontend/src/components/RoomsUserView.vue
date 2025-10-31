@@ -131,35 +131,23 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
 
 .salas-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  gap: 3rem;
-  position: relative;
-  overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; gap: 3rem;
+  position: relative; overflow: hidden;
   background-size: cover;
   font-family: 'Poppins', sans-serif;
   color: #333;
-  padding: 0;
-  margin: 0;
-  width: 100%;
-  height: 100vh;
+  margin: 0; padding: 0;
+  width: 100%; height: 100vh;
 }
 
-/* --- ANIMACIONES Y EFECTOS VISUALES --- */
-
-/* Efecto de líneas de escaneo CRT */
+/* Scanlines CRT effect */
 .scanlines {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: fixed; inset: 0;
   pointer-events: none;
   background: repeating-linear-gradient(
     0deg,
@@ -171,98 +159,79 @@ onUnmounted(() => {
   animation: scanlineMove 8s linear infinite;
   z-index: 10;
 }
-
 @keyframes scanlineMove {
   0% { transform: translateY(0); }
   100% { transform: translateY(4px); }
 }
 
-/* Contenedor del título con animación de glitch */
+/* Title container with glitch */
 .title-container {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: flex; flex-direction: column; align-items: center;
   animation: glitchContainer 5s infinite;
 }
-
 @keyframes glitchContainer {
-  0%, 90%, 100% { transform: translate(0, 0); }
-  91% { transform: translate(-2px, 1px); }
-  92% { transform: translate(2px, -1px); }
-  93% { transform: translate(-1px, 2px); }
-  94% { transform: translate(1px, -2px); }
+  0%,90%,100% { transform: translate(0,0); }
+  91% { transform: translate(-2px,1px); }
+  92% { transform: translate(2px,-1px); }
+  93% { transform: translate(-1px,2px); }
+  94% { transform: translate(1px,-2px); }
 }
 
-/* --- TÍTULO --- */
-
+/* Title with glitch and float animations */
 .title {
-
-  font-size: 6rem;
-  font-weight: 900;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-  text-transform: uppercase;
+  font-size: 6rem; font-weight: 900;
+  margin: 0; display: flex; flex-direction: column;
+  line-height: 1; text-transform: uppercase;
   animation: titleGlitch 3s infinite, titleFloat 4s ease-in-out infinite;
 }
-
 .word {
   display: block;
   animation: wordBlink 2s ease-in-out infinite;
 }
-
 .word-1 {
   color: #FFD700;
   text-shadow:
     -1px -1px 0 #000,
-    0   -1px 0 #000,
-    1px -1px 0 #000,
-    1px  0   0 #000,
-    1px  1px 0 #000,
-    0    1px 0 #000,
+     0   -1px 0 #000,
+     1px -1px 0 #000,
+     1px  0   0 #000,
+     1px  1px 0 #000,
+     0    1px 0 #000,
     -1px  1px 0 #000,
     -1px  0   0 #000,
     0 0 10px rgba(0,0,0,0.5);
   font-weight: 900;
 }
-
 @keyframes titleGlitch {
-  0%, 85%, 100% { transform: skew(0deg); }
+  0%,85%,100% { transform: skew(0deg); }
   86% { transform: skew(-1deg); }
   88% { transform: skew(1deg); }
   90% { transform: skew(0deg); }
 }
-
 @keyframes titleFloat {
-  0%, 100% { transform: translateY(0px); }
+  0%,100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
+@keyframes wordBlink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
 
-/* Estrellas pixel art */
+/* Pixel stars background */
 .pixel-stars {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 1;
+  position: fixed; top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  pointer-events: none; z-index: 1;
   overflow: hidden;
 }
-
 .pixel-star {
-  position: absolute;
-  width: 12px;
-  height: 12px;
+  position: absolute; width: 12px; height: 12px;
   background: #FFA500;
-  box-shadow: 
-    0 0 10px #FFA500,
-    inset 0 0 5px #ffffff;
+  box-shadow: 0 0 10px #FFA500, inset 0 0 5px #fff;
   animation: pixelStarBlink 1.5s ease-in-out infinite;
 }
-
+/* Positions & animation delays for stars */
 .pixel-star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
 .pixel-star:nth-child(2) { top: 20%; right: 15%; animation-delay: 0.3s; }
 .pixel-star:nth-child(3) { top: 70%; left: 15%; animation-delay: 0.6s; }
@@ -279,58 +248,36 @@ onUnmounted(() => {
 .pixel-star:nth-child(14) { top: 60%; right: 40%; animation-delay: 0.8s; }
 .pixel-star:nth-child(15) { top: 10%; right: 5%; animation-delay: 0.3s; }
 .pixel-star:nth-child(16) { bottom: 10%; left: 5%; animation-delay: 0.7s; }
-
 @keyframes pixelStarBlink {
-  0%, 50%, 100% { 
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-  25% { 
-    opacity: 0.3;
-    transform: scale(1.3) rotate(45deg);
-  }
-  75% { 
-    opacity: 0.5;
-    transform: scale(0.8) rotate(-45deg);
-  }
+  0%,50%,100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  25% { opacity: 0.3; transform: scale(1.3) rotate(45deg); }
+  75% { opacity: 0.5; transform: scale(0.8) rotate(-45deg); }
 }
 
-/* --- GRID DE SALAS --- */
-
+/* Rooms grid */
 .salas-grid {
-  width: 100%;
-  max-width: 600px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  width: 100%; max-width: 600px;
+  display: flex; flex-direction: column; gap: 1rem;
   z-index: 5;
 }
 
+/* Room button */
 .sala-btn {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: rgba(255, 140, 0, 0.9);
-  color: #ffffff;
+  display: flex; justify-content: space-between; align-items: center;
+  background-color: rgba(255,140,0,0.9); color: #fff;
   padding: 1.2rem 2rem;
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
+  border: none; border-radius: 50px;
+  cursor: pointer; position: relative; overflow: hidden;
   transition: all 0.3s ease;
-  font-weight: 700;
-  font-family: 'Poppins', sans-serif;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  font-weight: 700; font-family: 'Poppins', sans-serif;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   animation: buttonPulse 1.5s ease-in-out infinite;
 }
-
 .sala-btn:hover {
   background-color: #FFA500;
   transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(255, 140, 0, 0.6);
+  box-shadow: 0 8px 30px rgba(255,140,0,0.6);
 }
-
 .sala-btn.selected {
   background-color: #FFD700;
   color: #000;
@@ -338,173 +285,111 @@ onUnmounted(() => {
   transform: scale(1.05);
   animation: none;
 }
-
+/* Pixel border animation */
 .sala-btn .pixel-border {
-  position: absolute;
-  inset: 2px;
+  position: absolute; inset: 2px;
   border-radius: 50px;
   border: 2px dashed #FFA500;
   animation: borderDash 1s linear infinite;
 }
-
 @keyframes borderDash {
-  0% { border-color: #FFA500; }
-  50% { border-color: #ffffff; }
-  100% { border-color: #FFA500; }
+  0%,100% { border-color: #FFA500; }
+  50% { border-color: #fff; }
 }
 
-.sala-nombre {
-  font-size: 1.5rem;
-  font-weight: bold;
-  position: relative;
-  z-index: 2;
-}
-
-.sala-capacidad {
-  font-size: 1.5rem;
-  position: relative;
-  z-index: 2;
+.sala-nombre, .sala-capacidad {
+  font-size: 1.5rem; font-weight: bold;
+  position: relative; z-index: 2;
 }
 
 .no-salas {
-  text-align: center;
-  padding: 2rem;
-  color: #fff;
-  font-size: 1.2rem;
+  text-align: center; padding: 2rem;
+  color: #fff; font-size: 1.2rem;
   text-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
-/* --- BOTÓN UNIRSE --- */
-
+/* Join button container */
 .unirse-container {
-  margin-top: 1rem;
-  z-index: 5;
+  margin-top: 1rem; z-index: 5;
 }
-
 .play-button {
-  padding: 1rem 3.5rem;
-  font-size: 1.2rem;
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  color: #ffffff;
-  background-color: #FF8C00;
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 1rem 3.5rem; font-size: 1.2rem;
+  font-family: 'Poppins', sans-serif; font-weight: 700;
+  color: #fff; background-color: #FF8C00;
+  border: none; border-radius: 50px;
+  cursor: pointer; position: relative; overflow: hidden;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
   animation: buttonPulse 1.5s ease-in-out infinite;
 }
-
 @keyframes buttonPulse {
-  0%, 100% { 
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  }
-  50% { 
-    box-shadow: 0 6px 25px rgba(255, 140, 0, 0.5);
-  }
+  0%,100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+  50% { box-shadow: 0 6px 25px rgba(255,140,0,0.5); }
 }
-
 .play-button .pixel-border {
-  position: absolute;
-  inset: 2px;
+  position: absolute; inset: 2px;
   border-radius: 50px;
   border: 2px dashed #FFA500;
   animation: borderDash 1s linear infinite;
 }
-
 .button-text {
-  position: relative;
-  z-index: 2;
+  position: relative; z-index: 2;
   display: inline-block;
   animation: textGlow 1.5s ease-in-out infinite;
 }
-
 @keyframes textGlow {
-  0%, 100% { text-shadow: 0 0 5px #fff; }
+  0%,100% { text-shadow: 0 0 5px #fff; }
   50% { text-shadow: 0 0 20px #fff; }
 }
-
 .button-pixels {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
+  position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
   background: repeating-linear-gradient(
     90deg,
     transparent,
     transparent 3px,
-    rgba(255, 255, 255, 0.2) 3px,
-    rgba(255, 255, 255, 0.2) 6px
+    rgba(255,255,255,0.2) 3px,
+    rgba(255,255,255,0.2) 6px
   );
   animation: pixelScan 1.2s linear infinite;
 }
-
 @keyframes pixelScan {
   0% { left: -100%; }
   100% { left: 100%; }
 }
-
-.play-button {
-  background-color: #4CAF50; /* Green background */
-  /* Rest of the existing styles remain the same */
-}
-
 .play-button:hover {
   background-color: #45a049; /* Darker green on hover */
   transform: translateY(-5px) translateX(-2px);
-  box-shadow: 0 8px 30px rgba(76, 175, 80, 0.6);
+  box-shadow: 0 8px 30px rgba(76,175,80,0.6);
 }
-
 .play-button:hover .button-text {
   animation: textFlicker 0.1s ease-in-out infinite;
 }
-
 @keyframes textFlicker {
-  0%, 100% { opacity: 1; }
+  0%,100% { opacity: 1; }
   50% { opacity: 0.9; }
 }
-
 .play-button:active {
   transform: translateY(2px) translateX(1px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
-
 .play-button:disabled {
-  background-color: #d0d0d0;
-  color: #666666;
-  cursor: not-allowed;
-  transform: none;
-  animation: none;
+  background-color: #d0d0d0; color: #666; cursor: not-allowed;
+  transform: none; animation: none;
 }
-
 .play-button:disabled .pixel-border,
 .play-button:disabled .button-pixels {
   display: none;
 }
 
-/* --- BOTÓN VOLVER --- */
-
+/* Back button */
 .back-button {
-  position: absolute;
-  left: 5vw;
-  bottom: 6vh;
-  background: #ffffff;
-  color: #000000;
-  border: none;
-  border-radius: 8px;
-  width: 56px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  position: absolute; left: 5vw; bottom: 6vh;
+  background: #fff; color: #000;
+  border: none; border-radius: 8px;
+  width: 56px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.3s ease;
   z-index: 40;
 }
 .back-button:hover {
@@ -513,36 +398,19 @@ onUnmounted(() => {
 }
 .back-button i {
   font-size: 1.25rem;
+  color: inherit;
 }
 
-/* --- RESPONSIVE DESIGN --- */
+/* Responsive */
 @media (max-width: 768px) {
-  .title {
-    font-size: 4rem;
-  }
-  
-  .play-button {
-    padding: 0.8rem 2.5rem;
-    font-size: 1rem;
-  }
-  
-  .sala-btn {
-    padding: 1rem 1.5rem;
-  }
-  
-  .sala-nombre,
-  .sala-capacidad {
-    font-size: 1.2rem;
-  }
-  
-  .pixel-star {
-    width: 8px;
-    height: 8px;
-  }
-
-  .back-button {
-    left: 3vw;
-    bottom: 3vh;
-  }
+  .title { font-size: 4rem; }
+  .play-button { padding: 0.8rem 2.5rem; font-size: 1rem; }
+  .sala-btn { padding: 1rem 1.5rem; }
+  .sala-nombre, .sala-capacidad { font-size: 1.2rem; }
+  .pixel-star { width: 8px; height: 8px; }
+  .back-button { left: 3vw; bottom: 3vh; }
 }
+
+
+
 </style>
