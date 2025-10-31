@@ -13,21 +13,48 @@ export default class SocketManager {
   }
 
   connect() {
-    this.socket = io(socketURL);
-
-    this.socket.on("connect", () => {
-      console.log("Connected to server!");
+    this.socket = io(socketURL, {
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000
     });
 
-    this.socket.onAny((event, data) => {
+    this.socket.on("connect", () => {
+      console.log("✅ Conectado al servidor de socket");
+      // Volver a registrar todos los callbacks después de reconectar
+      Object.entries(this.callbacks).forEach(([event, callback]) => {
+        this.socket.on(event, callback);
+      });
+    });
+
+    this.socket.on("connect_error", (error) => {
+      console.error("❌ Error de conexión:", error.message);
+    });
+
+    this.socket.on("disconnect", (reason) => {
+      console.warn("⚠️ Desconectado:", reason);
+    });
+
+    this.socket.on("reconnect_attempt", (attemptNumber) => {
+      console.log(`🔄 Intentando reconectar (${attemptNumber})...`);
+    });
+
+    this.socket.onAny((event, ...args) => {
+      console.debug(`📡 Evento recibido [${event}]:`, ...args);
       if (this.callbacks[event]) {
-        this.callbacks[event](data);
+        this.callbacks[event](...args);
       }
     });
   }
 
   on(eventName, callback) {
     this.callbacks[eventName] = callback;
+    // Asegurarse de que el socket esté escuchando el evento
+    if (this.socket) {
+      this.socket.on(eventName, callback);
+    }
   }
   //Sending the server data
   emit(eventName, data) {
