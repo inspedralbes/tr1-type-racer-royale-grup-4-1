@@ -33,7 +33,13 @@ io.on("connection", (socket) => {
   };
   //Push the player to the array
   players.push(newPlayer);
+  socket.on("register", (userData) => {
+    //Call the function to register the user with a hash to the database
+    registerUser(userData.username, userData.password);
+    //TODO: Add so that the server emits if the user is registered or not
+  });
 
+  //TODO: Create socket.on(login) that will see if the user is registered and validate via bcrypt if the password is the same or not
   socket.on("saveUsername", (username) => {
     //Find the player
     let player = players.find((p) => p.id === socket.id);
@@ -176,13 +182,51 @@ const mysqlconfig = {
 };
 
 let con = null;
-con = sql.createConnection(mysqlconfig);
-con.connect(function (err) {
-  if (err) throw err;
-  con.query("SELECT NOW() AS now", function (err, results) {
-    if (err) throw err;
-    console.log(results);
+
+//Connection to database with retries since our MySQL in development is far slower in startup than our express app.
+function connectToDB(callback, retries = 10, delayMs = 2000) {
+  con = sql.createConnection(mysqlconfig);
+
+  con.connect((err) => {
+    if (err) {
+      console.log("Error connecting to database:", err.message);
+
+      if (retries > 0) {
+        console.log(
+          `Retrying in ${delayMs / 1000} seconds... (${retries} retries left)`,
+        );
+        setTimeout(() => connectToDB(callback, retries - 1, delayMs), delayMs); //Retries connection to database;
+      } else {
+        console.log("All retries failed. Could not connect to the database.");
+      }
+    } else {
+      console.log("Connection successful!");
+      if (callback) callback(con); //Sets what we will add to the callback
+    }
   });
-});
+}
+
+function registerUser(username, password) {
+  //First we will get the username and the password
+  let user = username;
+  let pass = password;
+
+  //Then we will hash the password
+  bcrypt.hash(pass, 10, (err, hashedPassword) => {
+    if (err) {
+      console.error("Error hashing passwword".err.message);
+      return;
+    }
+    //Upon hashing the password we will use it as the password to insert it into the database
+    connectToDB((connection) => {
+      const execute = "INSERT INTO users (username, password) VALUES (?,?)";
+      connection.execute(execute, [user, hashedPassword], (err, results) => {
+        if (err) throw err;
+        console.log("User registered!");
+        console.log(results.insertId);
+      });
+    });
+  });
+}
 
 server.listen(3000, () => console.log("Server running on port:3000"));
