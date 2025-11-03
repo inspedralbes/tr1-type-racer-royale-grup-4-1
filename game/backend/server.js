@@ -34,12 +34,29 @@ io.on("connection", (socket) => {
   //Push the player to the array
   players.push(newPlayer);
   socket.on("register", (userData) => {
-    //Call the function to register the user with a hash to the database
-    registerUser(userData.username, userData.password);
-    //TODO: Add so that the server emits if the user is registered or not
+    registerUser(userData.username, userData.password, (ok, payload) => {
+      if (ok) {
+        socket.emit("registerResult", { ok: true, userId: payload.userId });
+      } else {
+        socket.emit("registerResult", { ok: false, code: payload });
+      }
+    });
   });
 
   //TODO: Create socket.on(login) that will see if the user is registered and validate via bcrypt if the password is the same or not
+  socket.on("login", (userData) => {
+    if (!userData || !userData.username || !userData.password) {
+      socket.emit("loginResult", { ok: false, code: "INVALID_PAYLOAD" });
+      return;
+    }
+    loginUser(userData.username, userData.password, (ok, payload) => {
+      if (ok) {
+        socket.emit("loginResult", { ok: true, userId: payload.userId });
+      } else {
+        socket.emit("loginResult", { ok: false, code: payload });
+      }
+    });
+  });
   socket.on("saveUsername", (username) => {
     //Find the player
     let player = players.find((p) => p.id === socket.id);
@@ -206,24 +223,61 @@ function connectToDB(callback, retries = 10, delayMs = 2000) {
   });
 }
 
-function registerUser(username, password) {
-  //First we will get the username and the password
+function registerUser(username, password, done) {
   let user = username;
   let pass = password;
-
-  //Then we will hash the password
   bcrypt.hash(pass, 10, (err, hashedPassword) => {
     if (err) {
-      console.error("Error hashing passwword".err.message);
+      done(false, "HASH_ERROR");
       return;
     }
-    //Upon hashing the password we will use it as the password to insert it into the database
     connectToDB((connection) => {
-      const execute = "INSERT INTO users (username, password) VALUES (?,?)";
-      connection.execute(execute, [user, hashedPassword], (err, results) => {
-        if (err) throw err;
-        console.log("User registered!");
-        console.log(results.insertId);
+      const q1 = "SELECT id FROM users WHERE username = ?";
+      connection.execute(q1, [user], (err, rows) => {
+        if (err) {
+          done(false, "DB_ERROR");
+          return;
+        }
+        if (rows && rows.length > 0) {
+          done(false, "USER_EXISTS");
+          return;
+        }
+        const q2 = "INSERT INTO users (username, password) VALUES (?,?)";
+        connection.execute(q2, [user, hashedPassword], (err, results) => {
+          if (err) {
+            done(false, "DB_ERROR");
+            return;
+          }
+          done(true, { userId: results.insertId });
+        });
+      });
+    });
+  });
+}
+
+function loginUser(username, password, done) {
+  connectToDB((connection) => {
+    const q = "SELECT id, password FROM users WHERE username = ?";
+    connection.execute(q, [username], (err, rows) => {
+      if (err) {
+        done(false, "DB_ERROR");
+        return;
+      }
+      if (!rows || rows.length === 0) {
+        done(false, "NOT_FOUND");
+        return;
+      }
+      const user = rows[0];
+      bcrypt.compare(password, user.password, (err, same) => {
+        if (err) {
+          done(false, "HASH_ERROR");
+          return;
+        }
+        if (!same) {
+          done(false, "INVALID_PASSWORD");
+          return;
+        }
+        done(true, { userId: user.id });
       });
     });
   });
