@@ -1,29 +1,25 @@
 <template>
   <div class="game-engine">
+    <button class="back-button" aria-label="Volver" @click="handleBack">
+      <i class="fa-solid fa-house"></i>
+    </button>
     <div class="container">
       <div v-if="gameState.isLoading" class="loading">
         <p>Cargando texto...</p>
       </div>
       <template v-else>
-        <div class="active-word">
-          <span v-for="(letter, i) in activeWord.text" :key="i">
-            {{ letter }}
-          </span>
+        <div class="full-text-container">
+          <div class="text-display">
+            <span
+              v-for="(letter, i) in gameState.inputText"
+              :key="'input-' + i"
+              :class="getLetterClass(i)"
+            >
+              {{ letter }}
+            </span>
+            <span class="remaining-text">{{ remainingText }}</span>
+          </div>
         </div>
-        <div class="input-word">
-          <span
-            v-for="(letter, i) in gameState.inputText"
-            :key="i"
-            :class="getLetterClass(i)"
-          >
-            {{ letter }}
-          </span>
-        </div>
-        <ul class="word-list">
-          <li v-for="(word, i) in visibleWordsReversed" :key="i">
-            {{ word.text }}
-          </li>
-        </ul>
       </template>
     </div>
   </div>
@@ -32,131 +28,110 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useGameStore } from '../stores/gameStore';
 
-const emit = defineEmits(["activeKey"]);
+const emit = defineEmits(["activeKey", "back"]);
 const gameStore = useGameStore();
 
 const gameState = ref({
-  words: [],
-  activeWordIndex: 0,
+  fullText: "",
   inputText: "",
   stats: [],
   totalErrors: 0,
-  currentErrors: 0,
   isLoading: true,
 });
 
-const activeWord = computed(() => {
-  return gameState.value.words[gameState.value.activeWordIndex] || { text: '' };
+const remainingText = computed(() => {
+  if (!gameState.value.fullText) return "";
+  const typedLength = gameState.value.inputText.length;
+  return gameState.value.fullText.substring(typedLength);
 });
 
-const visibleWordsReversed = computed(() => {
-  return gameState.value.words
-    .filter((word) => word.text !== activeWord.value.text && !word.completed)
-    .slice() // make a shallow copy
-    .reverse(); // reverse the order
-});
+let textStartTime = 0;
 
-let wordStartTime = 0;
-
-function startWordTimer() {
-  wordStartTime = Date.now();
-}
-
-function handleWordInput() {
-  if (gameState.value.inputText.length === 1 && wordStartTime === 0) {
-    startWordTimer();
-  }
-
-  if (gameState.value.inputText === activeWord.value.text) {
-    const timeTaken = Date.now() - wordStartTime;
-
-    gameState.value.stats.push({
-      word: activeWord.value.text,
-      time: timeTaken,
-      errors: gameState.value.currentErrors,
-    });
-
-    gameState.value.currentErrors = 0;
-    gameState.value.totalErrors = 0;
-    activeWord.value.completed = true;
-    gameState.value.activeWordIndex++;
-    gameState.value.inputText = "";
-    wordStartTime = 0;
-
-    if (gameState.value.activeWordIndex >= gameState.value.words.length) {
-      stopGame();
-    }
+function startTimer() {
+  if (textStartTime === 0) {
+    textStartTime = Date.now();
   }
 }
 
-function stopGame() {
-  console.log(gameState.value.stats);
+function handleTextInput() {
+  if (gameState.value.inputText === gameState.value.fullText) {
+    const timeTaken = Date.now() - textStartTime;
+    stopGame(timeTaken);
+  }
+}
+
+function stopGame(timeTaken) {
+  const userResults = {
+    username: gameStore.username,
+    time: timeTaken,
+    errors: gameState.value.totalErrors
+  };
+  
+  console.log('Resultados del usuario:', userResults);
+  
+  // Enviar resultados al servidor
+  gameStore.manager.emit('userResults', userResults);
 }
 
 function getLetterClass(index) {
   const inputText = gameState.value.inputText;
-  if (index >= inputText.length) {
+  const fullText = gameState.value.fullText;
+  
+  if (index >= inputText.length || index >= fullText.length) {
     return "";
   }
-  if (inputText[index] === activeWord.value.text[index]) {
+  
+  if (inputText[index] === fullText[index]) {
     return "correct-letter";
   }
   return "incorrect-letter";
 }
-//Watches for the input of the user
+// Watches for the input of the user
 watch(
   () => gameState.value.inputText,
   (newValue, oldValue) => {
-    const target = activeWord.value.text;
+    const target = gameState.value.fullText;
     if (newValue.length > oldValue.length) {
       const lastIndex = newValue.length - 1;
       const typedChar = newValue[lastIndex];
       const targetChar = target[lastIndex];
       if (typedChar && typedChar !== targetChar) {
-        gameState.value.totalErrors++; // Track mistakes
-        gameState.value.currentErrors = gameState.value.totalErrors; // Update currentErrors for stats
+        gameState.value.totalErrors++;
       }
     }
   },
 );
+
 function handleKeyDown(event) {
   if (event.key === "Backspace") {
     gameState.value.inputText = gameState.value.inputText.slice(0, -1);
   } else if (event.key.length === 1) {
     gameState.value.inputText += event.key;
-    handleWordInput();
+    startTimer();
+    handleTextInput();
     emit("activeKey", event.key);
   }
 }
 
-// Cargar artículos del servidor
+function handleBack() {
+  emit('back');
+}
+
 function loadArticles() {
-  // Limpiar listener anterior si existe para evitar duplicados
   if (gameStore.manager.callbacks['articlesData']) {
     delete gameStore.manager.callbacks['articlesData'];
   }
   
-  // Registrar listener para la respuesta
   gameStore.manager.on('articlesData', (articles) => {
     if (articles && articles.length > 0) {
-      // Seleccionar un artículo aleatorio
       const randomArticle = articles[Math.floor(Math.random() * articles.length)];
-      
-      // Convertir el texto en palabras
-      const words = randomArticle.text.split(' ').map((word, index) => ({
-        id: index + 1,
-        text: word,
-        completed: false
-      }));
-      
-      gameState.value.words = words;
+      gameState.value.fullText = randomArticle.text;
       gameState.value.isLoading = false;
     } else {
       gameState.value.isLoading = false;
     }
   });
   
-  // Solicitar artículos al servidor
   gameStore.manager.emit('getArticles');
 }
 
@@ -168,61 +143,87 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", handleKeyDown);
-  // Limpiar listener
   delete gameStore.manager.callbacks['articlesData'];
 });
 </script>
 
 <style scoped>
+.game-engine {
+  position: relative;
+  min-height: 100vh;
+}
+
+.back-button {
+  position: absolute;
+  left: 5vw;
+  bottom: 50vh;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.back-button:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.back-button i {
+  font-size: 1.25rem;
+}
+
 .container {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-direction: column;
-  margin-top: 45vh;
+  padding: 2rem 0;
+  margin-top: 5vh;
   position: relative;
   font-family: sans-serif;
-  min-height: 50vh;
-}
-.word-list {
-  position: absolute;
-  font-size: 2.5em;
-  color: #222020;
-  list-style: none;
-  width: 225px;
-  bottom: 5vh;
-  margin: 0;
-  padding: 0;
+  min-height: 60vh;
 }
 
-.word-list > li {
-  margin: 10px 0;
+.full-text-container {
+  position: relative;
+  width: 90%;
+  max-width: 900px;
 }
-.active-word {
-  position: absolute;
-  font-size: 3em;
-  color: rgba(0, 0, 0, 0.3);
-  padding: 10px 35px;
-  z-index: 1;
-  border: 2px solid #d0d0d0;
-  border-radius: 8px;
-  width: 225px;
+
+.text-display {
+  font-size: 2em;
+  line-height: 1.6;
+  text-align: left;
+  word-wrap: break-word;
   background-color: #f9f9f9;
-}
-
-.input-word {
-  width: 225px;
-  height: 75px;
-  font-size: 3em;
-  padding: 10px 35px;
-  z-index: 2;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  border: 2px solid #d0d0d0;
+  min-height: 120px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .correct-letter {
   color: white;
+  background-color: #4CAF50;
 }
 
 .incorrect-letter {
-  color: red;
+  color: white;
+  background-color: #f44336;
+}
+
+.remaining-text {
+  color: rgba(0, 0, 0, 0.4);
 }
 
 .loading {

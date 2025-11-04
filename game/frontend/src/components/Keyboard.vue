@@ -40,7 +40,8 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 10vh;
+  margin-top: -50vh;
+  padding-top: 2rem;
 }
 .key {
   color: #000000;

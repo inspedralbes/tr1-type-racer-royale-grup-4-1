@@ -13,6 +13,11 @@
         <span class="word word-1">JOURNALISM</span>
         <span class="word word-2">RUN!</span>
       </h1>
+    <h1 class="title">Jorunalism Race!</h1>
+
+    <div style="display:flex; gap:8px;">
+      <button @click="doRegister">Registrar</button>
+      <button @click="doLogin">Login</button>
     </div>
 
     <button class="play-button" @click="$emit('lobby')">
@@ -24,9 +29,51 @@
 </template>
 
 <script setup>
-// Se mantiene la importación y emisión del código original
+import { onMounted } from 'vue';
 import Config from "./Config.vue";
-defineEmits(["lobby"]);
+import SocketManager from "../../services/socketManager";
+
+const emit = defineEmits(['lobby']);
+
+const sm = new SocketManager();
+
+onMounted(() => {
+  if (!sm.socket) sm.connect();
+});
+
+function doRegister() {
+  const username = prompt('Usuario:');
+  const password = prompt('Contraseña:');
+  if (!username || !password) return;
+
+  sm.on('registerResult', (res) => {
+    if (res.ok) {
+      sm.callbacks['registerResult'] = undefined;
+      emit('lobby');
+    } else {
+      alert(`Error: ${res.code}`);
+      sm.callbacks['registerResult'] = undefined;
+    }
+  });
+  sm.emit('register', { username, password });
+}
+
+function doLogin() {
+  const username = prompt('Usuario:');
+  const password = prompt('Contraseña:');
+  if (!username || !password) return;
+
+  sm.on('loginResult', (res) => {
+    if (res.ok) {
+      sm.callbacks['loginResult'] = undefined;
+      emit('lobby');
+    } else {
+      alert(`Error: ${res.code}`);
+      sm.callbacks['loginResult'] = undefined;
+    }
+  });
+  sm.emit('login', { username, password });
+}
 </script>
 
 <style scoped>
