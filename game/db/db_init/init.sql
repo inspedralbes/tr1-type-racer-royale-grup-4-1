@@ -1,12 +1,13 @@
 SET NAMES utf8mb4;
 
-DROP DATABASE IF EXISTS journalismRacer;
-CREATE DATABASE journalismRacer;
-
-GRANT ALL PRIVILEGES ON ticketing.* TO 'admin'@'%';
-FLUSH PRIVILEGES;
+-- La base de datos ya se crea automáticamente por MYSQL_DATABASE en docker-compose.yml
+-- No necesitamos crearla aquí
 
 USE journalismRacer;
+
+-- Dar permisos al usuario configurado (appuser según el .env)
+GRANT ALL PRIVILEGES ON journalismRacer.* TO 'appuser'@'%';
+FLUSH PRIVILEGES;
 
 CREATE TABLE articles_easy (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -26,7 +27,8 @@ CREATE TABLE articles_hard (
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
-    password VARCHAR(100) NOT NULL
+    password VARCHAR(100) NOT NULL,
+    img VARCHAR(255) DEFAULT NULL
 );
 
 

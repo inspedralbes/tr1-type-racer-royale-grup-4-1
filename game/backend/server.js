@@ -4,6 +4,8 @@ const { Server } = require("socket.io");
 const path = require("path");
 const sql = require("mysql2");
 const bcrypt = require("bcrypt");
+const multer = require("multer");
+const fs = require("fs");
 
 const app = express();
 const server = http.createServer(app);
@@ -11,8 +13,47 @@ const io = new Server(server, {
   cors: { origin: "*" },
 });
 
+// Middleware para parsear JSON y URL-encoded
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Sirve el frontend de Vue
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+// ============================================================================
+// CONFIGURACIÓN DE MULTER PARA IMÁGENES
+// ============================================================================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, "img");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máximo
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Solo se permiten imágenes (jpeg, jpg, png, gif, webp)"));
+    }
+  }
+});
+
+// Sirve las imágenes estáticamente
+app.use("/img", express.static(path.join(__dirname, "img")));
 
 // Estado global
 let players = [];
@@ -205,6 +246,50 @@ io.on("connection", (socket) => {
   });
 });
 
+// ============================================================================
+// RUTAS HTTP - IMÁGENES
+// ============================================================================
+// Ruta para subir imagen de perfil
+app.post("/api/upload-profile-image", upload.single("image"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, message: "No se recibió ninguna imagen" });
+    }
+
+    const userId = req.body.userId;
+    if (!userId) {
+      // Eliminar archivo subido si no hay userId
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ ok: false, message: "userId es requerido" });
+    }
+
+    const imagePath = `/img/${req.file.filename}`;
+    updateUserImage(userId, imagePath, (ok, payload) => {
+      if (!ok) {
+        // Eliminar archivo subido si falla la actualización
+        fs.unlinkSync(req.file.path);
+        return res.status(500).json({ ok: false, message: "Error al actualizar imagen", code: payload });
+      }
+
+      res.json({ ok: true, imagePath: payload.img });
+    });
+  } catch (error) {
+    console.error("Error al subir imagen:", error);
+    res.status(500).json({ ok: false, message: "Error interno del servidor" });
+  }
+});
+
+// Ruta para obtener imagen de perfil
+app.get("/api/get-profile-image/:userId", (req, res) => {
+  const userId = req.params.userId;
+  getUserImage(userId, (ok, payload) => {
+    if (!ok) {
+      return res.status(404).json({ ok: false, message: "Usuario no encontrado", code: payload });
+    }
+    res.json({ ok: true, imagePath: payload.img });
+  });
+});
+
 // Configuración DB
 const mysqlconfig = {
   host: process.env.DB_HOST,
@@ -250,6 +335,61 @@ function getArticlesFromDB(callback) {
         completed: false
       }));
       callback(articles);
+    });
+  });
+}
+
+// ============================================================================
+// FUNCIONES DE GESTIÓN DE IMÁGENES DE PERFIL
+// ============================================================================
+function getUserImage(userId, done) {
+  connectToDB((connection) => {
+    const q = "SELECT img FROM users WHERE id = ?";
+    connection.execute(q, [userId], (err, rows) => {
+      if (err) {
+        done(false, "DB_ERROR");
+        return;
+      }
+      if (!rows || rows.length === 0) {
+        done(false, "USER_NOT_FOUND");
+        return;
+      }
+      done(true, { img: rows[0].img });
+    });
+  });
+}
+
+function updateUserImage(userId, imagePath, done) {
+  connectToDB((connection) => {
+    // Primero obtenemos la imagen anterior para eliminarla
+    const q1 = "SELECT img FROM users WHERE id = ?";
+    connection.execute(q1, [userId], (err, rows) => {
+      if (err) {
+        done(false, "DB_ERROR");
+        return;
+      }
+      const oldImage = rows && rows.length > 0 ? rows[0].img : null;
+
+      // Actualizamos la ruta de la imagen en la BD
+      const q2 = "UPDATE users SET img = ? WHERE id = ?";
+      connection.execute(q2, [imagePath, userId], (err, results) => {
+        if (err) {
+          done(false, "DB_ERROR");
+          return;
+        }
+
+        // Eliminamos la imagen anterior del sistema de archivos si existe
+        if (oldImage && oldImage !== imagePath) {
+          const oldImagePath = path.join(__dirname, oldImage);
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlink(oldImagePath, (unlinkErr) => {
+              if (unlinkErr) console.error("Error al eliminar imagen antigua:", unlinkErr);
+            });
+          }
+        }
+
+        done(true, { img: imagePath });
+      });
     });
   });
 }
