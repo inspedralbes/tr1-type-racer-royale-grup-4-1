@@ -11,8 +11,6 @@ const io = new Server(server, {
   cors: { origin: "*" },
 });
 
-const articles = require("./data/data.json");
-
 // Sirve el frontend de Vue
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
@@ -136,7 +134,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("getArticles", () => {
-    socket.emit("articlesData", articles);
+    getArticlesFromDB((articles) => {
+      socket.emit("articlesData", articles);
+    });
   });
 
   socket.on("getRooms", () => {
@@ -230,6 +230,27 @@ function connectToDB(callback, retries = 10, delayMs = 2000) {
       console.log("Connection successful!");
       if (callback) callback(con);
     }
+  });
+}
+
+// Función para obtener artículos de la base de datos (solo articles_easy)
+function getArticlesFromDB(callback) {
+  connectToDB((connection) => {
+    const query = `SELECT id, text FROM articles_easy`;
+    connection.query(query, (err, results) => {
+      if (err) {
+        console.error('Error obteniendo artículos de la BBDD:', err);
+        callback([]);
+        return;
+      }
+      // Convertir los resultados al formato que espera el frontend
+      const articles = results.map(row => ({
+        id: row.id,
+        text: row.text,
+        completed: false
+      }));
+      callback(articles);
+    });
   });
 }
 
