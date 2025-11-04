@@ -14,6 +14,7 @@ const io = new Server(server, {
 const articles = require("./data/data.json");
 
 // Sirve el frontend de Vue
+//si
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 // Estado global
