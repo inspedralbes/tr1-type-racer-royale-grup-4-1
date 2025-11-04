@@ -272,7 +272,7 @@ onUnmounted(() => {
 }
 
 /* Pixel stars background */
-.pixel-stars {
+/*.pixel-stars {
   position: fixed;
   top: 0;
   left: 0;
@@ -292,7 +292,7 @@ onUnmounted(() => {
     inset 0 0 5px #fff;
   animation: pixelStarBlink 1.5s ease-in-out infinite;
 }
-/* Positions & animation delays for stars */
+Positions & animation delays for stars
 .pixel-star:nth-child(1) {
   top: 10%;
   left: 10%;
@@ -389,6 +389,7 @@ onUnmounted(() => {
     transform: scale(0.8) rotate(-45deg);
   }
 }
+*/
 
 /* Rooms grid */
 .salas-grid {
@@ -421,14 +422,14 @@ onUnmounted(() => {
   background-color: #5b3f1b;
 }
 .sala-btn:hover {
-  background-color: #ffa500;
+  background-color: #dca85c;
   transform: translateY(-5px);
   box-shadow: 0 8px 30px rgba(255, 140, 0, 0.6);
 }
 .sala-btn.selected {
-  background-color: #ffd700;
+  background-color: #dca85c;
   color: #000;
-  border: 3px solid #ffa500;
+  /*border: 3px solid #ffa500;*/
   transform: scale(1.05);
   animation: none;
 }

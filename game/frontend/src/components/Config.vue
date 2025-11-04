@@ -271,8 +271,8 @@ const changeVolume = () => {
 
 .divider {
   border: none;
-  border-top: 1.6px solid #ffd70066;
   margin: 1.5rem 0 1.3rem 0;
+  border-top: 1.6px solid #ffd70066;
   width: 85%;
 }
 
