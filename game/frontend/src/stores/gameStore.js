@@ -10,14 +10,61 @@ export const useGameStore = defineStore("rooms", () => {
   const roomFull = ref(false);
   const rooms = ref([]);
 
-  //Ensure that the listener is there
-  manager.socket.on("connect", () => {
-    console.log("Socket connected from store");
+  // Configurar listeners para eventos de socket
+  const setupSocketListeners = () => {
+    console.log('🔌 Configurando listeners de socket...');
+    
+    const handleConnect = () => {
+      console.log('✅ Socket conectado desde el store');
+      // Esperar un momento antes de solicitar las salas
+      setTimeout(() => {
+        console.log('🔄 Solicitando salas al conectar...');
+        manager.emit("getRooms");
+      }, 100);
+    };
 
-    manager.on("roomFull", (data) => {
-      roomFull.value = data;
+    const handleRoomData = (data) => {
+      console.log('📥 Datos de sala recibidos en store:', data);
+      if (Array.isArray(data)) {
+        setRooms(data);
+      } else {
+        console.warn('Datos de sala no válidos recibidos:', data);
+      }
+    };
+
+    const handleUpdateRooms = (data) => {
+      console.log('🔄 Actualización de salas recibida:', data);
+      if (Array.isArray(data)) {
+        setRooms(data);
+      }
+    };
+
+    // Configurar listeners
+    manager.on("connect", handleConnect);
+    manager.on("roomFull", (data) => (roomFull.value = data));
+    manager.on("roomData", handleRoomData);
+    manager.on("updateRooms", handleUpdateRooms);
+    
+    // Manejar cuando un jugador abandona la sala
+    manager.on("playerLeft", ({ playerId, roomName }) => {
+      console.log(`Jugador ${playerId} ha abandonado la sala ${roomName}`);
+      // Si el jugador que salió es el usuario actual, limpiar la sala actual
+      if (playerId === manager.socket?.id) {
+        console.log('Has abandonado la sala:', roomName);
+        currentRoom.value = '';
+      }
+      // Forzar actualización de salas
+      manager.emit('getRooms');
     });
-  });
+    
+    // Si ya estamos conectados, forzar una actualización
+    if (manager.socket?.connected) {
+      handleConnect();
+    }
+  };
+
+  // Configurar los listeners cuando se crea el store
+  setupSocketListeners();
 
   function handleRoomFull(data) {
     roomFull.value = data;

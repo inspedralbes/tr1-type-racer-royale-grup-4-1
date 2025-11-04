@@ -9,19 +9,19 @@
     <div v-if="isOpen" class="overlay" @click="isOpen = false">
       <div class="popup" @click.stop>
         <button class="close-button" @click="isOpen = false">×</button>
-        
-        <h3>Configuración Usuario</h3>
-        
+
+        <h3 class="heading">Configuración Usuario</h3>
+
         <!-- Foto de usuario -->
         <div class="user-photo">
-          <img src="data:image/jpeg;base64,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" alt="Usuario" />
+          <img src="data:image/png;base64,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" alt="Usuario" />
         </div>
 
         <!-- Nombre -->
-        <h2>Jugador</h2>
+        <h2 class="nombre">Jugador</h2>
 
         <div class="buttons">
-          <button class="btn">Cambiar foto</button>  
+          <button class="btn">Cambiar foto</button>
           <button class="btn">Cambiar nombre</button>
         </div>
 
@@ -31,9 +31,9 @@
           <div>Mejor Puntuación: <strong>0</strong></div>
         </div>
 
-        <hr>
+        <hr class="divider" />
 
-        <h3>Configuración Juego</h3>
+        <h3 class="heading">Configuración Juego</h3>
 
         <!-- Volumen -->
         <div class="volume">
@@ -70,143 +70,260 @@ const changeVolume = () => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+
 .config-button {
   position: absolute;
   bottom: 6vh;
   right: 5vw;
-  background: #ffffff;
-  color: #000000;
+  background: #fff;
+  color: #000;
   border: none;
-  border-radius: 8px;
+  border-radius: 16px;
   width: 56px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
+  font-family: 'Poppins', sans-serif;
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.08);
 }
-
 .config-button:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.05);
+  background: #ffe5b2;
+  color: #ff8c00;
+  transform: scale(1.07);
+  box-shadow: 0 4px 20px #ffa50055;
 }
-
 .config-button i {
-  font-size: 1.25rem;
+  font-size: 1.6rem;
+  transition: color 0.3s;
+}
+.config-button:hover i {
+  color: #ff8c00;
 }
 
 .overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10, 10, 20, 0.36);
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 120;
 }
 
 .popup {
-  background: white;
-  border-radius: 8px;
-  padding: 2rem;
-  width: 350px;
+  background: 
+  rgba(0, 0, 0, 0.795);
+  border-radius: 24px;
+  padding: 2.3rem 2.2rem 2rem 2.2rem;
+  width: 370px;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
   text-align: center;
   position: relative;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 90vh;
+  overflow-y: visible;
+  box-shadow: 0 8px 32px rgba(255, 140, 0, 0.14), 0 4px 6px rgba(0,0,0,0.09);
+  animation: popupIn 0.26s cubic-bezier(0.19,1,0.22,1);
+}
+@keyframes popupIn {
+  0% { transform: scale(0.7) translateY(40px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
 .close-button {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 1.1rem;
+  right: 1.2rem;
   background: none;
   border: none;
-  font-size: 2rem;
+  font-size: 2.1rem;
+  color: #ff8c00;
   cursor: pointer;
+  transition: color 0.18s;
+  font-family: 'Poppins', sans-serif;
+}
+.close-button:hover {
+  color: #ffa500;
 }
 
-h3 {
-  margin: 1rem 0;
-  color: #666;
+.heading {
+  margin: 1.3rem 0 1.4rem 0;
+  color: #ffaa00;
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 8px #fff3;
+  font-family: 'Poppins', sans-serif;
+}
+.nombre {
+  margin: 0.1rem 0 1.3rem 0;
+  color: #eddfdf;
+  font-weight: 900;
+  font-size: 1.37rem;
+  letter-spacing: .2px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .user-photo {
-  width: 80px;
-  height: 80px;
-  margin: 1rem auto;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 1.2rem auto;
   border-radius: 50%;
   overflow: hidden;
+  border: 3px solid #ffd70088;
+  background: #fff7e3;
+  box-shadow: 0 2px 10px #ffd70022;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.25s;
 }
 
 .user-photo img {
   width: 100%;
   height: 100%;
-}
-
-h2 {
-  margin: 0.5rem 0 1rem 0;
-  color: #333;
+  object-fit: cover;
+  object-position: center;
+  background: #ffd70019;
 }
 
 .buttons {
   display: flex;
   gap: 1rem;
   justify-content: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+}
+.btn {
+  padding: 0.38rem 0.8rem;
+  background: linear-gradient(90deg, #ff8c00, #ffd700ee);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.19s, box-shadow 0.19s, color 0.17s;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px #fff9;
+}
+
+.btn:hover {
+  background: linear-gradient(90deg, #ffd700, #ff8c00dd);
+  color: #fff;
+  box-shadow: 0 0 15px #ff8c0066;
+  transform: translateY(-1px);
 }
 
 .stats {
-  background: #f5f5f5;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+  background: #fff1e2ee;
+  padding: 0.92rem 0.5rem;
+  border-radius: 14px;
+  margin-bottom: 1.2rem;
+  font-size: 1rem;
+  box-shadow: 0 2px 12px #ff8c0011;
+  border: 1.5px solid #ffdfa533;
 }
-
 .stats div {
-  padding: 0.5rem 0;
-  color: #666;
+  padding: 0.25rem 0;
+  color: #9f750b;
+  font-family: 'Poppins', sans-serif;
+}
+.stats strong {
+  color: #ff8c00;
+  font-weight: 900;
 }
 
-hr {
+.divider {
   border: none;
-  border-top: 1px solid #ddd;
-  margin: 1.5rem 0;
+  border-top: 1.6px solid #ffd70066;
+  margin: 1.5rem 0 1.3rem 0;
+  width: 85%;
 }
 
 .volume {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 1rem 0;
+  gap: 0.8rem;
   justify-content: center;
+  margin: 1.25rem 0 0.25rem 0;
 }
-
-.volume input {
-  width: 150px;
+.volume label {
+  font-weight: 600;
+  color: #b68700;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: .2px;
 }
-
+.volume input[type="range"] {
+  width: 130px;
+  accent-color: #ff8c00;
+  background: #ffdfa555;
+  border-radius: 5px;
+  height: 6px;
+  outline: none;
+}
 .volume span {
-  min-width: 40px;
+  min-width: 38px;
+  color: #ffaa00;
+  font-weight: 700;
+  font-size: 1.01rem;
+  font-family: 'Poppins', sans-serif;
 }
 
 .dark-mode {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.57rem;
   cursor: pointer;
   justify-content: center;
-  margin: 1rem 0;
+  margin: 1.1rem 0 .3rem 0;
+  font-weight: 700;
+  color: #f1e9e9;
+  font-family: 'Poppins', sans-serif;
+  user-select: none;
+}
+.dark-mode input[type="checkbox"] {
+  width: 1.18rem;
+  height: 1.18rem;
+  accent-color: #ff8c00;
 }
 </style>
 
 <style>
 body.dark-mode {
-  background: #1a1a1a;
-  color: #000000;
+  background: #181422 !important;
+  color: #fff !important;
+}
+body.dark-mode .popup {
+  background: rgba(24,20,34,0.99) !important;
+  color: #fff !important;
+}
+body.dark-mode .heading {
+  color: #ffd700 !important;
+}
+body.dark-mode .stats {
+  background: #28212c !important;
+  border-color: #ffd70033 !important;
+}
+body.dark-mode .user-photo {
+  border-color: #ffa500;
+  background: #222;
+}
+body.dark-mode .divider {
+  border-top-color: #ffd70066;
+}
+body.dark-mode .btn {
+  color: #fff !important;
+  background: linear-gradient(90deg, #ff8c00, #ffd700bb) !important;
+}
+body.dark-mode .btn:hover {
+  background: linear-gradient(90deg, #ffd700, #ff8c00) !important;
+  color: #fffde7 !important;
 }
 </style>
+
+

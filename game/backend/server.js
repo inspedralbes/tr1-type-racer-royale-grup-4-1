@@ -159,6 +159,62 @@ io.on("connection", (socket) => {
     socket.emit("articlesData", articles);
   });
 
+  socket.on("getRooms", () => {
+    console.log(`[${socket.id}] Solicitando lista de salas (${rooms.length} salas disponibles)`);
+    // Enviar la lista de salas al cliente que la solicitó
+    socket.emit("roomData", rooms);
+    // También actualizar a todos los clientes conectados
+    io.emit("updateRooms", rooms);
+  });
+
+  // Manejar errores
+  socket.on("error", (error) => {
+    console.error(`[${socket.id}] Error de socket:`, error);
+  });
+
+
+  // Manejar cuando un jugador abandona una sala
+  socket.on("leaveRoom", (roomName) => {
+    console.log(`Jugador ${socket.id} está abandonando la sala: ${roomName}`);
+    
+    // Encontrar la sala
+    const room = rooms.find(r => r.name === roomName);
+    if (room) {
+      // Eliminar al jugador de la sala
+      room.players = room.players.filter(p => p.id !== socket.id);
+      console.log(`Jugador ${socket.id} eliminado de la sala ${roomName}`);
+      
+      // Si la sala está vacía, eliminarla
+      if (room.players.length === 0) {
+        rooms = rooms.filter(r => r.name !== roomName);
+        console.log(`Sala ${roomName} eliminada por estar vacía`);
+      }
+      
+      // Notificar a todos los clientes la actualización
+      io.emit("updateRooms", rooms);
+      
+      // Notificar a los jugadores restantes en la sala
+      socket.leave(roomName);
+      io.to(roomName).emit('playerLeft', { playerId: socket.id, roomName });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+    
+    // Encontrar todas las salas donde estaba el jugador
+    const playerRooms = rooms.filter(room => 
+      room.players.some(p => p.id === socket.id)
+    );
+    
+    // Eliminar al jugador de todas las salas
+    rooms.forEach(room => {
+      room.players = room.players.filter(p => p.id !== socket.id);
+      
+      // Si la sala queda vacía, eliminarla
+      if (room.players.length === 0) {
+        rooms = rooms.filter(r => r.name !== room.name);
+        console.log(`Sala ${room.name} eliminada por estar vacía`);
   socket.on("userResults", (userResults) => {
     if (!userResults) return;
     leaderboard.push({
@@ -185,7 +241,19 @@ io.on("connection", (socket) => {
         io.to(room.name).emit("gameStateUpdate", room.players);
       }
     });
-    io.emit("updateRooms", rooms);
+    
+    // Eliminar al jugador de la lista global
+    players = players.filter((p) => p.id !== socket.id);
+    
+    // Notificar a todos los clientes la actualización
+    if (playerRooms.length > 0) {
+      io.emit("updateRooms", rooms);
+      
+      // Notificar a las salas afectadas
+      playerRooms.forEach(room => {
+        io.to(room.name).emit('playerLeft', { playerId: socket.id, roomName: room.name });
+      });
+    }
   });
 });
 
