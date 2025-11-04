@@ -13,7 +13,8 @@
         <span class="word word-1">JOURNALISM</span>
         <span class="word word-2">RUN!</span>
       </h1>
-    <h1 class="title">Jorunalism Race!</h1>
+    </div>
+
 
     <div style="display:flex; gap:8px;">
       <button @click="doRegister">Registrar</button>
