@@ -437,8 +437,8 @@ onUnmounted(() => {
   position: absolute;
   inset: 2px;
   border-radius: 50px;
-  border: 2px dashed #ffa500;
-  animation: borderDash 1s linear infinite;
+  /*border: 2px dashed #ffa500;
+  /*animation: borderDash 1s linear infinite;*/
 }
 @keyframes borderDash {
   0%,
@@ -502,8 +502,8 @@ onUnmounted(() => {
   position: absolute;
   inset: 2px;
   border-radius: 50px;
-  border: 2px dashed #ffa500;
-  animation: borderDash 1s linear infinite;
+  /*border: 2px dashed #ffa500;
+  /*animation: borderDash 1s linear infinite;*/
 }
 .button-text {
   position: relative;
