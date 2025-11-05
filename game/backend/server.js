@@ -15,6 +15,35 @@ const articles = require("./data/data.json");
 //Serve Vue frontend build
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
+// Parse JSON bodies for debug endpoints
+app.use(express.json());
+
+// Debug HTTP endpoint to save a result without using sockets
+app.post('/debug/save-result', (req, res) => {
+  const payload = req.body || {};
+  const username = payload.username;
+  const time = payload.time;
+  const errors = payload.errors;
+  const user_id = payload.user_id || null;
+
+  if (!username || time == null || errors == null) {
+    return res.status(400).json({ ok: false, error: 'INVALID_PAYLOAD' });
+  }
+
+  connectToDB((connection) => {
+    const insertQuery = 'INSERT INTO results (user_id, username, time_ms, errors) VALUES (?, ?, ?, ?)';
+    const params = [user_id, username, time, errors];
+    console.log('HTTP debug save-result params:', params);
+    connection.execute(insertQuery, params, (err, results) => {
+      if (err) {
+        console.log('Error saving via debug endpoint:', err.message);
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+      return res.json({ ok: true, insertId: results.insertId });
+    });
+  });
+});
+
 //Inject the enviroment variables
 let players = [];
 let rooms = [];
@@ -36,6 +65,12 @@ io.on("connection", (socket) => {
   socket.on("register", (userData) => {
     registerUser(userData.username, userData.password, (ok, payload) => {
       if (ok) {
+        // Associate this socket/player with the newly created DB user
+        const player = players.find((p) => p.id === socket.id);
+        if (player) {
+          player.userId = payload.userId;
+          player.username = userData.username; // ensure player's username matches registered username
+        }
         socket.emit("registerResult", { ok: true, userId: payload.userId });
       } else {
         socket.emit("registerResult", { ok: false, code: payload });
@@ -51,6 +86,12 @@ io.on("connection", (socket) => {
     }
     loginUser(userData.username, userData.password, (ok, payload) => {
       if (ok) {
+        // Associate this socket/player with the logged-in DB user
+        const player = players.find((p) => p.id === socket.id);
+        if (player) {
+          player.userId = payload.userId;
+          player.username = userData.username; // use the registered username
+        }
         socket.emit("loginResult", { ok: true, userId: payload.userId });
       } else {
         socket.emit("loginResult", { ok: false, code: payload });
@@ -161,12 +202,34 @@ io.on("connection", (socket) => {
 
   socket.on("userResults", (userResults) => {
     if (!userResults) return;
+
     leaderboard.push({
-      name: userResults.name,
+      username: userResults.username,
       time: userResults.time,
       errors: userResults.errors,
-    });
+    }); 
     socket.emit("updateLeaderboard", leaderboard);
+
+    // Guardar en la base de datos
+      connectToDB((connection) => {
+        // Preferimos guardar el user_id si el socket tiene un usuario asociado
+        const player = players.find((p) => p.id === socket.id);
+        const userIdToSave = player && player.userId ? player.userId : null;
+        const usernameToSave = player && player.username ? player.username : userResults.username;
+        const insertQuery =
+          "INSERT INTO results (user_id, username, time_ms, errors) VALUES (?, ?, ?, ?)";
+
+        const params = [userIdToSave, usernameToSave, userResults.time, userResults.errors];
+        console.log("Saving userResults to DB", { socketId: socket.id, params, userResults });
+
+        connection.execute(insertQuery, params, (err, results) => {
+          if (err) {
+            console.log("Error guardando resultado:", err.message, err.code || "");
+          } else {
+            console.log("Resultado guardado en BD id=", results.insertId);
+          }
+        });
+      });
   });
 
   socket.on("disconnect", () => {
@@ -196,32 +259,28 @@ const mysqlconfig = {
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
 };
 
 let con = null;
 
-//Connection to database with retries since our MySQL in development is far slower in startup than our express app.
-function connectToDB(callback, retries = 10, delayMs = 2000) {
-  con = sql.createConnection(mysqlconfig);
+// Use a connection pool to simplify and stabilize DB access from multiple socket events.
+const pool = sql.createPool(mysqlconfig);
 
-  con.connect((err) => {
-    if (err) {
-      console.log("Error connecting to database:", err.message);
-
-      if (retries > 0) {
-        console.log(
-          `Retrying in ${delayMs / 1000} seconds... (${retries} retries left)`,
-        );
-        setTimeout(() => connectToDB(callback, retries - 1, delayMs), delayMs); //Retries connection to database;
-      } else {
-        console.log("All retries failed. Could not connect to the database.");
-      }
-    } else {
-      console.log("Connection successful!");
-      if (callback) callback(con); //Sets what we will add to the callback
-    }
-  });
+function connectToDB(callback) {
+  // For compatibility with existing code that expects a `connection` with execute(..., cb)
+  if (callback) callback(pool);
 }
+
+// Quick check of pool connectivity (non-fatal)
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.log("Warning: could not get DB connection from pool:", err.message);
+  } else {
+    console.log("DB pool connection OK");
+    connection.release();
+  }
+});
 
 function registerUser(username, password, done) {
   let user = username;
