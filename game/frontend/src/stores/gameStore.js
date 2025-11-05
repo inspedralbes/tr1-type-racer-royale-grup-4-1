@@ -4,7 +4,8 @@ import { ref, computed } from "vue";
 
 export const useGameStore = defineStore("rooms", () => {
   const currentRoom = ref("");
-  const username = ref("");
+  const username = ref(localStorage.getItem('username') || "");
+  const userId = ref(localStorage.getItem('userId') || null);
   const manager = new SocketManager();
   manager.connect();
   const roomFull = ref(false);
@@ -72,6 +73,14 @@ export const useGameStore = defineStore("rooms", () => {
 
   function setUsername(name) {
     username.value = name;
+    localStorage.setItem('username', name);
+    console.log('✅ Username guardado en Pinia y localStorage:', name);
+  }
+
+  function setUserId(id) {
+    userId.value = id;
+    localStorage.setItem('userId', id);
+    console.log('✅ UserId guardado en Pinia y localStorage:', id);
   }
 
   function setRoomName(roomName) {
@@ -88,8 +97,10 @@ export const useGameStore = defineStore("rooms", () => {
   return {
     currentRoom,
     username,
+    userId,
     rooms,
     setUsername,
+    setUserId,
     setRoomName,
     setRooms,
     isRoomFull,

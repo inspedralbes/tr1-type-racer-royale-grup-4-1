@@ -1,14 +1,16 @@
 SET NAMES utf8mb4;
 
--- La base de datos ya se crea automáticamente por MYSQL_DATABASE en docker-compose.yml
--- No necesitamos crearla aquí
+DROP DATABASE IF EXISTS journalismRacer;
+CREATE DATABASE journalismRacer;
 
+-- Select the database
 USE journalismRacer;
 
--- Dar permisos al usuario configurado (appuser según el .env)
-GRANT ALL PRIVILEGES ON journalismRacer.* TO 'appuser'@'%';
+-- Give privileges on the created DB to the admin user
+GRANT ALL PRIVILEGES ON journalismRacer.* TO 'admin'@'%';
 FLUSH PRIVILEGES;
 
+-- Create tables
 CREATE TABLE articles_easy (
     id INT AUTO_INCREMENT PRIMARY KEY,
     text TEXT NOT NULL

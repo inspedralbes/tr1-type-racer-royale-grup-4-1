@@ -6,11 +6,27 @@ const sql = require("mysql2");
 const bcrypt = require("bcrypt");
 const multer = require("multer");
 const fs = require("fs");
+const cors = require("cors");
 
 const app = express();
 const server = http.createServer(app);
+
+// Configuración de CORS
+const corsOptions = {
+  origin: 'http://localhost:5173', // Asegúrate de que coincida con la URL de tu frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
+
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true
+  },
 });
 
 // Middleware para parsear JSON y URL-encoded
@@ -290,6 +306,17 @@ app.get("/api/get-profile-image/:userId", (req, res) => {
   });
 });
 
+// Ruta para obtener información del usuario
+app.get("/api/get-user-info/:userId", (req, res) => {
+  const userId = req.params.userId;
+  getUserInfo(userId, (ok, payload) => {
+    if (!ok) {
+      return res.status(404).json({ ok: false, message: "Usuario no encontrado", code: payload });
+    }
+    res.json({ ok: true, username: payload.username, imagePath: payload.img });
+  });
+});
+
 // Configuración DB
 const mysqlconfig = {
   host: process.env.DB_HOST,
@@ -359,6 +386,23 @@ function getUserImage(userId, done) {
   });
 }
 
+function getUserInfo(userId, done) {
+  connectToDB((connection) => {
+    const q = "SELECT username, img FROM users WHERE id = ?";
+    connection.execute(q, [userId], (err, rows) => {
+      if (err) {
+        done(false, "DB_ERROR");
+        return;
+      }
+      if (!rows || rows.length === 0) {
+        done(false, "USER_NOT_FOUND");
+        return;
+      }
+      done(true, { username: rows[0].username, img: rows[0].img });
+    });
+  });
+}
+
 function updateUserImage(userId, imagePath, done) {
   connectToDB((connection) => {
     // Primero obtenemos la imagen anterior para eliminarla
@@ -417,7 +461,7 @@ function registerUser(username, password, done) {
             done(false, "DB_ERROR");
             return;
           }
-          done(true, { userId: results.insertId });
+          done(true, { userId: results.insertId, username: username });
         });
       });
     });
@@ -426,7 +470,7 @@ function registerUser(username, password, done) {
 
 function loginUser(username, password, done) {
   connectToDB((connection) => {
-    const q = "SELECT id, password FROM users WHERE username = ?";
+    const q = "SELECT id, username, password FROM users WHERE username = ?";
     connection.execute(q, [username], (err, rows) => {
       if (err) {
         done(false, "DB_ERROR");
@@ -446,7 +490,7 @@ function loginUser(username, password, done) {
           done(false, "INVALID_PASSWORD");
           return;
         }
-        done(true, { userId: user.id });
+        done(true, { userId: user.id, username: user.username });
       });
     });
   });

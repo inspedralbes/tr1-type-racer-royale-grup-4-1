@@ -37,7 +37,6 @@
 
         <div class="buttons">
           <button class="btn" @click="openFileSelector">Cambiar foto</button>
-          <button class="btn" @click="changeUsername">Cambiar nombre</button>
         </div>
 
         <!-- Mensaje de error/éxito -->
@@ -73,7 +72,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useGameStore } from '../stores/gameStore';
+
+const gameStore = useGameStore();
 
 const isOpen = ref(false);
 const isDarkMode = ref(false);
@@ -82,37 +84,53 @@ const fileInput = ref(null);
 const isUploading = ref(false);
 const uploadMessage = ref('');
 const uploadMessageType = ref('success');
-const username = ref('Jugador');
+
+// Obtener username del Pinia store
+const username = computed(() => gameStore.username || 'Jugador');
 
 // Imagen por defecto
 const defaultImage = "data:image/png;base64,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";
 
 const profileImage = ref(defaultImage);
 
-// Obtener userId del localStorage o de donde lo guardes
-// IMPORTANTE: Cambia esto por tu forma de obtener el userId
-const userId = ref(localStorage.getItem('userId') || '1'); // Temporalmente uso '1' para testing
+// Obtener userId del Pinia store
+const userId = computed(() => gameStore.userId);
 
 onMounted(() => {
   loadUserProfile();
 });
 
+// Watch para recargar la imagen cuando cambie el userId
+watch(userId, (newUserId) => {
+  console.log('UserId cambió a:', newUserId);
+  if (newUserId) {
+    profileImage.value = defaultImage; // Reset a imagen por defecto
+    loadUserProfile();
+  }
+});
+
 const loadUserProfile = () => {
   if (userId.value) {
-    console.log('Cargando imagen de perfil para userId:', userId.value);
-    // Cargar la imagen del usuario desde el servidor
-    fetch(`/api/get-profile-image/${userId.value}`)
+    console.log('Cargando perfil de usuario para userId:', userId.value);
+    // Cargar la información del usuario desde el servidor
+    fetch(`http://localhost:3000/api/get-user-info/${userId.value}`)
       .then(response => response.json())
       .then(data => {
         console.log('Respuesta del servidor:', data);
-        if (data.ok && data.imagePath) {
-          profileImage.value = data.imagePath;
-          showMessage('Imagen cargada correctamente', 'success');
+        if (data.ok) {
+          // Actualizar username si viene del servidor
+          if (data.username) {
+            gameStore.setUsername(data.username);
+          }
+          // Construir la URL completa de la imagen si existe
+          if (data.imagePath) {
+            profileImage.value = `http://localhost:3000${data.imagePath}`;
+            console.log('Imagen de perfil cargada:', profileImage.value);
+          }
         }
       })
       .catch(error => {
-        console.error('Error al cargar imagen de perfil:', error);
-        showMessage('Error al cargar imagen', 'error');
+        console.error('Error al cargar perfil de usuario:', error);
       });
   }
 };
@@ -171,7 +189,7 @@ const uploadImage = async (file) => {
 
     console.log('Enviando FormData al servidor...');
 
-    const response = await fetch('http://localhost:3000/api/upload-profile-image', {  // or whatever port your backend is running on
+    const response = await fetch('http://localhost:3000/api/upload-profile-image', {  
       method: 'POST',
       body: formData
     });
@@ -180,9 +198,10 @@ const uploadImage = async (file) => {
     console.log('Respuesta del servidor:', data);
 
     if (data.ok) {
-      profileImage.value = data.imagePath;
+      // Construir la URL completa de la imagen
+      profileImage.value = `http://localhost:3000${data.imagePath}`;
       showMessage('✅ Foto actualizada correctamente', 'success');
-      console.log('Nueva ruta de imagen:', data.imagePath);
+      console.log('Nueva ruta de imagen:', profileImage.value);
     } else {
       showMessage('❌ ' + (data.message || 'Error al subir la imagen'), 'error');
       console.error('Error en la respuesta:', data);
@@ -206,14 +225,6 @@ const showMessage = (message, type) => {
   setTimeout(() => {
     uploadMessage.value = '';
   }, 4000);
-};
-
-const changeUsername = () => {
-  const newUsername = prompt('Introduce tu nuevo nombre:');
-  if (newUsername && newUsername.trim()) {
-    username.value = newUsername.trim();
-    showMessage('✅ Nombre actualizado correctamente', 'success');
-  }
 };
 </script>
 
