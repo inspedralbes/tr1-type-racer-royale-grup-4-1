@@ -123,18 +123,26 @@ io.on("connection", (socket) => {
     socket.emit("roomFull", roomFull);
   });
 
-  socket.on("createRoom", (roomName) => {
+  socket.on("createRoom", (data) => {
+    const roomName = data.name;
+    const difficulty = data.difficulty;
+    
     let roomExists = rooms.find((r) => r.name === roomName);
     if (!roomExists) {
-      rooms.push({ name: roomName, players: [] });
+      rooms.push({ 
+        name: roomName, 
+        difficulty: difficulty,
+        players: [] 
+      });
       io.emit("updateRooms", rooms);
     } else {
       console.log("Room already exists!");
     }
   });
 
-  socket.on("getArticles", () => {
-    getArticlesFromDB((articles) => {
+  socket.on("getArticles", (data) => {
+    const difficulty = rooms.find((r) => r.name === data?.roomName)?.difficulty || 'easy';
+    getArticlesFromDB(difficulty, (articles) => {
       socket.emit("articlesData", articles);
     });
   });
@@ -233,23 +241,18 @@ function connectToDB(callback, retries = 10, delayMs = 2000) {
   });
 }
 
-// Función para obtener artículos de la base de datos (solo articles_easy)
-function getArticlesFromDB(callback) {
+// Función para obtener artículos de la base de datos según la dificultad
+function getArticlesFromDB(difficulty, callback) {
+  const validDifficulties = ['easy', 'medium', 'hard'];
+  const tableName = `articles_${validDifficulties.includes(difficulty) ? difficulty : 'easy'}`;
+  
   connectToDB((connection) => {
-    const query = `SELECT id, text FROM articles_easy`;
-    connection.query(query, (err, results) => {
+    connection.query(`SELECT id, text FROM ${tableName}`, (err, results) => {
       if (err) {
-        console.error('Error obteniendo artículos de la BBDD:', err);
-        callback([]);
-        return;
+        console.error(`Error obteniendo artículos de la BBDD (${tableName}):`, err);
+        return callback([]);
       }
-      // Convertir los resultados al formato que espera el frontend
-      const articles = results.map(row => ({
-        id: row.id,
-        text: row.text,
-        completed: false
-      }));
-      callback(articles);
+      callback(results.map(row => ({ id: row.id, text: row.text, completed: false })));
     });
   });
 }

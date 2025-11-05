@@ -1,11 +1,5 @@
 SET NAMES utf8mb4;
 
-DROP DATABASE IF EXISTS journalismRacer;
-CREATE DATABASE journalismRacer;
-
-GRANT ALL PRIVILEGES ON ticketing.* TO 'admin'@'%';
-FLUSH PRIVILEGES;
-
 USE journalismRacer;
 
 CREATE TABLE articles_easy (
