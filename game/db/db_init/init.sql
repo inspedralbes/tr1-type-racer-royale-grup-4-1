@@ -7,6 +7,7 @@ CREATE DATABASE journalismRacer;
 GRANT ALL PRIVILEGES ON journalismRacer.* TO 'admin'@'%';
 FLUSH PRIVILEGES;
 
+
 USE journalismRacer;
 
 CREATE TABLE articles_easy (

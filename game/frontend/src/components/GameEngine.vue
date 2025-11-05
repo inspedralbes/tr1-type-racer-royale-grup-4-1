@@ -132,7 +132,7 @@ function loadArticles() {
     }
   });
   
-  gameStore.manager.emit('getArticles');
+  gameStore.manager.emit('getArticles', { roomName: gameStore.currentRoom });
 }
 
 // Lifecycle hooks for adding/removing global event listener

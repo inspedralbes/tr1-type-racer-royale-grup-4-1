@@ -2,7 +2,7 @@
   <template v-if="!startGame">
     <FirstPage v-if="!showMainMenu && !showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
     <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
-    <HostCreateLobby v-else-if="showHostCreateLobby" @backToLobby="showHostCreateLobby = false" @roomCreated="handleRoomCreated" />
+    <HostCreateLobby v-else-if="showHostCreateLobby" @backToLobby="handleBackFromCreateLobby" @roomCreated="handleRoomCreated" />
     <RoomsUserView v-else-if="showRoomsUserView" @back="handleBackFromRooms" @joinedRoom="handleJoinedRoom" />
     <UserLobby v-else-if="showUserLobby" @back="handleBackFromUserLobby" @startGame="handleGameStart" />
     <MainMenu v-else-if="showMainMenu" />
@@ -40,11 +40,23 @@ manager.on("gameStart", handleGameStart);
 function handleJoinRoom() {
   showLobby.value = false;
   showRoomsUserView.value = true;
+  // Forzar una actualización de las salas al navegar
+  nextTick(() => {
+    if (store.manager.socket) {
+      console.log('Solicitando salas al navegar...');
+      store.manager.emit('getRooms');
+    }
+  });
 }
 
 function handleCreateRoom() {
   showLobby.value = false;
   showHostCreateLobby.value = true;
+}
+
+function handleBackFromCreateLobby() {
+  showHostCreateLobby.value = false;
+  showLobby.value = true;
 }
 
 function handleRoomCreated(roomName) {

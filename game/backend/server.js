@@ -2,17 +2,16 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
-const sql = require("mysql2"); //To be able to connect to the database
-const bcrypt = require("bcrypt"); //Hash tool for passwords
-console.log(process.env.DB_USER);
+const sql = require("mysql2");
+const bcrypt = require("bcrypt");
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: "*" },
 });
 
-const articles = require("./data/data.json");
-//Serve Vue frontend build
+// Sirve el frontend de Vue
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 // Parse JSON bodies for debug endpoints
@@ -45,11 +44,11 @@ app.post('/debug/save-result', (req, res) => {
 });
 
 //Inject the enviroment variables
+// Estado global
 let players = [];
 let rooms = [];
 let leaderboard = [];
 
-// Configurable room capacity
 const ROOM_CAPACITY = 4;
 
 // Socket.io logic
@@ -60,8 +59,9 @@ io.on("connection", (socket) => {
     status: "waiting",
     room: null,
   };
-  //Push the player to the array
+
   players.push(newPlayer);
+
   socket.on("register", (userData) => {
     registerUser(userData.username, userData.password, (ok, payload) => {
       if (ok) {
@@ -75,10 +75,13 @@ io.on("connection", (socket) => {
       } else {
         socket.emit("registerResult", { ok: false, code: payload });
       }
+      socket.emit("registerResult", ok
+        ? { ok: true, userId: payload.userId }
+        : { ok: false, code: payload }
+      );
     });
   });
 
-  //TODO: Create socket.on(login) that will see if the user is registered and validate via bcrypt if the password is the same or not
   socket.on("login", (userData) => {
     if (!userData || !userData.username || !userData.password) {
       socket.emit("loginResult", { ok: false, code: "INVALID_PAYLOAD" });
@@ -96,14 +99,18 @@ io.on("connection", (socket) => {
       } else {
         socket.emit("loginResult", { ok: false, code: payload });
       }
+      socket.emit("loginResult", ok
+        ? { ok: true, userId: payload.userId }
+        : { ok: false, code: payload }
+      );
     });
   });
+
   socket.on("saveUsername", (username) => {
-    //Find the player
     let player = players.find((p) => p.id === socket.id);
     if (!player) return;
     player.username = username;
-    player.status = "not-joined"; // Estado inicial al guardar nombre
+    player.status = "not-joined";
     io.emit("updatePlayerData", players);
     io.emit("roomData", rooms);
   });
@@ -116,21 +123,17 @@ io.on("connection", (socket) => {
       return;
     }
     let player = players.find((p) => p.id === socket.id);
-
     if (!player) {
       console.log("Player not found:", socket.id);
       return;
     }
-
     if (!room.players.find((p) => p.id === socket.id)) {
       player.room = roomName;
       player.status = "waiting";
       room.players.push(player);
 
       if (room.players.length === ROOM_CAPACITY) {
-        // Marca la sala como llena y solicita a los jugadores que confirmen 'ready'
         room.isFull = true;
-        // Emite al frontend que la sala está llena y los clientes deben mostrar el botón 'Ready'
         io.to(roomName).emit("roomFull", true);
         io.to(roomName).emit("requestReady");
       }
@@ -140,24 +143,20 @@ io.on("connection", (socket) => {
     io.to(roomName).emit("updateRoomPlayers", room.players);
   });
 
-  function checkStartGame(room) {
-    const allReady = room.players.every((p) => p.status === "ready");
-
-    if (allReady && room.players.length > 1) {
-      io.to(room.name).emit("gameStart");
-      console.log("Game started in room:", room.name);
-      room.players.forEach((p) => {
-        p.status = "playing";
-      });
-      io.to(room.name).emit("gameStarted", room.players);
-    }
-  }
-
   socket.on("gameStart", () => {
     io.emit("gameStart");
   });
 
-  // Handler para cuando un jugador pulsa el botón 'Ready' en el frontend
+  function checkStartGame(room) {
+    const allReady = room.players.every((p) => p.status === "ready");
+    if (allReady && room.players.length > 1) {
+      io.to(room.name).emit("gameStart");
+      console.log("Game started in room:", room.name);
+      room.players.forEach((p) => { p.status = "playing"; });
+      io.to(room.name).emit("gameStarted", room.players);
+    }
+  }
+
   socket.on("playerReady", (isReady) => {
     let player = players.find((p) => p.id === socket.id);
     if (!player) return;
@@ -165,39 +164,61 @@ io.on("connection", (socket) => {
     const room = rooms.find((r) => r.name === player.room);
     if (room) {
       io.to(room.name).emit("updateRoomPlayers", room.players);
-      console.log(
-        `Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`,
-      );
-      // Comprueba si todos los jugadores están listos para arrancar
+      console.log(`Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`);
       checkStartGame(room);
     }
   });
 
   socket.on("isRoomFull", (roomName) => {
-    let roomFull = false;
     let room = rooms.find((r) => r.name === roomName);
-    if (!room) {
-      console.log("room doesn't exist");
-    } else if (room.players.length > 3) {
-      roomFull = true;
-    } else {
-      roomFull = false;
-    }
+    let roomFull = room ? room.players.length >= ROOM_CAPACITY : false;
     socket.emit("roomFull", roomFull);
   });
 
-  socket.on("createRoom", (roomName) => {
+  socket.on("createRoom", (data) => {
+    const roomName = data.name;
+    const difficulty = data.difficulty;
+    
     let roomExists = rooms.find((r) => r.name === roomName);
     if (!roomExists) {
-      rooms.push({ name: roomName, players: [] });
+      rooms.push({ 
+        name: roomName, 
+        difficulty: difficulty,
+        players: [] 
+      });
       io.emit("updateRooms", rooms);
     } else {
       console.log("Room already exists!");
     }
   });
 
-  socket.on("getArticles", () => {
-    socket.emit("articlesData", articles);
+  socket.on("getArticles", (data) => {
+    const difficulty = rooms.find((r) => r.name === data?.roomName)?.difficulty || 'easy';
+    getArticlesFromDB(difficulty, (articles) => {
+      socket.emit("articlesData", articles);
+    });
+  });
+
+  socket.on("getRooms", () => {
+    console.log(`[${socket.id}] Solicitando lista de salas (${rooms.length} salas disponibles)`);
+    socket.emit("roomData", rooms);
+    io.emit("updateRooms", rooms);
+  });
+
+  socket.on("leaveRoom", (roomName) => {
+    console.log(`Jugador ${socket.id} está abandonando la sala: ${roomName}`);
+    const room = rooms.find(r => r.name === roomName);
+    if (room) {
+      room.players = room.players.filter(p => p.id !== socket.id);
+      console.log(`Jugador ${socket.id} eliminado de la sala ${roomName}`);
+      if (room.players.length === 0) {
+        rooms = rooms.filter(r => r.name !== roomName);
+        console.log(`Sala ${roomName} eliminada por estar vacía`);
+      }
+      io.emit("updateRooms", rooms);
+      socket.leave(roomName);
+      io.to(roomName).emit('playerLeft', { playerId: socket.id, roomName });
+    }
   });
 
   socket.on("userResults", (userResults) => {
@@ -234,26 +255,39 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     const player = players.find((p) => p.id === socket.id);
-    console.log(
-      `User disconnected: ${socket.id} (${player ? player.username || "no-name" : "unknown"})`,
-    );
+    console.log(`User disconnected: ${socket.id} (${player ? player.username || "no-name" : "unknown"})`);
 
-    players = players.filter((p) => p.id !== socket.id);
-    // Remove the player from every room and emit updates per room
-    rooms.forEach((room) => {
+    const playerRooms = rooms.filter(room => room.players.some(p => p.id === socket.id));
+
+    rooms.forEach(room => {
       const before = room.players.length;
-      room.players = room.players.filter((p) => p.id !== socket.id);
-      if (room.players.length !== before) {
+      room.players = room.players.filter(p => p.id !== socket.id);
+
+      if (room.players.length === 0) {
+        rooms = rooms.filter(r => r.name !== room.name);
+        console.log(`Sala ${room.name} eliminada por estar vacía`);
+      } else if (before !== room.players.length) {
         io.to(room.name).emit("updateRoom", room);
         io.to(room.name).emit("gameStateUpdate", room.players);
       }
     });
-    io.emit("updateRooms", rooms);
+
+    players = players.filter((p) => p.id !== socket.id);
+
+    if (playerRooms.length > 0) {
+      io.emit("updateRooms", rooms);
+      playerRooms.forEach(room => {
+        io.to(room.name).emit('playerLeft', { playerId: socket.id, roomName: room.name });
+      });
+    }
+  });
+
+  socket.on("error", (error) => {
+    console.error(`[${socket.id}] Error de socket:`, error);
   });
 });
 
-//Db stuff
-//Connect to the database
+// Configuración DB
 const mysqlconfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -282,17 +316,49 @@ pool.getConnection((err, connection) => {
   }
 });
 
+function connectToDB(callback, retries = 10, delayMs = 2000) {
+  con = sql.createConnection(mysqlconfig);
+  con.connect((err) => {
+    if (err) {
+      console.log("Error connecting to database:", err.message);
+      if (retries > 0) {
+        console.log(`Retrying in ${delayMs / 1000} seconds... (${retries} retries left)`);
+        setTimeout(() => connectToDB(callback, retries - 1, delayMs), delayMs);
+      } else {
+        console.log("All retries failed. Could not connect to the database.");
+      }
+    } else {
+      console.log("Connection successful!");
+      if (callback) callback(con);
+    }
+  });
+}
+
+// Función para obtener artículos de la base de datos según la dificultad
+function getArticlesFromDB(difficulty, callback) {
+  const validDifficulties = ['easy', 'medium', 'hard'];
+  const tableName = `articles_${validDifficulties.includes(difficulty) ? difficulty : 'easy'}`;
+  
+  connectToDB((connection) => {
+    connection.query(`SELECT id, text FROM ${tableName}`, (err, results) => {
+      if (err) {
+        console.error(`Error obteniendo artículos de la BBDD (${tableName}):`, err);
+        return callback([]);
+      }
+      callback(results.map(row => ({ id: row.id, text: row.text, completed: false })));
+    });
+  });
+}
+
 function registerUser(username, password, done) {
-  let user = username;
-  let pass = password;
-  bcrypt.hash(pass, 10, (err, hashedPassword) => {
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
       done(false, "HASH_ERROR");
       return;
     }
     connectToDB((connection) => {
       const q1 = "SELECT id FROM users WHERE username = ?";
-      connection.execute(q1, [user], (err, rows) => {
+      connection.execute(q1, [username], (err, rows) => {
         if (err) {
           done(false, "DB_ERROR");
           return;
@@ -301,8 +367,8 @@ function registerUser(username, password, done) {
           done(false, "USER_EXISTS");
           return;
         }
-        const q2 = "INSERT INTO users (username, password) VALUES (?,?)";
-        connection.execute(q2, [user, hashedPassword], (err, results) => {
+        const q2 = "INSERT INTO users (username, password) VALUES (?, ?)";
+        connection.execute(q2, [username, hashedPassword], (err, results) => {
           if (err) {
             done(false, "DB_ERROR");
             return;
