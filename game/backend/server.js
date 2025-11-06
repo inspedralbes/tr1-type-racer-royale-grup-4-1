@@ -349,18 +349,10 @@ io.on("connection", (socket) => {
         rooms = rooms.filter(r => r.name !== roomName);
         console.log(`Sala ${roomName} eliminada por estar vacía`);
       } else {
-        // Si la sala estaba jugando y quedan jugadores, resetear a waiting
-        if (room.status === 'playing') {
-          room.status = 'waiting';
-          room.players.forEach(p => {
-            if (p.status === 'playing' || p.status === 'ready') {
-              p.status = 'waiting';
-            }
-          });
-          console.log(`Sala ${roomName} reseteada a 'waiting' después de que un jugador abandonó`);
-        }
-        // Notificar a los jugadores restantes
+        // Si la sala está jugando, mantenerla como 'playing' (no resetear)
+        // Solo notificar a los jugadores restantes
         io.to(roomName).emit("updateRoomPlayers", room.players);
+        console.log(`Sala ${roomName} mantiene su estado: ${room.status}`);
       }
       
       io.emit("updateRooms", rooms);
@@ -415,18 +407,10 @@ io.on("connection", (socket) => {
         rooms = rooms.filter(r => r.name !== room.name);
         console.log(`Sala ${room.name} eliminada por estar vacía`);
       } else if (before !== room.players.length) {
-        // Si la sala estaba jugando y quedan jugadores, resetear a waiting
-        if (room.status === 'playing') {
-          room.status = 'waiting';
-          room.players.forEach(p => {
-            if (p.status === 'playing' || p.status === 'ready') {
-              p.status = 'waiting';
-            }
-          });
-          console.log(`Sala ${room.name} reseteada a 'waiting' después de desconexión`);
-        }
+        // Mantener el estado de la sala (no resetear si está jugando)
         io.to(room.name).emit("updateRoom", room);
         io.to(room.name).emit("updateRoomPlayers", room.players);
+        console.log(`Sala ${room.name} mantiene su estado: ${room.status}`);
       }
     });
 

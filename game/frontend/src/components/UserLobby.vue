@@ -372,6 +372,27 @@ onUnmounted(() => {
   position: relative; overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+.player-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 215, 0, 0.3);
+  border: 2px solid #FFD700;
+  z-index: 2;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 @keyframes cardPulse {
   0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
   50% { box-shadow: 0 6px 20px rgba(255,140,0,0.4); }
@@ -398,8 +419,6 @@ onUnmounted(() => {
 .player-number {
   display: flex; align-items: center; justify-content: center;
   width: 50px; height: 50px;
-  min-width: 50px; /* Ancho mínimo fijo */
-  flex-shrink: 0; /* No permitir que se encoja */
   background-color: #FFD700; color: #000;
   border-radius: 50%;
   font-weight: 900; font-size: 1.5rem; z-index: 2;
@@ -409,14 +428,7 @@ onUnmounted(() => {
   background-color: #999; color: #666; box-shadow: none;
 }
 .player-info {
-  display: flex; 
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem; 
-  flex: 1; 
-  z-index: 2;
-  min-width: 0; /* Permitir que el contenido se ajuste */
-  overflow: hidden; /* Evitar desbordamiento */
+  display: flex; align-items: center; gap: 0.75rem; flex: 1; z-index: 2;
 }
 .player-icon {
   font-size: 1.8rem; color: #fff;
@@ -425,39 +437,10 @@ onUnmounted(() => {
   color: #666;
 }
 .player-name {
-  font-size: 1.4rem; 
-  font-weight: 700; 
-  color: #fff; 
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  white-space: nowrap; /* No permitir saltos de línea */
-  overflow: hidden; /* Ocultar desbordamiento */
-  text-overflow: ellipsis; /* Mostrar ... si es muy largo */
-  max-width: 100%; /* Limitar al ancho disponible */
+  font-size: 1.4rem; font-weight: 700; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 .player-card.empty .player-name {
   color: #666; font-style: italic; text-shadow: none;
-}
-
-.player-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 50px;
-  height: 50px;
-  min-width: 50px; /* Ancho mínimo fijo */
-  flex-shrink: 0; /* No permitir que se encoja */
-  border-radius: 50%;
-  overflow: hidden;
-  background: rgba(255, 215, 0, 0.3);
-  border: 2px solid #FFD700;
-  z-index: 2;
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
 }
 
 .player-card.ready {
@@ -491,9 +474,8 @@ onUnmounted(() => {
   font-size: 0.9rem;
   font-weight: 700;
   color: #fff;
+  margin-left: 0.5rem;
   animation: readyPulse 1.5s ease-in-out infinite;
-  white-space: nowrap; /* No permitir saltos de línea */
-  flex-shrink: 0; /* No permitir que se encoja */
 }
 
 @keyframes readyPulse {
@@ -593,8 +575,9 @@ onUnmounted(() => {
 
 @keyframes blink {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5;  }
+  50% { opacity: 0.5; }
 }
+
 .play-button {
   padding: 1.2rem 4rem; font-size: 1.6rem; font-weight: 700;
   color: #fff; background-color: #FF8C00; border: none; border-radius: 50px;
@@ -631,31 +614,6 @@ onUnmounted(() => {
   0% { left: -100%; }
   100% { left: 100%; }
 }
-.play-button:hover {
-  background-color: #FFA500;
-  transform: translateY(-5px) translateX(-2px);
-  box-shadow: 0 8px 30px rgba(255,140,0,0.6);
-}
-.play-button:hover .button-text {
-  animation: textFlicker 0.1s ease-in-out infinite;
-}
-@keyframes textFlicker {
-  0%,100% { opacity: 1; }
-  50% { opacity: 0.9; }
-}
-.play-button:active {
-  transform: translateY(2px) translateX(1px);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-.play-button:disabled {
-  background-color: #d0d0d0; color: #666; cursor: not-allowed;
-  transform: none; animation: none;
-}
-.play-button:disabled .pixel-border,
-.play-button:disabled .button-pixels {
-  display: none;
-}
-
 .ready-button:hover {
   background-color: #3AE03A;
   transform: translateY(-5px) translateX(-2px);
@@ -687,6 +645,31 @@ onUnmounted(() => {
 
 .ready-button:disabled .pixel-border,
 .ready-button:disabled .button-pixels {
+  display: none;
+}
+
+.play-button:hover {
+  background-color: #FFA500;
+  transform: translateY(-5px) translateX(-2px);
+  box-shadow: 0 8px 30px rgba(255,140,0,0.6);
+}
+.play-button:hover .button-text {
+  animation: textFlicker 0.1s ease-in-out infinite;
+}
+@keyframes textFlicker {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.9; }
+}
+.play-button:active {
+  transform: translateY(2px) translateX(1px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.play-button:disabled {
+  background-color: #d0d0d0; color: #666; cursor: not-allowed;
+  transform: none; animation: none;
+}
+.play-button:disabled .pixel-border,
+.play-button:disabled .button-pixels {
   display: none;
 }
 
