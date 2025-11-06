@@ -18,7 +18,6 @@ app.use(express.static(path.join(__dirname, "../frontend/dist")));
 let players = [];
 let rooms = [];
 let leaderboard = [];
-
 const ROOM_CAPACITY = 4;
 
 // Socket.io logic
@@ -34,9 +33,11 @@ io.on("connection", (socket) => {
 
   socket.on("register", (userData) => {
     registerUser(userData.username, userData.password, (ok, payload) => {
-      socket.emit("registerResult", ok
-        ? { ok: true, userId: payload.userId }
-        : { ok: false, code: payload }
+      socket.emit(
+        "registerResult",
+        ok
+          ? { ok: true, userId: payload.userId }
+          : { ok: false, code: payload },
       );
     });
   });
@@ -47,9 +48,11 @@ io.on("connection", (socket) => {
       return;
     }
     loginUser(userData.username, userData.password, (ok, payload) => {
-      socket.emit("loginResult", ok
-        ? { ok: true, userId: payload.userId }
-        : { ok: false, code: payload }
+      socket.emit(
+        "loginResult",
+        ok
+          ? { ok: true, userId: payload.userId }
+          : { ok: false, code: payload },
       );
     });
   });
@@ -64,6 +67,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("joinRoom", (roomName) => {
+    //Join the room
     socket.join(roomName);
     let room = rooms.find((r) => r.name === roomName);
     if (!room) {
@@ -74,6 +78,13 @@ io.on("connection", (socket) => {
     if (!player) {
       console.log("Player not found:", socket.id);
       return;
+    }
+    if (!room.scores.find((s) => s.id === socket.id)) {
+      room.scores.push({
+        id: socket.id, // Will need this later to update the user score
+        username: player.username,
+        articlesDone: 0,
+      });
     }
     if (!room.players.find((p) => p.id === socket.id)) {
       player.room = roomName;
@@ -86,11 +97,12 @@ io.on("connection", (socket) => {
         io.to(roomName).emit("requestReady");
       }
     }
-
+    io.to(roomName).emit("leaderboardUpdateInRoom", room.scores);
     io.to(roomName).emit("updateRooms", rooms);
     io.to(roomName).emit("updateRoomPlayers", room.players);
   });
 
+  //TODO: Change this shit to only send the startGame to the room, or do it elsewhere
   socket.on("gameStart", () => {
     io.emit("gameStart");
   });
@@ -100,7 +112,9 @@ io.on("connection", (socket) => {
     if (allReady && room.players.length > 1) {
       io.to(room.name).emit("gameStart");
       console.log("Game started in room:", room.name);
-      room.players.forEach((p) => { p.status = "playing"; });
+      room.players.forEach((p) => {
+        p.status = "playing";
+      });
       io.to(room.name).emit("gameStarted", room.players);
     }
   }
@@ -112,7 +126,9 @@ io.on("connection", (socket) => {
     const room = rooms.find((r) => r.name === player.room);
     if (room) {
       io.to(room.name).emit("updateRoomPlayers", room.players);
-      console.log(`Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`);
+      console.log(
+        `Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`,
+      );
       checkStartGame(room);
     }
   });
@@ -126,38 +142,60 @@ io.on("connection", (socket) => {
   socket.on("createRoom", (roomName) => {
     let roomExists = rooms.find((r) => r.name === roomName);
     if (!roomExists) {
-      rooms.push({ name: roomName, players: [] });
+      rooms.push({ name: roomName, players: [], scores: [] });
       io.emit("updateRooms", rooms);
     } else {
       console.log("Room already exists!");
     }
   });
 
+  //Test for 2 articles instead of all
   socket.on("getArticles", () => {
     getArticlesFromDB((articles) => {
-      socket.emit("articlesData", articles);
+      // Limit to 2 articles
+      const limitedArticles = articles.slice(0, 2);
+      socket.emit("articlesData", limitedArticles);
     });
   });
 
   socket.on("getRooms", () => {
-    console.log(`[${socket.id}] Solicitando lista de salas (${rooms.length} salas disponibles)`);
+    console.log(
+      `[${socket.id}] Solicitando lista de salas (${rooms.length} salas disponibles)`,
+    );
     socket.emit("roomData", rooms);
     io.emit("updateRooms", rooms);
   });
 
   socket.on("leaveRoom", (roomName) => {
     console.log(`Jugador ${socket.id} está abandonando la sala: ${roomName}`);
-    const room = rooms.find(r => r.name === roomName);
+    const room = rooms.find((r) => r.name === roomName);
     if (room) {
-      room.players = room.players.filter(p => p.id !== socket.id);
+      room.players = room.players.filter((p) => p.id !== socket.id);
       console.log(`Jugador ${socket.id} eliminado de la sala ${roomName}`);
       if (room.players.length === 0) {
-        rooms = rooms.filter(r => r.name !== roomName);
+        rooms = rooms.filter((r) => r.name !== roomName);
         console.log(`Sala ${roomName} eliminada por estar vacía`);
       }
       io.emit("updateRooms", rooms);
       socket.leave(roomName);
-      io.to(roomName).emit('playerLeft', { playerId: socket.id, roomName });
+      io.to(roomName).emit("playerLeft", { playerId: socket.id, roomName });
+    }
+  });
+
+  socket.on("articleCompleted", (articlesCompleted) => {
+    let player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+    //When the user joins we set the player.room thus now we can find the room he's in
+    let room = rooms.find((r) => r.name === player.room);
+    if (!room) return;
+
+    // Find and update the user's score
+    let userScore = room.scores.find((s) => s.id === socket.id);
+    if (userScore) {
+      userScore.articlesDone = articlesCompleted;
+
+      // Broadcast updated scoreboard to everyone in the room
+      io.to(player.room).emit("leaderboardUpdateInRoom", room.scores);
     }
   });
 
@@ -173,16 +211,20 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     const player = players.find((p) => p.id === socket.id);
-    console.log(`User disconnected: ${socket.id} (${player ? player.username || "no-name" : "unknown"})`);
+    console.log(
+      `User disconnected: ${socket.id} (${player ? player.username || "no-name" : "unknown"})`,
+    );
 
-    const playerRooms = rooms.filter(room => room.players.some(p => p.id === socket.id));
+    const playerRooms = rooms.filter((room) =>
+      room.players.some((p) => p.id === socket.id),
+    );
 
-    rooms.forEach(room => {
+    rooms.forEach((room) => {
       const before = room.players.length;
-      room.players = room.players.filter(p => p.id !== socket.id);
+      room.players = room.players.filter((p) => p.id !== socket.id);
 
       if (room.players.length === 0) {
-        rooms = rooms.filter(r => r.name !== room.name);
+        rooms = rooms.filter((r) => r.name !== room.name);
         console.log(`Sala ${room.name} eliminada por estar vacía`);
       } else if (before !== room.players.length) {
         io.to(room.name).emit("updateRoom", room);
@@ -194,8 +236,11 @@ io.on("connection", (socket) => {
 
     if (playerRooms.length > 0) {
       io.emit("updateRooms", rooms);
-      playerRooms.forEach(room => {
-        io.to(room.name).emit('playerLeft', { playerId: socket.id, roomName: room.name });
+      playerRooms.forEach((room) => {
+        io.to(room.name).emit("playerLeft", {
+          playerId: socket.id,
+          roomName: room.name,
+        });
       });
     }
   });
@@ -221,7 +266,9 @@ function connectToDB(callback, retries = 10, delayMs = 2000) {
     if (err) {
       console.log("Error connecting to database:", err.message);
       if (retries > 0) {
-        console.log(`Retrying in ${delayMs / 1000} seconds... (${retries} retries left)`);
+        console.log(
+          `Retrying in ${delayMs / 1000} seconds... (${retries} retries left)`,
+        );
         setTimeout(() => connectToDB(callback, retries - 1, delayMs), delayMs);
       } else {
         console.log("All retries failed. Could not connect to the database.");
@@ -239,15 +286,15 @@ function getArticlesFromDB(callback) {
     const query = `SELECT id, text FROM articles_easy`;
     connection.query(query, (err, results) => {
       if (err) {
-        console.error('Error obteniendo artículos de la BBDD:', err);
+        console.error("Error obteniendo artículos de la BBDD:", err);
         callback([]);
         return;
       }
       // Convertir los resultados al formato que espera el frontend
-      const articles = results.map(row => ({
+      const articles = results.map((row) => ({
         id: row.id,
         text: row.text,
-        completed: false
+        completed: false,
       }));
       callback(articles);
     });
@@ -312,4 +359,6 @@ function loginUser(username, password, done) {
   });
 }
 
-server.listen(3000, () => console.log("Server running on port:3000"));
+server.listen(3000, () =>
+  console.log("Server running on portakjshdgfhjga+ articles done: 1:3000"),
+);
