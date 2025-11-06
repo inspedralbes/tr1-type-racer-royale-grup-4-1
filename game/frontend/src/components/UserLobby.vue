@@ -110,6 +110,7 @@ const nombreSala = computed(() => gameStore.currentRoom || 'Sala');
 const isCurrentPlayerReady = ref(false);
 const showCountdown = ref(false);
 const countdownValue = ref(3);
+let countdownInterval = null;
 
 const slotsVacios = computed(() => {
   return maxJugadores.value - jugadores.value.length;
@@ -129,6 +130,13 @@ const actualizarJugadores = (rooms) => {
 
 // Manejar el botón de volver
 const handleBack = () => {
+  // Limpiar el countdown si existe
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+    showCountdown.value = false;
+  }
+  
   // Notificar al servidor que el jugador está saliendo de la sala
   if (gameStore.currentRoom) {
     console.log(`Saliendo de la sala: ${gameStore.currentRoom}`);
@@ -147,17 +155,23 @@ const toggleReady = () => {
 };
 
 const startCountdown = () => {
+  // Limpiar cualquier countdown anterior
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+  
   showCountdown.value = true;
   countdownValue.value = 3;
   
-  const countdownInterval = setInterval(() => {
-    if (countdownValue.value === 1) {
+  countdownInterval = setInterval(() => {
+    countdownValue.value--;
+    
+    if (countdownValue.value === 0) {
       clearInterval(countdownInterval);
+      countdownInterval = null;
       showCountdown.value = false;
       // Iniciar el juego
       emit('startGame');
-    } else {
-      countdownValue.value--;
     }
   }, 1000);
 };
@@ -220,6 +234,11 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  // Limpiar el countdown si existe
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
   // No eliminar los callbacks, solo dejar de usarlos
   console.log('UserLobby desmontado');
 });

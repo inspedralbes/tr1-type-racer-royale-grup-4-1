@@ -241,20 +241,27 @@ io.on("connection", (socket) => {
   function checkStartGame(room) {
     const allReady = room.players.every((p) => p.status === "ready");
     if (allReady && room.players.length > 1) {
-      // Marcar la sala como jugando
-      room.status = "playing";
+      console.log(`¡Todos los jugadores están listos en la sala ${room.name}! Iniciando cuenta regresiva...`);
       
-      // Cambiar el estado de los jugadores a playing
-      room.players.forEach((p) => { p.status = "playing"; });
+      // Emitir evento para iniciar la cuenta regresiva
+      io.to(room.name).emit("startCountdown");
       
-      // Emitir eventos
-      io.to(room.name).emit("gameStart");
-      io.to(room.name).emit("gameStarted", room.players);
-      
-      // Actualizar la lista de salas para ocultar esta sala
-      io.emit("updateRooms", rooms);
-      
-      console.log(`Game started in room: ${room.name} - Status: ${room.status}`);
+      // Después de 3 segundos, cambiar el estado de los jugadores a "playing"
+      setTimeout(() => {
+        // Marcar la sala como jugando
+        room.status = "playing";
+        
+        // Cambiar el estado de los jugadores a playing
+        room.players.forEach((p) => { p.status = "playing"; });
+        
+        // Emitir eventos
+        io.to(room.name).emit("gameStarted", room.players);
+        
+        // Actualizar la lista de salas para ocultar esta sala
+        io.emit("updateRooms", rooms);
+        
+        console.log(`Game started in room: ${room.name} - Status: ${room.status}`);
+      }, 3000);
     }
   }
 
