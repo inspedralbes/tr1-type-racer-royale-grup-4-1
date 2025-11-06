@@ -20,12 +20,6 @@
       <button @click="doRegister">Registrar</button>
       <button @click="doLogin">Login</button>
     </div>
-
-    <button class="play-button" @click="$emit('lobby')">
-      <span class="pixel-border"></span>
-      <span class="button-text">JUGAR</span>
-      <div class="button-pixels"></div>
-    </button>
   </div>
 </template>
 
