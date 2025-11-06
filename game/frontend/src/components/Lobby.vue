@@ -11,28 +11,9 @@
     </div>
 
     <Config />
-    <div v-if="!hasNameSaved" class="name-input-wrapper">
-      <div class="name-input-container">
-        <div class="input-group">
-          <input
-            v-model="playerName"
-            type="text"
-            placeholder="Introduce tu nombre"
-            class="name-input"
-            maxlength="20"
-            @keypress="handleKeyPress"
-          />
-          <button class="play-button btn" @click="savePlayerName">
-            <span class="button-text">GUARDAR</span>
-            <span class="pixel-border"></span>
-            <span class="button-pixels"></span>
-          </button>
-        </div>
-      </div>
-    </div>
-    <p v-else class="welcome-text">Bienvenido, {{ gameStore.username }}</p>
+    <p class="welcome-text">Bienvenido, {{ gameStore.username }}</p>
 
-    <div v-if="hasNameSaved" class="actions">
+    <div class="actions">
       <button class="play-button btn" @click="handleCreateRoom">
         <span class="button-text">CREAR SALA</span>
         <span class="pixel-border"></span>
@@ -53,44 +34,19 @@
 
 <script setup>
 import Config from './Config.vue';
-import { ref, onMounted } from 'vue';
 import { useGameStore } from '../stores/gameStore';
 
 const gameStore = useGameStore();
-const playerName = ref('');
-const hasNameSaved = ref(false);
 const emit = defineEmits(['back', 'createRoom', 'joinRoom']);
-
-onMounted(() => {
-  if (gameStore.username) {
-    playerName.value = gameStore.username;
-    hasNameSaved.value = true;
-  }
-});
-
-function savePlayerName() {
-  if (playerName.value.trim()) {
-    gameStore.setUsername(playerName.value.trim());
-    hasNameSaved.value = true;
-    gameStore.manager.emit('saveUsername', playerName.value.trim());
-    console.log('Username guardado:', playerName.value.trim());
-  }
-}
-
-function handleKeyPress(event) {
-  if (event.key === 'Enter') {
-    savePlayerName();
-  }
-}
 
 function handleCreateRoom() {
   emit('createRoom');
 }
 
 function handleJoinRoom() {
-  if (!playerName.value.trim()) {
-    alert('Por favor, introduce tu nombre');
-    return;
+  // Enviar el username al servidor
+  if (gameStore.username) {
+    gameStore.manager.emit('saveUsername', gameStore.username);
   }
 
   // Configurar los listeners para actualización de salas
@@ -103,9 +59,6 @@ function handleJoinRoom() {
     console.log('updateRooms recibido en Lobby:', rooms);
     gameStore.setRooms(rooms);
   });
-
-  // Guardar el nombre del jugador
-  savePlayerName();
   
   // Solicitar la lista de salas disponibles
   gameStore.manager.emit('getRooms');
