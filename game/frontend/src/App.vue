@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, nextTick } from "vue";
 import GameEngine from "./components/GameEngine.vue";
 import MainMenu from "./components/MainMenu.vue";
 import Keyboard from "./components/Keyboard.vue";
@@ -61,8 +61,10 @@ function handleBackFromCreateLobby() {
 
 function handleRoomCreated(roomName) {
   showHostCreateLobby.value = false;
-  showRoomsUserView.value = true;
-  console.log('Sala creada:', roomName);
+  showUserLobby.value = true;
+  // Guardar el nombre de la sala en el store
+  store.setRoomName(roomName);
+  console.log('Sala creada y unido a:', roomName);
 }
 
 function handleBackFromRooms() {
