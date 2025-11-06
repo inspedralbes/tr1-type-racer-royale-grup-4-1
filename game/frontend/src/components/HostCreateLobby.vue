@@ -22,6 +22,18 @@
         @keypress.enter="createRoom"
       />
     </div>
+    
+    <div class="difficulty-container">
+      <label class="difficulty-label">Dificultad:</label>
+      <select 
+        v-model="selectedDifficulty" 
+        class="difficulty-select"
+      >
+        <option value="easy">Fácil</option>
+        <option value="medium">Medio</option>
+        <option value="hard">Difícil</option>
+      </select>
+    </div>
     <br><br>
     <div class="button-container">
       <button class="play-button btn" @click="goBack">
@@ -54,6 +66,7 @@ const emit = defineEmits(["backToLobby", "roomCreated"]);
 const gameStore = useGameStore();
 
 const roomName = ref("");
+const selectedDifficulty = ref("easy");
 
 function goBack() {
   // Emit the backToLobby event and ensure we're showing the Lobby view
@@ -69,8 +82,11 @@ function createRoom() {
     return;
   }
 
-  // Emitir al servidor para crear la sala (el backend espera solo el nombre por ahora)
-  gameStore.manager.emit("createRoom", name);
+  // Emitir al servidor para crear la sala con nombre y dificultad
+  gameStore.manager.emit("createRoom", {
+    name: name,
+    difficulty: selectedDifficulty.value
+  });
 
   emit("roomCreated", name);
 }
@@ -240,6 +256,51 @@ body, html {
 .name-input:focus {
   border-color: #FFD700;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.difficulty-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 1.5rem 0;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.difficulty-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  font-family: 'Poppins', sans-serif;
+}
+
+.difficulty-select {
+  padding: 0.8rem 1.5rem;
+  font-size: 1.2rem;
+  border: 2px solid #333;
+  border-radius: 4px;
+  outline: none;
+  width: 100%;
+  max-width: 300px;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  box-sizing: border-box;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.difficulty-select:focus {
+  border-color: #FFD700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.difficulty-select:hover {
+  border-color: #FFA500;
 }
 
 .button-group {

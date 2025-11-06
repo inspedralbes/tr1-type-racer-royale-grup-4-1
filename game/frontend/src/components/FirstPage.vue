@@ -20,12 +20,6 @@
       <button @click="doRegister">Registrar</button>
       <button @click="doLogin">Login</button>
     </div>
-
-    <button class="play-button" @click="$emit('lobby')">
-      <span class="pixel-border"></span>
-      <span class="button-text">JUGAR</span>
-      <div class="button-pixels"></div>
-    </button>
   </div>
 </template>
 
@@ -33,9 +27,10 @@
 import { onMounted } from 'vue';
 import Config from "./Config.vue";
 import SocketManager from "../../services/socketManager";
+import { useGameStore } from '../stores/gameStore';
 
 const emit = defineEmits(['lobby']);
-
+const gameStore = useGameStore();
 const sm = new SocketManager();
 
 onMounted(() => {
@@ -49,6 +44,9 @@ function doRegister() {
 
   sm.on('registerResult', (res) => {
     if (res.ok) {
+      gameStore.setUserId(res.userId);
+      gameStore.setUsername(res.username);
+      console.log('Usuario registrado:', res.username, 'con ID:', res.userId);
       sm.callbacks['registerResult'] = undefined;
       emit('lobby');
     } else {
@@ -66,6 +64,9 @@ function doLogin() {
 
   sm.on('loginResult', (res) => {
     if (res.ok) {
+      gameStore.setUserId(res.userId);
+      gameStore.setUsername(res.username);
+      console.log('Usuario logueado:', res.username, 'con ID:', res.userId);
       sm.callbacks['loginResult'] = undefined;
       emit('lobby');
     } else {

@@ -4,16 +4,103 @@ const { Server } = require("socket.io");
 const path = require("path");
 const sql = require("mysql2");
 const bcrypt = require("bcrypt");
+const multer = require("multer");
+const fs = require("fs");
+const cors = require("cors");
 
 const app = express();
 const server = http.createServer(app);
+
+// Configuración de CORS
+const corsOptions = {
+  origin: 'http://localhost:5173', // Asegúrate de que coincida con la URL de tu frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
+
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true
+  },
 });
+
+// Middleware para parsear JSON y URL-encoded
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Sirve el frontend de Vue
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
+// ============================================================================
+// CONFIGURACIÓN DE MULTER PARA IMÁGENES
+// ============================================================================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, "img");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máximo
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Solo se permiten imágenes (jpeg, jpg, png, gif, webp)"));
+    }
+  }
+});
+
+// Sirve las imágenes estáticamente
+app.use("/img", express.static(path.join(__dirname, "img")));
+
+// Parse JSON bodies for debug endpoints
+app.use(express.json());
+
+// Debug HTTP endpoint to save a result without using sockets
+app.post('/debug/save-result', (req, res) => {
+  const payload = req.body || {};
+  const username = payload.username;
+  const time = payload.time;
+  const errors = payload.errors;
+  const user_id = payload.user_id || null;
+
+  if (!username || time == null || errors == null) {
+    return res.status(400).json({ ok: false, error: 'INVALID_PAYLOAD' });
+  }
+
+  connectToDB((connection) => {
+    const insertQuery = 'INSERT INTO results (user_id, username, time_ms, errors) VALUES (?, ?, ?, ?)';
+    const params = [user_id, username, time, errors];
+    console.log('HTTP debug save-result params:', params);
+    connection.execute(insertQuery, params, (err, results) => {
+      if (err) {
+        console.log('Error saving via debug endpoint:', err.message);
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+      return res.json({ ok: true, insertId: results.insertId });
+    });
+  });
+});
+
+//Inject the enviroment variables
 // Estado global
 let players = [];
 let rooms = [];
@@ -38,6 +125,20 @@ io.on("connection", (socket) => {
         ok
           ? { ok: true, userId: payload.userId }
           : { ok: false, code: payload },
+      if (ok) {
+        // Associate this socket/player with the newly created DB user
+        const player = players.find((p) => p.id === socket.id);
+        if (player) {
+          player.userId = payload.userId;
+          player.username = userData.username; // ensure player's username matches registered username
+        }
+        socket.emit("registerResult", { ok: true, userId: payload.userId });
+      } else {
+        socket.emit("registerResult", { ok: false, code: payload });
+      }
+      socket.emit("registerResult", ok
+        ? { ok: true, userId: payload.userId }
+        : { ok: false, code: payload }
       );
     });
   });
@@ -53,6 +154,20 @@ io.on("connection", (socket) => {
         ok
           ? { ok: true, userId: payload.userId }
           : { ok: false, code: payload },
+      if (ok) {
+        // Associate this socket/player with the logged-in DB user
+        const player = players.find((p) => p.id === socket.id);
+        if (player) {
+          player.userId = payload.userId;
+          player.username = userData.username; // use the registered username
+        }
+        socket.emit("loginResult", { ok: true, userId: payload.userId });
+      } else {
+        socket.emit("loginResult", { ok: false, code: payload });
+      }
+      socket.emit("loginResult", ok
+        ? { ok: true, userId: payload.userId }
+        : { ok: false, code: payload }
       );
     });
   });
@@ -139,22 +254,28 @@ io.on("connection", (socket) => {
     socket.emit("roomFull", roomFull);
   });
 
-  socket.on("createRoom", (roomName) => {
+  socket.on("createRoom", (data) => {
+    const roomName = data.name;
+    const difficulty = data.difficulty;
+    
     let roomExists = rooms.find((r) => r.name === roomName);
     if (!roomExists) {
-      rooms.push({ name: roomName, players: [], scores: [] });
+      rooms.push({ 
+        name: roomName, 
+        difficulty: difficulty,
+        players: [],
+        scores: [],
+      });
       io.emit("updateRooms", rooms);
     } else {
       console.log("Room already exists!");
     }
   });
 
-  //Test for 2 articles instead of all
-  socket.on("getArticles", () => {
-    getArticlesFromDB((articles) => {
-      // Limit to 2 articles
-      const limitedArticles = articles.slice(0, 2);
-      socket.emit("articlesData", limitedArticles);
+  socket.on("getArticles", (data) => {
+    const difficulty = rooms.find((r) => r.name === data?.roomName)?.difficulty || 'easy';
+    getArticlesFromDB(difficulty, (articles) => {
+      socket.emit("articlesData", articles);
     });
   });
 
@@ -201,12 +322,34 @@ io.on("connection", (socket) => {
 
   socket.on("userResults", (userResults) => {
     if (!userResults) return;
+
     leaderboard.push({
-      name: userResults.name,
+      username: userResults.username,
       time: userResults.time,
       errors: userResults.errors,
-    });
+    }); 
     socket.emit("updateLeaderboard", leaderboard);
+
+    // Guardar en la base de datos
+      connectToDB((connection) => {
+        // Preferimos guardar el user_id si el socket tiene un usuario asociado
+        const player = players.find((p) => p.id === socket.id);
+        const userIdToSave = player && player.userId ? player.userId : null;
+        const usernameToSave = player && player.username ? player.username : userResults.username;
+        const insertQuery =
+          "INSERT INTO results (user_id, username, time_ms, errors) VALUES (?, ?, ?, ?)";
+
+        const params = [userIdToSave, usernameToSave, userResults.time, userResults.errors];
+        console.log("Saving userResults to DB", { socketId: socket.id, params, userResults });
+
+        connection.execute(insertQuery, params, (err, results) => {
+          if (err) {
+            console.log("Error guardando resultado:", err.message, err.code || "");
+          } else {
+            console.log("Resultado guardado en BD id=", results.insertId);
+          }
+        });
+      });
   });
 
   socket.on("disconnect", () => {
@@ -250,15 +393,89 @@ io.on("connection", (socket) => {
   });
 });
 
+// ============================================================================
+// RUTAS HTTP - IMÁGENES
+// ============================================================================
+// Ruta para subir imagen de perfil
+app.post("/api/upload-profile-image", upload.single("image"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, message: "No se recibió ninguna imagen" });
+    }
+
+    const userId = req.body.userId;
+    if (!userId) {
+      // Eliminar archivo subido si no hay userId
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ ok: false, message: "userId es requerido" });
+    }
+
+    const imagePath = `/img/${req.file.filename}`;
+    updateUserImage(userId, imagePath, (ok, payload) => {
+      if (!ok) {
+        // Eliminar archivo subido si falla la actualización
+        fs.unlinkSync(req.file.path);
+        return res.status(500).json({ ok: false, message: "Error al actualizar imagen", code: payload });
+      }
+
+      res.json({ ok: true, imagePath: payload.img });
+    });
+  } catch (error) {
+    console.error("Error al subir imagen:", error);
+    res.status(500).json({ ok: false, message: "Error interno del servidor" });
+  }
+});
+
+// Ruta para obtener imagen de perfil
+app.get("/api/get-profile-image/:userId", (req, res) => {
+  const userId = req.params.userId;
+  getUserImage(userId, (ok, payload) => {
+    if (!ok) {
+      return res.status(404).json({ ok: false, message: "Usuario no encontrado", code: payload });
+    }
+    res.json({ ok: true, imagePath: payload.img });
+  });
+});
+
+// Ruta para obtener información del usuario
+app.get("/api/get-user-info/:userId", (req, res) => {
+  const userId = req.params.userId;
+  getUserInfo(userId, (ok, payload) => {
+    if (!ok) {
+      return res.status(404).json({ ok: false, message: "Usuario no encontrado", code: payload });
+    }
+    res.json({ ok: true, username: payload.username, imagePath: payload.img });
+  });
+});
+
 // Configuración DB
 const mysqlconfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
 };
 
 let con = null;
+
+// Use a connection pool to simplify and stabilize DB access from multiple socket events.
+const pool = sql.createPool(mysqlconfig);
+
+function connectToDB(callback) {
+  // For compatibility with existing code that expects a `connection` with execute(..., cb)
+  if (callback) callback(pool);
+}
+
+// Quick check of pool connectivity (non-fatal)
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.log("Warning: could not get DB connection from pool:", err.message);
+  } else {
+    console.log("DB pool connection OK");
+    connection.release();
+  }
+});
 
 function connectToDB(callback, retries = 10, delayMs = 2000) {
   con = sql.createConnection(mysqlconfig);
@@ -280,11 +497,46 @@ function connectToDB(callback, retries = 10, delayMs = 2000) {
   });
 }
 
-// Función para obtener artículos de la base de datos (solo articles_easy)
-function getArticlesFromDB(callback) {
+// Función para obtener artículos de la base de datos según la dificultad
+function getArticlesFromDB(difficulty, callback) {
+  const validDifficulties = ['easy', 'medium', 'hard'];
+  const tableName = `articles_${validDifficulties.includes(difficulty) ? difficulty : 'easy'}`;
+  
   connectToDB((connection) => {
-    const query = `SELECT id, text FROM articles_easy`;
-    connection.query(query, (err, results) => {
+    connection.query(`SELECT id, text FROM ${tableName}`, (err, results) => {
+      if (err) {
+        console.error(`Error obteniendo artículos de la BBDD (${tableName}):`, err);
+        return callback([]);
+      }
+      callback(results.map(row => ({ id: row.id, text: row.text, completed: false })));
+    });
+  });
+}
+
+// ============================================================================
+// FUNCIONES DE GESTIÓN DE IMÁGENES DE PERFIL
+// ============================================================================
+function getUserImage(userId, done) {
+  connectToDB((connection) => {
+    const q = "SELECT img FROM users WHERE id = ?";
+    connection.execute(q, [userId], (err, rows) => {
+      if (err) {
+        done(false, "DB_ERROR");
+        return;
+      }
+      if (!rows || rows.length === 0) {
+        done(false, "USER_NOT_FOUND");
+        return;
+      }
+      done(true, { img: rows[0].img });
+    });
+  });
+}
+
+function getUserInfo(userId, done) {
+  connectToDB((connection) => {
+    const q = "SELECT username, img FROM users WHERE id = ?";
+    connection.execute(q, [userId], (err, rows) => {
       if (err) {
         console.error("Error obteniendo artículos de la BBDD:", err);
         callback([]);
@@ -297,6 +549,49 @@ function getArticlesFromDB(callback) {
         completed: false,
       }));
       callback(articles);
+        done(false, "DB_ERROR");
+        return;
+      }
+      if (!rows || rows.length === 0) {
+        done(false, "USER_NOT_FOUND");
+        return;
+      }
+      done(true, { username: rows[0].username, img: rows[0].img });
+    });
+  });
+}
+
+function updateUserImage(userId, imagePath, done) {
+  connectToDB((connection) => {
+    // Primero obtenemos la imagen anterior para eliminarla
+    const q1 = "SELECT img FROM users WHERE id = ?";
+    connection.execute(q1, [userId], (err, rows) => {
+      if (err) {
+        done(false, "DB_ERROR");
+        return;
+      }
+      const oldImage = rows && rows.length > 0 ? rows[0].img : null;
+
+      // Actualizamos la ruta de la imagen en la BD
+      const q2 = "UPDATE users SET img = ? WHERE id = ?";
+      connection.execute(q2, [imagePath, userId], (err, results) => {
+        if (err) {
+          done(false, "DB_ERROR");
+          return;
+        }
+
+        // Eliminamos la imagen anterior del sistema de archivos si existe
+        if (oldImage && oldImage !== imagePath) {
+          const oldImagePath = path.join(__dirname, oldImage);
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlink(oldImagePath, (unlinkErr) => {
+              if (unlinkErr) console.error("Error al eliminar imagen antigua:", unlinkErr);
+            });
+          }
+        }
+
+        done(true, { img: imagePath });
+      });
     });
   });
 }
@@ -324,7 +619,7 @@ function registerUser(username, password, done) {
             done(false, "DB_ERROR");
             return;
           }
-          done(true, { userId: results.insertId });
+          done(true, { userId: results.insertId, username: username });
         });
       });
     });
@@ -333,7 +628,7 @@ function registerUser(username, password, done) {
 
 function loginUser(username, password, done) {
   connectToDB((connection) => {
-    const q = "SELECT id, password FROM users WHERE username = ?";
+    const q = "SELECT id, username, password FROM users WHERE username = ?";
     connection.execute(q, [username], (err, rows) => {
       if (err) {
         done(false, "DB_ERROR");
@@ -353,7 +648,7 @@ function loginUser(username, password, done) {
           done(false, "INVALID_PASSWORD");
           return;
         }
-        done(true, { userId: user.id });
+        done(true, { userId: user.id, username: user.username });
       });
     });
   });
