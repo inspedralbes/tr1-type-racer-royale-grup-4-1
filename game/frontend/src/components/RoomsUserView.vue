@@ -63,7 +63,6 @@ import { useGameStore } from "../stores/gameStore";
 
 const emit = defineEmits(["back", "joinedRoom"]);
 const gameStore = useGameStore();
-
 const maxJugadoresPorSala = ref(4);
 const salaSeleccionada = ref(null);
 
