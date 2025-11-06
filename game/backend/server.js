@@ -112,6 +112,8 @@ io.on("connection", (socket) => {
   const newPlayer = {
     id: socket.id,
     username: null,
+    userId: null,
+    profileImage: null,
     status: "waiting",
     room: null,
   };
@@ -130,7 +132,13 @@ io.on("connection", (socket) => {
         const player = players.find((p) => p.id === socket.id);
         if (player) {
           player.userId = payload.userId;
-          player.username = userData.username; // ensure player's username matches registered username
+          player.username = userData.username;
+          // Fetch profile image
+          getUserImage(payload.userId, (imgOk, imgPayload) => {
+            if (imgOk && imgPayload.img) {
+              player.profileImage = imgPayload.img;
+            }
+          });
         }
         socket.emit("registerResult", { ok: true, userId: payload.userId });
       } else {
@@ -159,7 +167,13 @@ io.on("connection", (socket) => {
         const player = players.find((p) => p.id === socket.id);
         if (player) {
           player.userId = payload.userId;
-          player.username = userData.username; // use the registered username
+          player.username = userData.username;
+          // Fetch profile image
+          getUserImage(payload.userId, (imgOk, imgPayload) => {
+            if (imgOk && imgPayload.img) {
+              player.profileImage = imgPayload.img;
+            }
+          });
         }
         socket.emit("loginResult", { ok: true, userId: payload.userId });
       } else {
@@ -179,6 +193,26 @@ io.on("connection", (socket) => {
     player.status = "not-joined";
     io.emit("updatePlayerData", players);
     io.emit("roomData", rooms);
+  });
+
+  socket.on("updateProfileImage", (userId) => {
+    let player = players.find((p) => p.id === socket.id);
+    if (!player) return;
+    
+    // Fetch the updated profile image
+    getUserImage(userId, (imgOk, imgPayload) => {
+      if (imgOk && imgPayload.img) {
+        player.profileImage = imgPayload.img;
+        
+        // Notify all players in the same room about the update
+        if (player.room) {
+          const room = rooms.find((r) => r.name === player.room);
+          if (room) {
+            io.to(player.room).emit("updateRoomPlayers", room.players);
+          }
+        }
+      }
+    });
   });
 
   socket.on("joinRoom", (roomName) => {
@@ -225,21 +259,45 @@ io.on("connection", (socket) => {
   function checkStartGame(room) {
     const allReady = room.players.every((p) => p.status === "ready");
     if (allReady && room.players.length > 1) {
-      io.to(room.name).emit("gameStart");
-      console.log("Game started in room:", room.name);
-      room.players.forEach((p) => {
-        p.status = "playing";
-      });
-      io.to(room.name).emit("gameStarted", room.players);
+      console.log(`¡Todos los jugadores están listos en la sala ${room.name}! Iniciando cuenta regresiva...`);
+      
+      // Emitir evento para iniciar la cuenta regresiva
+      io.to(room.name).emit("startCountdown");
+      
+      // Después de 3 segundos, cambiar el estado de los jugadores a "playing"
+      setTimeout(() => {
+        // Marcar la sala como jugando
+        room.status = "playing";
+        
+        // Cambiar el estado de los jugadores a playing
+        room.players.forEach((p) => { p.status = "playing"; });
+        
+        // Emitir eventos
+        io.to(room.name).emit("gameStarted", room.players);
+        
+        // Actualizar la lista de salas para ocultar esta sala
+        io.emit("updateRooms", rooms);
+        
+        console.log(`Game started in room: ${room.name} - Status: ${room.status}`);
+      }, 3000);
     }
   }
 
   socket.on("playerReady", (isReady) => {
     let player = players.find((p) => p.id === socket.id);
     if (!player) return;
+    
     player.status = isReady ? "ready" : "waiting";
     const room = rooms.find((r) => r.name === player.room);
+    
     if (room) {
+      // Actualizar el estado del jugador dentro del array de la sala
+      const roomPlayer = room.players.find((p) => p.id === socket.id);
+      if (roomPlayer) {
+        roomPlayer.status = isReady ? "ready" : "waiting";
+      }
+      
+      // Emitir actualización a todos los jugadores en la sala
       io.to(room.name).emit("updateRoomPlayers", room.players);
       console.log(
         `Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`,
@@ -260,11 +318,26 @@ io.on("connection", (socket) => {
     
     let roomExists = rooms.find((r) => r.name === roomName);
     if (!roomExists) {
-      rooms.push({ 
+      const newRoom = { 
         name: roomName, 
         difficulty: difficulty,
         players: [],
+        status: 'waiting', // 'waiting' or 'playing'
         scores: [],
+      };
+      rooms.push(newRoom);
+      
+      // Automatically join the creator to the room
+      let player = players.find((p) => p.id === socket.id);
+      if (player) {
+        socket.join(roomName);
+        player.room = roomName;
+        player.status = "waiting";
+        newRoom.players.push(player);
+        console.log(`Player ${player.username || socket.id} created and joined room ${roomName}`);
+        // Emitir actualización de jugadores en la sala
+        io.to(roomName).emit("updateRoomPlayers", newRoom.players);
+      }
       });
       io.emit("updateRooms", rooms);
     } else {
@@ -293,10 +366,17 @@ io.on("connection", (socket) => {
     if (room) {
       room.players = room.players.filter((p) => p.id !== socket.id);
       console.log(`Jugador ${socket.id} eliminado de la sala ${roomName}`);
+      
       if (room.players.length === 0) {
         rooms = rooms.filter((r) => r.name !== roomName);
         console.log(`Sala ${roomName} eliminada por estar vacía`);
+      } else {
+        // Si la sala está jugando, mantenerla como 'playing' (no resetear)
+        // Solo notificar a los jugadores restantes
+        io.to(roomName).emit("updateRoomPlayers", room.players);
+        console.log(`Sala ${roomName} mantiene su estado: ${room.status}`);
       }
+      
       io.emit("updateRooms", rooms);
       socket.leave(roomName);
       io.to(roomName).emit("playerLeft", { playerId: socket.id, roomName });
@@ -370,8 +450,10 @@ io.on("connection", (socket) => {
         rooms = rooms.filter((r) => r.name !== room.name);
         console.log(`Sala ${room.name} eliminada por estar vacía`);
       } else if (before !== room.players.length) {
+        // Mantener el estado de la sala (no resetear si está jugando)
         io.to(room.name).emit("updateRoom", room);
-        io.to(room.name).emit("gameStateUpdate", room.players);
+        io.to(room.name).emit("updateRoomPlayers", room.players);
+        console.log(`Sala ${room.name} mantiene su estado: ${room.status}`);
       }
     });
 

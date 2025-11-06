@@ -202,6 +202,12 @@ const uploadImage = async (file) => {
       profileImage.value = `http://localhost:3000${data.imagePath}`;
       showMessage('✅ Foto actualizada correctamente', 'success');
       console.log('Nueva ruta de imagen:', profileImage.value);
+      
+      // Notificar al servidor via socket para actualizar la imagen en el lobby
+      if (gameStore.manager && userId.value) {
+        gameStore.manager.emit('updateProfileImage', userId.value);
+        console.log('Evento updateProfileImage emitido al servidor');
+      }
     } else {
       showMessage('❌ ' + (data.message || 'Error al subir la imagen'), 'error');
       console.error('Error en la respuesta:', data);

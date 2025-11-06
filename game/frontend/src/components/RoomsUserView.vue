@@ -28,11 +28,15 @@
         <button
           v-for="sala in salasFiltradas"
           :key="sala.id"
-          :class="['sala-btn', { selected: sala.id === salaSeleccionada }]"
+          :class="['sala-btn', { selected: sala.id === salaSeleccionada, full: sala.isFull }]"
           @click="seleccionarSala(sala.id)"
+          :disabled="sala.isFull"
         >
           <div class="sala-content">
-            <div class="sala-nombre">{{ sala.nombre }}</div>
+            <div class="sala-nombre">
+              {{ sala.nombre }}
+              <span v-if="sala.isFull" class="full-badge">LLENA</span>
+            </div>
             <div class="sala-playercount player-column">
               <span class="player-count"
                 >{{ sala.jugadores }}/{{ maxJugadoresPorSala }}</span
@@ -67,11 +71,14 @@ const maxJugadoresPorSala = ref(4);
 const salaSeleccionada = ref(null);
 
 const salasFiltradas = computed(() =>
-  gameStore.rooms.map((sala) => ({
-    id: sala.name,
-    nombre: sala.name,
-    jugadores: sala.players.length,
-  })),
+  gameStore.rooms
+    .filter((sala) => sala.status !== 'playing') // Filtrar salas que están jugando
+    .map((sala) => ({
+      id: sala.name,
+      nombre: sala.name,
+      jugadores: sala.players.length,
+      isFull: sala.players.length >= maxJugadoresPorSala.value,
+    })),
 );
 
 const seleccionarSala = (salaId) => {
@@ -252,6 +259,32 @@ onUnmounted(() => {
   font-weight: bolder;
   font-size: 2em;
 }
+
+/* Full room styles */
+.sala-btn.full {
+  background: #d3d3d3;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sala-btn.full:hover {
+  background: #d3d3d3;
+  transform: none;
+}
+
+.full-badge {
+  display: inline-block;
+  background: #ff4444;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  letter-spacing: 1px;
+  box-shadow: 2px 2px 0 #000;
+}
+
 /* Enter game button */
 .unirse-container {
   margin-top: 2rem;
