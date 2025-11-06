@@ -398,6 +398,8 @@ onUnmounted(() => {
 .player-number {
   display: flex; align-items: center; justify-content: center;
   width: 50px; height: 50px;
+  min-width: 50px; /* Ancho mínimo fijo */
+  flex-shrink: 0; /* No permitir que se encoja */
   background-color: #FFD700; color: #000;
   border-radius: 50%;
   font-weight: 900; font-size: 1.5rem; z-index: 2;
@@ -407,7 +409,14 @@ onUnmounted(() => {
   background-color: #999; color: #666; box-shadow: none;
 }
 .player-info {
-  display: flex; align-items: center; gap: 0.75rem; flex: 1; z-index: 2;
+  display: flex; 
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem; 
+  flex: 1; 
+  z-index: 2;
+  min-width: 0; /* Permitir que el contenido se ajuste */
+  overflow: hidden; /* Evitar desbordamiento */
 }
 .player-icon {
   font-size: 1.8rem; color: #fff;
@@ -416,7 +425,14 @@ onUnmounted(() => {
   color: #666;
 }
 .player-name {
-  font-size: 1.4rem; font-weight: 700; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  font-size: 1.4rem; 
+  font-weight: 700; 
+  color: #fff; 
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  white-space: nowrap; /* No permitir saltos de línea */
+  overflow: hidden; /* Ocultar desbordamiento */
+  text-overflow: ellipsis; /* Mostrar ... si es muy largo */
+  max-width: 100%; /* Limitar al ancho disponible */
 }
 .player-card.empty .player-name {
   color: #666; font-style: italic; text-shadow: none;
@@ -428,6 +444,8 @@ onUnmounted(() => {
   justify-content: center;
   width: 50px;
   height: 50px;
+  min-width: 50px; /* Ancho mínimo fijo */
+  flex-shrink: 0; /* No permitir que se encoja */
   border-radius: 50%;
   overflow: hidden;
   background: rgba(255, 215, 0, 0.3);
@@ -473,8 +491,9 @@ onUnmounted(() => {
   font-size: 0.9rem;
   font-weight: 700;
   color: #fff;
-  margin-left: 0.5rem;
   animation: readyPulse 1.5s ease-in-out infinite;
+  white-space: nowrap; /* No permitir saltos de línea */
+  flex-shrink: 0; /* No permitir que se encoja */
 }
 
 @keyframes readyPulse {
