@@ -3,11 +3,18 @@ SET NAMES utf8mb4;
 DROP DATABASE IF EXISTS journalismRacer;
 CREATE DATABASE journalismRacer;
 
-GRANT ALL PRIVILEGES ON ticketing.* TO 'admin'@'%';
+-- Select the database
+-- Give privileges on the created DB to the admin user
+GRANT ALL PRIVILEGES ON journalismRacer.* TO 'admin'@'%';
 FLUSH PRIVILEGES;
 
 USE journalismRacer;
 
+-- Give privileges on the created DB to the admin user
+GRANT ALL PRIVILEGES ON journalismRacer.* TO 'admin'@'%';
+FLUSH PRIVILEGES;
+
+-- Create tables
 CREATE TABLE articles_easy (
     id INT AUTO_INCREMENT PRIMARY KEY,
     text TEXT NOT NULL
@@ -26,11 +33,32 @@ CREATE TABLE articles_hard (
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
-    password VARCHAR(100) NOT NULL
+    password VARCHAR(100) NOT NULL,
+    img VARCHAR(255) DEFAULT NULL
 );
 
+ALTER TABLE users ADD UNIQUE KEY uk_users_username (username);
 
--- Articles Easy
+CREATE TABLE IF NOT EXISTS results (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    username VARCHAR(100) NULL,
+    time_ms INT NOT NULL,
+    errors INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_results_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_results_user_id ON results(user_id);
+CREATE INDEX idx_results_created_at ON results(created_at);
+
+
+SELECT r.*, u.username as nombre_usuario
+FROM results r
+LEFT JOIN users u ON r.user_id = u.id
+ORDER BY r.created_at DESC;
+
+
 INSERT INTO articles_easy (id, text) VALUES
 (1, "la tecnologia digital ha canviat completament la manera com treballem aprenem i ens comuniquem avui les empreses busquen professionals capaços dadaptarse rapidament als canvis constants"),
 (2, "laprenentatge autonom es una de les claus del segle xxi cada persona te al seu abast recursos infinits a internet pero nomes aquells que mantenen la disciplina aconsegueixen progres real"),

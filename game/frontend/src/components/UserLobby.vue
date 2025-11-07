@@ -23,13 +23,24 @@
         <div 
           v-for="(jugador, index) in jugadores" 
           :key="jugador.id"
-          class="player-card"
+          :class="['player-card', { ready: jugador.status === 'ready' }]"
         >
           <span class="pixel-border-card"></span>
           <div class="player-number">{{ index + 1 }}</div>
+          <div class="player-avatar">
+            <img 
+              v-if="jugador.profileImage" 
+              :src="getProfileImageUrl(jugador.profileImage)" 
+              :alt="jugador.username"
+              class="avatar-img"
+            />
+            <i v-else class="fa-solid fa-user player-icon"></i>
+          </div>
           <div class="player-info">
-            <i class="fa-solid fa-user player-icon"></i>
             <span class="player-name">{{ jugador.username }}</span>
+            <span v-if="jugador.status === 'ready'" class="ready-badge">
+              <i class="fa-solid fa-check"></i> LISTO
+            </span>
           </div>
         </div>
         
@@ -48,12 +59,39 @@
       </div>
     </div>
 
+    <!-- Countdown overlay -->
+    <div v-if="showCountdown" class="countdown-overlay">
+      <div class="countdown-number">{{ countdownValue }}</div>
+      <div class="countdown-text">¡Preparados!</div>
+    </div>
+
     <div class="actions">
-      <button class="play-button" @click="iniciarJuego">
+      <button 
+        v-if="!isCurrentPlayerReady"
+        class="ready-button" 
+        @click="toggleReady"
+        :disabled="jugadores.length < maxJugadores"
+      >
         <span class="pixel-border"></span>
-        <span class="button-text">INICIAR JUEGO</span>
+        <span class="button-text">
+          <i class="fa-solid fa-check"></i> ESTOY LISTO
+        </span>
         <div class="button-pixels"></div>
       </button>
+      <button 
+        v-else
+        class="ready-button not-ready" 
+        @click="toggleReady"
+      >
+        <span class="pixel-border"></span>
+        <span class="button-text">
+          <i class="fa-solid fa-xmark"></i> CANCELAR
+        </span>
+        <div class="button-pixels"></div>
+      </button>
+      <div v-if="jugadores.length < maxJugadores" class="waiting-message">
+        Esperando {{ maxJugadores - jugadores.length }} jugador(es) más...
+      </div>
     </div>
   </div>
 </template>
@@ -69,6 +107,10 @@ const gameStore = useGameStore();
 const maxJugadores = ref(4);
 const jugadores = ref([]);
 const nombreSala = computed(() => gameStore.currentRoom || 'Sala');
+const isCurrentPlayerReady = ref(false);
+const showCountdown = ref(false);
+const countdownValue = ref(3);
+let countdownInterval = null;
 
 const slotsVacios = computed(() => {
   return maxJugadores.value - jugadores.value.length;
@@ -88,6 +130,13 @@ const actualizarJugadores = (rooms) => {
 
 // Manejar el botón de volver
 const handleBack = () => {
+  // Limpiar el countdown si existe
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+    showCountdown.value = false;
+  }
+  
   // Notificar al servidor que el jugador está saliendo de la sala
   if (gameStore.currentRoom) {
     console.log(`Saliendo de la sala: ${gameStore.currentRoom}`);
@@ -99,12 +148,41 @@ const handleBack = () => {
   emit('back');
 };
 
-const iniciarJuego = () => {
-  // Emitir al servidor para que todos los jugadores inicien
-  gameStore.manager.emit('gameStart');
-  console.log('Iniciando juego...');
-  // Navegar localmente a GameEngine
-  emit('startGame');
+const toggleReady = () => {
+  isCurrentPlayerReady.value = !isCurrentPlayerReady.value;
+  gameStore.manager.emit('playerReady', isCurrentPlayerReady.value);
+  console.log('Estado listo:', isCurrentPlayerReady.value);
+};
+
+const startCountdown = () => {
+  // Limpiar cualquier countdown anterior
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+  
+  showCountdown.value = true;
+  countdownValue.value = 3;
+  
+  countdownInterval = setInterval(() => {
+    countdownValue.value--;
+    
+    if (countdownValue.value === 0) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+      showCountdown.value = false;
+      // Iniciar el juego
+      emit('startGame');
+    }
+  }, 1000);
+};
+
+// Helper function to get profile image URL
+const getProfileImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  // Si ya es una URL completa, devolverla tal cual
+  if (imagePath.startsWith('http')) return imagePath;
+  // Si es una ruta relativa, construir la URL completa
+  return `http://localhost:3000${imagePath}`;
 };
 
 onMounted(() => {
@@ -120,14 +198,47 @@ onMounted(() => {
   gameStore.manager.on('updateRooms', actualizarJugadores);
   gameStore.manager.on('roomData', actualizarJugadores);
   
-  // Escuchar cuando el servidor emite gameStart (otro jugador inició)
-  gameStore.manager.on('gameStart', () => {
-    console.log('Juego iniciado por otro jugador');
-    emit('startGame');
+  // Escuchar cuando todos están listos y comienza la cuenta regresiva
+  gameStore.manager.on('startCountdown', () => {
+    console.log('Todos los jugadores están listos. Iniciando cuenta regresiva...');
+    startCountdown();
+  });
+  
+  // Actualizar la lista completa de jugadores en tiempo real
+  gameStore.manager.on('updateRoomPlayers', (players) => {
+    console.log('Actualizando jugadores en tiempo real:', players);
+    // Crear una copia profunda para forzar la reactividad
+    jugadores.value = players.map(p => ({
+      id: p.id,
+      username: p.username,
+      userId: p.userId,
+      profileImage: p.profileImage,
+      status: p.status,
+      room: p.room
+    }));
+    
+    // También actualizar el estado del jugador actual
+    const currentPlayer = players.find(p => p.id === gameStore.manager.socket?.id);
+    if (currentPlayer) {
+      isCurrentPlayerReady.value = currentPlayer.status === 'ready';
+    }
+    
+    console.log('Estados de jugadores:', jugadores.value.map(j => ({ username: j.username, status: j.status })));
+  });
+  
+  // Escuchar cuando un jugador abandona la sala
+  gameStore.manager.on('playerLeft', ({ playerId, roomName }) => {
+    console.log(`Jugador ${playerId} abandonó la sala ${roomName}`);
+    // El estado se actualizará automáticamente con updateRoomPlayers
   });
 });
 
 onUnmounted(() => {
+  // Limpiar el countdown si existe
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
   // No eliminar los callbacks, solo dejar de usarlos
   console.log('UserLobby desmontado');
 });
@@ -261,6 +372,27 @@ onUnmounted(() => {
   position: relative; overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+.player-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 215, 0, 0.3);
+  border: 2px solid #FFD700;
+  z-index: 2;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 @keyframes cardPulse {
   0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
   50% { box-shadow: 0 6px 20px rgba(255,140,0,0.4); }
@@ -311,10 +443,141 @@ onUnmounted(() => {
   color: #666; font-style: italic; text-shadow: none;
 }
 
-/* Actions & play button */
-.actions {
-  margin-top: 2rem; display: flex; justify-content: center; z-index: 5;
+.player-card.ready {
+  background-color: rgba(50, 205, 50, 0.95);
+  box-shadow: 0 4px 15px rgba(50, 205, 50, 0.4);
+  animation: readyCardPulse 2s ease-in-out infinite;
 }
+
+.player-card.ready:hover {
+  box-shadow: 0 8px 25px rgba(50, 205, 50, 0.6);
+}
+
+@keyframes readyCardPulse {
+  0%, 100% { 
+    box-shadow: 0 4px 15px rgba(50, 205, 50, 0.4);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 6px 25px rgba(50, 205, 50, 0.8);
+    transform: scale(1.02);
+  }
+}
+
+.ready-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 0.3rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  margin-left: 0.5rem;
+  animation: readyPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes readyPulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  }
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* Countdown overlay */
+.countdown-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.countdown-number {
+  font-size: 15rem;
+  font-weight: 900;
+  color: #FFD700;
+  text-shadow:
+    -3px -3px 0 #000, 0 -3px 0 #000, 3px -3px 0 #000, 3px 0 0 #000,
+    3px 3px 0 #000, 0 3px 0 #000, -3px 3px 0 #000, -3px 0 0 #000,
+    0 0 30px rgba(255, 215, 0, 0.8);
+  animation: countdownScale 1s ease-in-out;
+}
+
+@keyframes countdownScale {
+  0% { 
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.countdown-text {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #FFA500;
+  text-transform: uppercase;
+  margin-top: 2rem;
+  text-shadow:
+    -2px -2px 0 #000, 0 -2px 0 #000, 2px -2px 0 #000, 2px 0 0 #000,
+    2px 2px 0 #000, 0 2px 0 #000, -2px 2px 0 #000, -2px 0 0 #000;
+}
+
+/* Actions & ready button */
+.actions {
+  margin-top: 2rem; 
+  display: flex; 
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  z-index: 5;
+}
+
+.ready-button {
+  padding: 1.2rem 4rem; font-size: 1.6rem; font-weight: 700;
+  color: #fff; background-color: #32CD32; border: none; border-radius: 50px;
+  cursor: pointer; position: relative; overflow: hidden;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  animation: buttonPulse 1.5s ease-in-out infinite;
+}
+
+.ready-button.not-ready {
+  background-color: #FF4444;
+  animation: none;
+}
+
+.waiting-message {
+  color: #FFD700;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-shadow:
+    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
+    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000;
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .play-button {
   padding: 1.2rem 4rem; font-size: 1.6rem; font-weight: 700;
   color: #fff; background-color: #FF8C00; border: none; border-radius: 50px;
@@ -351,6 +614,40 @@ onUnmounted(() => {
   0% { left: -100%; }
   100% { left: 100%; }
 }
+.ready-button:hover {
+  background-color: #3AE03A;
+  transform: translateY(-5px) translateX(-2px);
+  box-shadow: 0 8px 30px rgba(50, 205, 50, 0.6);
+}
+
+.ready-button.not-ready:hover {
+  background-color: #FF5555;
+  box-shadow: 0 8px 30px rgba(255, 68, 68, 0.6);
+}
+
+.ready-button:hover .button-text {
+  animation: textFlicker 0.1s ease-in-out infinite;
+}
+
+.ready-button:active {
+  transform: translateY(2px) translateX(1px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.ready-button:disabled {
+  background-color: #d0d0d0; 
+  color: #666; 
+  cursor: not-allowed;
+  transform: none; 
+  animation: none;
+  opacity: 0.5;
+}
+
+.ready-button:disabled .pixel-border,
+.ready-button:disabled .button-pixels {
+  display: none;
+}
+
 .play-button:hover {
   background-color: #FFA500;
   transform: translateY(-5px) translateX(-2px);

@@ -11,6 +11,10 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
     command: nodemon server.js
     depends_on:
       - db
