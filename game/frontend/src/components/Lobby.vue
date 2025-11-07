@@ -1,34 +1,62 @@
 <template>
   <div class="lobby">
+    <!-- decorative corner image wrapper -->
+    <div class="lobby-decor">
+      <img src="@/img/table-with-coffee3.png" alt="Mesa con café" class="corner-image" />
+    </div>
+
     <div class="scanlines"></div>
     <div class="pixel-stars">
       <div class="pixel-star" v-for="n in 8" :key="n"></div>
     </div>
-    <div class="title-container">
-      <h1 class="title">
-        <span class="word word-1">Lobby</span>
-      </h1>
-    </div>
 
-    <Config />
-    <p class="welcome-text">Bienvenido, {{ gameStore.username }}</p>
+    <!-- main content wrapper: title, inputs, buttons, texts -->
+    <div class="lobby-content">
+      <div class="title-container">
+        <h1 class="title">
+          <span class="word word-1">Lobby</span>
+        </h1>
+      </div>
 
-    <div class="actions">
-      <button class="play-button btn" @click="handleCreateRoom">
-        <span class="button-text">CREAR SALA</span>
-        <span class="pixel-border"></span>
-        <span class="button-pixels"></span>
+      <Config />
+
+      <div v-if="!hasNameSaved" class="name-input-wrapper">
+        <div class="input-group">
+          <input
+            v-model="playerName"
+            type="text"
+            placeholder="Introduce tu nombre"
+            class="name-input"
+            maxlength="20"
+            @keypress="handleKeyPress"
+          />
+          <button class="play-button btn" @click="savePlayerName">
+            <span class="button-text">GUARDAR</span>
+            <span class="pixel-border"></span>
+            <span class="button-pixels"></span>
+          </button>
+        </div>
+      </div>
+
+      <p v-else class="welcome-text">Bienvenido, {{ gameStore.username }}</p>
+
+      <div v-if="hasNameSaved" class="actions">
+        <button class="play-button btn" @click="handleCreateRoom">
+          <span class="button-text">CREAR SALA</span>
+          <span class="pixel-border"></span>
+          <span class="button-pixels"></span>
+        </button>
+        <button class="play-button btn" @click="handleJoinRoom">
+          <span class="button-text">UNIRSE SALA</span>
+          <span class="pixel-border"></span>
+          <span class="button-pixels"></span>
+        </button>
+      </div>
+
+      <button class="back-button" aria-label="Volver" @click="emit('back')">
+        <i class="fa-solid fa-house"></i>
       </button>
-      <button class="play-button btn" @click="handleJoinRoom">
-        <span class="button-text">UNIRSE SALA</span>
-        <span class="pixel-border"></span>
-        <span class="button-pixels"></span>
-      </button>
     </div>
-
-    <button class="back-button" aria-label="Volver" @click="emit('back')">
-      <i class="fa-solid fa-house"></i>
-    </button>
   </div>
 </template>
 
@@ -69,14 +97,6 @@ function handleJoinRoom() {
 </script>
 
 <style scoped>
-
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
-
-body, html {
-  margin: 0; padding: 0; overflow: hidden;
-  font-family: 'Poppins', sans-serif;
-}
-
 .lobby {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   height: 100vh; width: 100%;
@@ -87,48 +107,80 @@ body, html {
   overflow: hidden;
 }
 
-/* Scanlines CRT effect */
-.scanlines {
-  position: fixed; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0,0,0,0.04) 0px,
-    transparent 1px,
-    transparent 2px,
-    rgba(0,0,0,0.04) 3px
-  );
-  animation: scanlineMove 8s linear infinite;
-  z-index: 10;
+/* lobby content & decor wrappers */
+.lobby-decor {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
 }
-@keyframes scanlineMove {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(4px); }
+.lobby-decor .corner-image {
+  max-height: 100vh;
+  object-fit: contain;
 }
 
-/* Pixel stars */
-.pixel-stars {
-  position: absolute; width: 120%; height: 120%;
-  pointer-events: none; z-index: 1;
+.lobby-content {
+  z-index: 5; /* above decor */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding-right: 15%; /* shift content slightly left of center */
 }
-.pixel-star {
-  position: absolute; width: 12px; height: 12px;
-  background: #FFA500;
-  box-shadow: 0 0 10px #FFA500, inset 0 0 5px #fff;
-  animation: pixelStarBlink 1.5s ease-in-out infinite;
+
+@media (max-width: 768px) {
+  .lobby-content { 
+    width: 90%;
+    padding-right: 5%;
+  }
 }
-.pixel-star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
-.pixel-star:nth-child(2) { top: 20%; right: 15%; animation-delay: 0.3s; }
-.pixel-star:nth-child(3) { top: 70%; left: 15%; animation-delay: 0.6s; }
-.pixel-star:nth-child(4) { top: 80%; right: 20%; animation-delay: 0.9s; }
-.pixel-star:nth-child(5) { top: 30%; left: 5%; animation-delay: 0.2s; }
-.pixel-star:nth-child(6) { top: 50%; right: 10%; animation-delay: 0.5s; }
-.pixel-star:nth-child(7) { top: 15%; left: 85%; animation-delay: 0.8s; }
-.pixel-star:nth-child(8) { top: 65%; left: 80%; animation-delay: 0.4s; }
-@keyframes pixelStarBlink {
-  0%,50%,100% { opacity: 1; transform: scale(1) rotate(0deg); }
-  25% { opacity: 0.3; transform: scale(1.3) rotate(45deg); }
-  75% { opacity: 0.5; transform: scale(0.8) rotate(-45deg); }
-}
+
+/* --- scanlines & pixel-stars moved to global.css ---
+   Original rules kept here as comments for reference.
+
+  .scanlines {
+    position: fixed; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.04) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(0,0,0,0.04) 3px
+    );
+    animation: scanlineMove 8s linear infinite;
+    z-index: 10;
+  }
+  @keyframes scanlineMove {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(4px); }
+  }
+
+  .pixel-stars {
+    position: absolute; width: 120%; height: 120%;
+    pointer-events: none; z-index: 1;
+  }
+  .pixel-star {
+    position: absolute; width: 12px; height: 12px;
+    background: #FFA500;
+    box-shadow: 0 0 10px #FFA500, inset 0 0 5px #fff;
+    animation: pixelStarBlink 1.5s ease-in-out infinite;
+  }
+  .pixel-star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+  .pixel-star:nth-child(2) { top: 20%; right: 15%; animation-delay: 0.3s; }
+  .pixel-star:nth-child(3) { top: 70%; left: 15%; animation-delay: 0.6s; }
+  .pixel-star:nth-child(4) { top: 80%; right: 20%; animation-delay: 0.9s; }
+  .pixel-star:nth-child(5) { top: 30%; left: 5%; animation-delay: 0.2s; }
+  .pixel-star:nth-child(6) { top: 50%; right: 10%; animation-delay: 0.5s; }
+  .pixel-star:nth-child(7) { top: 15%; left: 85%; animation-delay: 0.8s; }
+  .pixel-star:nth-child(8) { top: 65%; left: 80%; animation-delay: 0.4s; }
+  @keyframes pixelStarBlink {
+    0%,50%,100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    25% { opacity: 0.3; transform: scale(1.3) rotate(45deg); }
+    75% { opacity: 0.5; transform: scale(0.8) rotate(-45deg); }
+  }
+*/
 
 /* Title with glitch and float */
 .title-container {
@@ -144,8 +196,8 @@ body, html {
   94% { transform: translate(1px,-2px); }
 }
 .title {
-  font-size: 6rem; font-weight: 900; margin: 0;
-  display: flex; flex-direction: column; line-height: 1;
+  font-size: 3rem; margin: 0;
+  display: flex; flex-direction: column; line-height: 1.2;
   text-transform: uppercase;
   animation: titleGlitch 3s infinite, titleFloat 4s ease-in-out infinite;
 }
@@ -184,13 +236,10 @@ body, html {
 
 /* Input group */
 .name-input-wrapper {
-  width: 100%; display: flex; justify-content: center;
+  width: 100%;
   margin: 1rem 0;
-}
-.name-input-container {
-  display: flex; justify-content: center;
-  max-width: 500px; width: 100%;
-  padding: 0 1rem;
+  display: flex;
+  justify-content: center;
 }
 .input-group {
   display: flex; flex-direction: column; align-items: center;
@@ -206,7 +255,7 @@ body, html {
   text-align: center;
   box-sizing: border-box;
   height: 48px;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Press Start 2P', cursive;
 }
 
 /* Submit button */
@@ -242,7 +291,7 @@ body, html {
 
 /* Welcome text */
 .welcome-text {
-  font-size: 1.5rem;
+  font-size: 1rem;
   color: #FF9500;  /* naranja vibrante */
   font-weight: 600;
   margin: 0 0 2rem;
@@ -250,15 +299,23 @@ body, html {
     0 0 4px #FFB347,
     0 0 1px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.03em;
+  align-self: center;
 }
 
-/* Actions container */
+/* Actions container: keep component-specific positioning/layout here so each component can
+   control where buttons appear on screen. Visual/button appearance is in global.css. */
 .actions {
-  display: flex; gap: 6rem; margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 2rem;
+  align-self: center;
 }
+/* Button styles moved to global.css - original Lobby.vue rules preserved here for reference */
+/*
 .btn {
-  padding: 1rem 3rem;
-  font-size: 1.5rem;
+  padding: 1rem 2rem;
+  font-size: 1rem;
   background-color: #FF8C00;
   color: #fff;
   border: none;
@@ -279,8 +336,8 @@ body, html {
   animation: textGlow 1.5s ease-in-out infinite;
 }
 @keyframes buttonPulse {
-  0%,100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1);}
-  50% { box-shadow: 0 6px 25px rgba(255,140,0,0.5);}
+  0%,100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1);} 
+  50% { box-shadow: 0 6px 25px rgba(255,140,0,0.5);} 
 }
 .pixel-border {
   position: absolute;
@@ -328,6 +385,19 @@ body, html {
   transform: translateY(2px) translateX(1px);
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
+*/
+
+/* Corner image moved to global.css - original kept for reference */
+/*
+.corner-image {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  max-height: 100vh;
+  object-fit: contain;
+  z-index: 1;
+}
+*/
 
 /* Back button */
 .back-button {
