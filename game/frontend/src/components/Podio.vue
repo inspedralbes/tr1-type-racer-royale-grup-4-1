@@ -3,69 +3,57 @@
     <div class="panel">
       <h1 class="title">PODIO</h1>
 
-      <div class="podio-grid">
-        <!-- LEFT: podium positions -->
-        <div class="podium-left">
-          <!-- Mostrar en orden: 1 arriba, luego 2, 3, 4 -->
-          <div class="podium-row first">
-            <div class="position large">1</div>
-            <div class="player-name large">{{ winners[0] }}</div>
-          </div>
-
-          <div class="podium-row second">
-            <div class="position">2</div>
-            <div class="player-name">{{ winners[1] }}</div>
-          </div>
-
-          <div class="podium-row third">
-            <div class="position">3</div>
-            <div class="player-name">{{ winners[2] }}</div>
-          </div>
-
-          <div class="podium-row fourth">
-            <div class="position">4</div>
-            <div class="player-name">{{ winners[3] }}</div>
-          </div>
-        </div>
-
-        <!-- RIGHT: statistics / results placeholder -->
-        <div class="podium-right">
-          <div class="stat-block">
-            <div class="stat-title">Resultado general</div>
-            <div class="stat-content"> <!-- Placeholder: reemplazar con datos reales -->
-              <div class="stat-row">
-                <div class="label">Ganador</div>
-                <div class="value">{{ winners[0] }}</div>
+          <div class="podio-grid">
+            <div class="podium-left">
+              <div class="podium-list">
+                <div v-for="(p, idx) in displayedPlayers" :key="p.username || idx" class="podium-row" :class="['rank-' + (idx+1), {first: idx===0}]">
+                  <div class="position" :class="{ large: idx===0 }">{{ idx+1 }}</div>
+                  <div class="player-name">
+                    <div class="name">{{ p.username || '---' }}</div>
+                    <div class="small">Tiempo: {{ formatTime(p.time) }} • Errores: {{ p.errors ?? '-' }} • Artículos: {{ p.articlesDone ?? '-' }}</div>
+                  </div>
+                </div>
               </div>
-              <div class="stat-row">
-                <div class="label">Puntuación</div>
-                <div class="value">{{ stats.score ?? '-' }}</div>
+            </div>
+
+            <div class="podium-right">
+              <div class="stat-block">
+                <div class="stat-title">Tabla de resultados</div>
+                <div class="stat-content">
+                  <div class="stat-row header">
+                    <div class="label">Jugador</div>
+                    <div class="value">Tiempo</div>
+                    <div class="value">Errores</div>
+                    <div class="value">Artículos</div>
+                  </div>
+                  <div v-for="(p, i) in displayedPlayers" :key="p.username + '-' + i" class="stat-row">
+                    <div class="label">{{ i+1 }}. {{ p.username }}</div>
+                    <div class="value">{{ formatTime(p.time) }}</div>
+                    <div class="value">{{ p.errors ?? '-' }}</div>
+                    <div class="value">{{ p.articlesDone ?? '-' }}</div>
+                  </div>
+                  <div v-if="displayedPlayers.length===0" class="stat-row">
+                    <div class="label">—</div>
+                    <div class="value">No hay datos</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stat-block">
+                <div class="stat-title">Resumen</div>
+                <div class="stat-content">
+                  <div class="stat-row">
+                    <div class="label">Ganador</div>
+                    <div class="value">{{ displayedPlayers[0]?.username ?? '-' }}</div>
+                  </div>
+                  <div class="stat-row">
+                    <div class="label">Mejor tiempo</div>
+                    <div class="value">{{ formatTime(displayedPlayers[0]?.time) }}</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
-          <div class="stat-block">
-            <div class="stat-title">Estadísticas</div>
-            <div class="stat-content">
-              <div class="stat-row">
-                <div class="label">Precisión</div>
-                <div class="bar"><div class="bar-fill" :style="{ width: (stats.accuracy || 0) + '%' }"></div></div>
-                <div class="value">{{ stats.accuracy ?? 0 }}%</div>
-              </div>
-              <div class="stat-row">
-                <div class="label">Tiempo</div>
-                <div class="bar"><div class="bar-fill" :style="{ width: (stats.timePercent || 0) + '%' }"></div></div>
-                <div class="value">{{ stats.time ?? '-' }}</div>
-              </div>
-              <div class="stat-row">
-                <div class="label">Otras</div>
-                <div class="bar"><div class="bar-fill" :style="{ width: (stats.otherPercent || 0) + '%' }"></div></div>
-                <div class="value">{{ stats.other ?? '-' }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div class="actions">
         <button class="play-button" @click="$emit('back')">Volver</button>
@@ -74,15 +62,69 @@
     </div>
   </div>
 </template>
-
 <script setup>
+import { computed, onMounted, onBeforeUnmount } from 'vue';
+import { useGameStore } from '@/stores/gameStore.js';
 
-const props = defineProps({
-  // Array esperado: [first, second, third, fourth]
-  winners: { type: Array, default: () => ["---", "---", "---", "---"] },
-  // Estadísticas placeholder, estructura libre por ahora
-  stats: { type: Object, default: () => ({ score: '-', accuracy: 0, time: '-', timePercent: 0, other: '-', otherPercent: 0 }) }
-})
+const emit = defineEmits(['back','playAgain']);
+
+const gameStore = useGameStore();
+
+// Combinar resultados guardados en BD con el contador de artículos por sala
+const displayedPlayers = computed(() => {
+  // results (DB) tiene objetos: { username, time, errors }
+  // roomScore tiene: { username, articlesDone }
+  const byName = {};
+
+  // Priorizar roomScore para articles
+  (gameStore.roomScore || []).forEach((r) => {
+    if (!r) return;
+    byName[r.username] = { username: r.username, articlesDone: r.articlesDone };
+  });
+
+  // Mezclar con results
+  (gameStore.results || []).forEach((res) => {
+    if (!res) return;
+    const name = res.username || res.nombre_usuario || res.user || 'unknown';
+    if (!byName[name]) byName[name] = { username: name };
+    // time in ms
+    byName[name].time = res.time ?? res.time_ms ?? res.ms ?? null;
+    byName[name].errors = res.errors ?? null;
+  });
+
+  // Fall back: si no hay results ni roomScore, intentar usar username local
+  if (Object.keys(byName).length === 0 && gameStore.username) {
+    byName[gameStore.username] = { username: gameStore.username, articlesDone: 0 };
+  }
+
+  // Convertir a array y ordenar por tiempo asc (menor es mejor), luego por articlesDone desc
+  const arr = Object.values(byName);
+  arr.sort((a, b) => {
+    // Si ambos tienen time, ordenar por menor tiempo
+    if (a.time != null && b.time != null) return a.time - b.time;
+    // Si uno tiene artículos, priorizar por artículos completados
+    if ((b.articlesDone || 0) !== (a.articlesDone || 0)) return (b.articlesDone || 0) - (a.articlesDone || 0);
+    return 0;
+  });
+  return arr;
+});
+
+function formatTime(ms) {
+  if (ms == null || ms === undefined) return '-';
+  if (typeof ms !== 'number') return String(ms);
+  const seconds = Math.floor(ms / 1000);
+  const msRem = ms % 1000;
+  return `${seconds}s ${msRem}ms`;
+}
+
+// Registrar listeners que actualizan el store ya lo hace el store internamente.
+onMounted(() => {
+  // no-op: store ya está escuchando eventos en su inicialización
+});
+
+onBeforeUnmount(() => {
+  // Limpieza opcional
+});
 </script>
 
 <style scoped>

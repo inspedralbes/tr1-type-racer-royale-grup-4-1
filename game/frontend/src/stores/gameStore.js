@@ -11,6 +11,7 @@ export const useGameStore = defineStore("rooms", () => {
   const roomFull = ref(false);
   const rooms = ref([]);
   const roomScore = ref([]);
+  const results = ref([]); // resultados guardados en BD (tiempo, errors, username)
 
   // Configurar listeners para eventos de socket
   const setupSocketListeners = () => {
@@ -46,12 +47,20 @@ export const useGameStore = defineStore("rooms", () => {
       roomScore.value = data;
     };
 
+    const handleUpdateLeaderboard = (data) => {
+      console.log("Received updateLeaderboard:", data);
+      if (Array.isArray(data)) {
+        results.value = data;
+      }
+    };
+
     // Configurar listeners
     manager.on("connect", handleConnect);
     manager.on("roomFull", (data) => (roomFull.value = data));
     manager.on("roomData", handleRoomData);
     manager.on("updateRooms", handleUpdateRooms);
     manager.on("leaderboardUpdateInRoom", handleScoresInRoom);
+  manager.on("updateLeaderboard", handleUpdateLeaderboard);
     // Manejar cuando un jugador abandona la sala
     manager.on("playerLeft", ({ playerId, roomName }) => {
       console.log(`Jugador ${playerId} ha abandonado la sala ${roomName}`);
@@ -105,6 +114,7 @@ export const useGameStore = defineStore("rooms", () => {
     username,
     userId,
     rooms,
+    results,
     setUsername,
     setUserId,
     setRoomName,
