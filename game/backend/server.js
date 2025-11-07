@@ -13,10 +13,10 @@ const server = http.createServer(app);
 
 // Configuración de CORS
 const corsOptions = {
-  origin: 'http://localhost:5173', // Asegúrate de que coincida con la URL de tu frontend
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
@@ -25,7 +25,7 @@ const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
   },
 });
 
@@ -48,9 +48,9 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
-  }
+  },
 });
 
 const upload = multer({
@@ -58,24 +58,49 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máximo
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const extname = allowedTypes.test(
+      path.extname(file.originalname).toLowerCase(),
+    );
     const mimetype = allowedTypes.test(file.mimetype);
     if (mimetype && extname) {
       return cb(null, true);
     } else {
       cb(new Error("Solo se permiten imágenes (jpeg, jpg, png, gif, webp)"));
     }
-  }
+  },
 });
 
 // Sirve las imágenes estáticamente
 app.use("/img", express.static(path.join(__dirname, "img")));
 
-// Parse JSON bodies for debug endpoints
-app.use(express.json());
+// Configuración DB
+const mysqlconfig = {
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASS || "",
+  database: process.env.DB_NAME || "typing_game",
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
+};
+
+// Use a connection pool to simplify and stabilize DB access
+const pool = sql.createPool(mysqlconfig);
+
+function connectToDB(callback) {
+  if (callback) callback(pool);
+}
+
+// Quick check of pool connectivity
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.log("Warning: could not get DB connection from pool:", err.message);
+  } else {
+    console.log("DB pool connection OK");
+    connection.release();
+  }
+});
 
 // Debug HTTP endpoint to save a result without using sockets
-app.post('/debug/save-result', (req, res) => {
+app.post("/debug/save-result", (req, res) => {
   const payload = req.body || {};
   const username = payload.username;
   const time = payload.time;
@@ -83,16 +108,17 @@ app.post('/debug/save-result', (req, res) => {
   const user_id = payload.user_id || null;
 
   if (!username || time == null || errors == null) {
-    return res.status(400).json({ ok: false, error: 'INVALID_PAYLOAD' });
+    return res.status(400).json({ ok: false, error: "INVALID_PAYLOAD" });
   }
 
   connectToDB((connection) => {
-    const insertQuery = 'INSERT INTO results (user_id, username, time_ms, errors) VALUES (?, ?, ?, ?)';
+    const insertQuery =
+      "INSERT INTO results (user_id, username, time_ms, errors) VALUES (?, ?, ?, ?)";
     const params = [user_id, username, time, errors];
-    console.log('HTTP debug save-result params:', params);
+    console.log("HTTP debug save-result params:", params);
     connection.execute(insertQuery, params, (err, results) => {
       if (err) {
-        console.log('Error saving via debug endpoint:', err.message);
+        console.log("Error saving via debug endpoint:", err.message);
         return res.status(500).json({ ok: false, error: err.message });
       }
       return res.json({ ok: true, insertId: results.insertId });
@@ -100,7 +126,6 @@ app.post('/debug/save-result', (req, res) => {
   });
 });
 
-//Inject the enviroment variables
 // Estado global
 let players = [];
 let rooms = [];
@@ -122,18 +147,12 @@ io.on("connection", (socket) => {
 
   socket.on("register", (userData) => {
     registerUser(userData.username, userData.password, (ok, payload) => {
-      socket.emit(
-        "registerResult",
-        ok
-          ? { ok: true, userId: payload.userId }
-          : { ok: false, code: payload },
       if (ok) {
-        // Associate this socket/player with the newly created DB user
         const player = players.find((p) => p.id === socket.id);
         if (player) {
           player.userId = payload.userId;
           player.username = userData.username;
-          // Fetch profile image
+
           getUserImage(payload.userId, (imgOk, imgPayload) => {
             if (imgOk && imgPayload.img) {
               player.profileImage = imgPayload.img;
@@ -144,10 +163,6 @@ io.on("connection", (socket) => {
       } else {
         socket.emit("registerResult", { ok: false, code: payload });
       }
-      socket.emit("registerResult", ok
-        ? { ok: true, userId: payload.userId }
-        : { ok: false, code: payload }
-      );
     });
   });
 
@@ -156,33 +171,25 @@ io.on("connection", (socket) => {
       socket.emit("loginResult", { ok: false, code: "INVALID_PAYLOAD" });
       return;
     }
+
     loginUser(userData.username, userData.password, (ok, payload) => {
-      socket.emit(
-        "loginResult",
-        ok
-          ? { ok: true, userId: payload.userId }
-          : { ok: false, code: payload },
       if (ok) {
-        // Associate this socket/player with the logged-in DB user
         const player = players.find((p) => p.id === socket.id);
         if (player) {
           player.userId = payload.userId;
           player.username = userData.username;
-          // Fetch profile image
+
           getUserImage(payload.userId, (imgOk, imgPayload) => {
             if (imgOk && imgPayload.img) {
               player.profileImage = imgPayload.img;
             }
           });
         }
+
         socket.emit("loginResult", { ok: true, userId: payload.userId });
       } else {
         socket.emit("loginResult", { ok: false, code: payload });
       }
-      socket.emit("loginResult", ok
-        ? { ok: true, userId: payload.userId }
-        : { ok: false, code: payload }
-      );
     });
   });
 
@@ -198,13 +205,11 @@ io.on("connection", (socket) => {
   socket.on("updateProfileImage", (userId) => {
     let player = players.find((p) => p.id === socket.id);
     if (!player) return;
-    
-    // Fetch the updated profile image
+
     getUserImage(userId, (imgOk, imgPayload) => {
       if (imgOk && imgPayload.img) {
         player.profileImage = imgPayload.img;
-        
-        // Notify all players in the same room about the update
+
         if (player.room) {
           const room = rooms.find((r) => r.name === player.room);
           if (room) {
@@ -216,7 +221,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("joinRoom", (roomName) => {
-    //Join the room
     socket.join(roomName);
     let room = rooms.find((r) => r.name === roomName);
     if (!room) {
@@ -230,7 +234,7 @@ io.on("connection", (socket) => {
     }
     if (!room.scores.find((s) => s.id === socket.id)) {
       room.scores.push({
-        id: socket.id, // Will need this later to update the user score
+        id: socket.id,
         username: player.username,
         articlesDone: 0,
       });
@@ -251,7 +255,6 @@ io.on("connection", (socket) => {
     io.to(roomName).emit("updateRoomPlayers", room.players);
   });
 
-  //TODO: Change this shit to only send the startGame to the room, or do it elsewhere
   socket.on("gameStart", () => {
     io.emit("gameStart");
   });
@@ -259,26 +262,24 @@ io.on("connection", (socket) => {
   function checkStartGame(room) {
     const allReady = room.players.every((p) => p.status === "ready");
     if (allReady && room.players.length > 1) {
-      console.log(`¡Todos los jugadores están listos en la sala ${room.name}! Iniciando cuenta regresiva...`);
-      
-      // Emitir evento para iniciar la cuenta regresiva
+      console.log(
+        `¡Todos los jugadores están listos en la sala ${room.name}! Iniciando cuenta regresiva...`,
+      );
+
       io.to(room.name).emit("startCountdown");
-      
-      // Después de 3 segundos, cambiar el estado de los jugadores a "playing"
+
       setTimeout(() => {
-        // Marcar la sala como jugando
         room.status = "playing";
-        
-        // Cambiar el estado de los jugadores a playing
-        room.players.forEach((p) => { p.status = "playing"; });
-        
-        // Emitir eventos
+        room.players.forEach((p) => {
+          p.status = "playing";
+        });
+
         io.to(room.name).emit("gameStarted", room.players);
-        
-        // Actualizar la lista de salas para ocultar esta sala
         io.emit("updateRooms", rooms);
-        
-        console.log(`Game started in room: ${room.name} - Status: ${room.status}`);
+
+        console.log(
+          `Game started in room: ${room.name} - Status: ${room.status}`,
+        );
       }, 3000);
     }
   }
@@ -286,18 +287,16 @@ io.on("connection", (socket) => {
   socket.on("playerReady", (isReady) => {
     let player = players.find((p) => p.id === socket.id);
     if (!player) return;
-    
+
     player.status = isReady ? "ready" : "waiting";
     const room = rooms.find((r) => r.name === player.room);
-    
+
     if (room) {
-      // Actualizar el estado del jugador dentro del array de la sala
       const roomPlayer = room.players.find((p) => p.id === socket.id);
       if (roomPlayer) {
         roomPlayer.status = isReady ? "ready" : "waiting";
       }
-      
-      // Emitir actualización a todos los jugadores en la sala
+
       io.to(room.name).emit("updateRoomPlayers", room.players);
       console.log(
         `Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`,
@@ -315,30 +314,29 @@ io.on("connection", (socket) => {
   socket.on("createRoom", (data) => {
     const roomName = data.name;
     const difficulty = data.difficulty;
-    
+
     let roomExists = rooms.find((r) => r.name === roomName);
     if (!roomExists) {
-      const newRoom = { 
-        name: roomName, 
+      const newRoom = {
+        name: roomName,
         difficulty: difficulty,
         players: [],
-        status: 'waiting', // 'waiting' or 'playing'
+        status: "waiting",
         scores: [],
       };
       rooms.push(newRoom);
-      
-      // Automatically join the creator to the room
+
       let player = players.find((p) => p.id === socket.id);
       if (player) {
         socket.join(roomName);
         player.room = roomName;
         player.status = "waiting";
         newRoom.players.push(player);
-        console.log(`Player ${player.username || socket.id} created and joined room ${roomName}`);
-        // Emitir actualización de jugadores en la sala
+        console.log(
+          `Player ${player.username || socket.id} created and joined room ${roomName}`,
+        );
         io.to(roomName).emit("updateRoomPlayers", newRoom.players);
       }
-      });
       io.emit("updateRooms", rooms);
     } else {
       console.log("Room already exists!");
@@ -346,7 +344,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("getArticles", (data) => {
-    const difficulty = rooms.find((r) => r.name === data?.roomName)?.difficulty || 'easy';
+    const difficulty =
+      rooms.find((r) => r.name === data?.roomName)?.difficulty || "easy";
     getArticlesFromDB(difficulty, (articles) => {
       socket.emit("articlesData", articles);
     });
@@ -366,17 +365,15 @@ io.on("connection", (socket) => {
     if (room) {
       room.players = room.players.filter((p) => p.id !== socket.id);
       console.log(`Jugador ${socket.id} eliminado de la sala ${roomName}`);
-      
+
       if (room.players.length === 0) {
         rooms = rooms.filter((r) => r.name !== roomName);
         console.log(`Sala ${roomName} eliminada por estar vacía`);
       } else {
-        // Si la sala está jugando, mantenerla como 'playing' (no resetear)
-        // Solo notificar a los jugadores restantes
         io.to(roomName).emit("updateRoomPlayers", room.players);
         console.log(`Sala ${roomName} mantiene su estado: ${room.status}`);
       }
-      
+
       io.emit("updateRooms", rooms);
       socket.leave(roomName);
       io.to(roomName).emit("playerLeft", { playerId: socket.id, roomName });
@@ -386,16 +383,12 @@ io.on("connection", (socket) => {
   socket.on("articleCompleted", (articlesCompleted) => {
     let player = players.find((p) => p.id === socket.id);
     if (!player || !player.room) return;
-    //When the user joins we set the player.room thus now we can find the room he's in
     let room = rooms.find((r) => r.name === player.room);
     if (!room) return;
 
-    // Find and update the user's score
     let userScore = room.scores.find((s) => s.id === socket.id);
     if (userScore) {
       userScore.articlesDone = articlesCompleted;
-
-      // Broadcast updated scoreboard to everyone in the room
       io.to(player.room).emit("leaderboardUpdateInRoom", room.scores);
     }
   });
@@ -407,29 +400,41 @@ io.on("connection", (socket) => {
       username: userResults.username,
       time: userResults.time,
       errors: userResults.errors,
-    }); 
+    });
     socket.emit("updateLeaderboard", leaderboard);
 
-    // Guardar en la base de datos
-      connectToDB((connection) => {
-        // Preferimos guardar el user_id si el socket tiene un usuario asociado
-        const player = players.find((p) => p.id === socket.id);
-        const userIdToSave = player && player.userId ? player.userId : null;
-        const usernameToSave = player && player.username ? player.username : userResults.username;
-        const insertQuery =
-          "INSERT INTO results (user_id, username, time_ms, errors) VALUES (?, ?, ?, ?)";
+    connectToDB((connection) => {
+      const player = players.find((p) => p.id === socket.id);
+      const userIdToSave = player && player.userId ? player.userId : null;
+      const usernameToSave =
+        player && player.username ? player.username : userResults.username;
+      const insertQuery =
+        "INSERT INTO results (user_id, username, time_ms, errors) VALUES (?, ?, ?, ?)";
 
-        const params = [userIdToSave, usernameToSave, userResults.time, userResults.errors];
-        console.log("Saving userResults to DB", { socketId: socket.id, params, userResults });
-
-        connection.execute(insertQuery, params, (err, results) => {
-          if (err) {
-            console.log("Error guardando resultado:", err.message, err.code || "");
-          } else {
-            console.log("Resultado guardado en BD id=", results.insertId);
-          }
-        });
+      const params = [
+        userIdToSave,
+        usernameToSave,
+        userResults.time,
+        userResults.errors,
+      ];
+      console.log("Saving userResults to DB", {
+        socketId: socket.id,
+        params,
+        userResults,
       });
+
+      connection.execute(insertQuery, params, (err, results) => {
+        if (err) {
+          console.log(
+            "Error guardando resultado:",
+            err.message,
+            err.code || "",
+          );
+        } else {
+          console.log("Resultado guardado en BD id=", results.insertId);
+        }
+      });
+    });
   });
 
   socket.on("disconnect", () => {
@@ -450,7 +455,6 @@ io.on("connection", (socket) => {
         rooms = rooms.filter((r) => r.name !== room.name);
         console.log(`Sala ${room.name} eliminada por estar vacía`);
       } else if (before !== room.players.length) {
-        // Mantener el estado de la sala (no resetear si está jugando)
         io.to(room.name).emit("updateRoom", room);
         io.to(room.name).emit("updateRoomPlayers", room.players);
         console.log(`Sala ${room.name} mantiene su estado: ${room.status}`);
@@ -478,26 +482,31 @@ io.on("connection", (socket) => {
 // ============================================================================
 // RUTAS HTTP - IMÁGENES
 // ============================================================================
-// Ruta para subir imagen de perfil
 app.post("/api/upload-profile-image", upload.single("image"), (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ ok: false, message: "No se recibió ninguna imagen" });
+      return res
+        .status(400)
+        .json({ ok: false, message: "No se recibió ninguna imagen" });
     }
 
     const userId = req.body.userId;
     if (!userId) {
-      // Eliminar archivo subido si no hay userId
       fs.unlinkSync(req.file.path);
-      return res.status(400).json({ ok: false, message: "userId es requerido" });
+      return res
+        .status(400)
+        .json({ ok: false, message: "userId es requerido" });
     }
 
     const imagePath = `/img/${req.file.filename}`;
     updateUserImage(userId, imagePath, (ok, payload) => {
       if (!ok) {
-        // Eliminar archivo subido si falla la actualización
         fs.unlinkSync(req.file.path);
-        return res.status(500).json({ ok: false, message: "Error al actualizar imagen", code: payload });
+        return res.status(500).json({
+          ok: false,
+          message: "Error al actualizar imagen",
+          code: payload,
+        });
       }
 
       res.json({ ok: true, imagePath: payload.img });
@@ -508,96 +517,57 @@ app.post("/api/upload-profile-image", upload.single("image"), (req, res) => {
   }
 });
 
-// Ruta para obtener imagen de perfil
 app.get("/api/get-profile-image/:userId", (req, res) => {
   const userId = req.params.userId;
   getUserImage(userId, (ok, payload) => {
     if (!ok) {
-      return res.status(404).json({ ok: false, message: "Usuario no encontrado", code: payload });
+      return res
+        .status(404)
+        .json({ ok: false, message: "Usuario no encontrado", code: payload });
     }
     res.json({ ok: true, imagePath: payload.img });
   });
 });
 
-// Ruta para obtener información del usuario
 app.get("/api/get-user-info/:userId", (req, res) => {
   const userId = req.params.userId;
   getUserInfo(userId, (ok, payload) => {
     if (!ok) {
-      return res.status(404).json({ ok: false, message: "Usuario no encontrado", code: payload });
+      return res
+        .status(404)
+        .json({ ok: false, message: "Usuario no encontrado", code: payload });
     }
     res.json({ ok: true, username: payload.username, imagePath: payload.img });
   });
 });
 
-// Configuración DB
-const mysqlconfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
-};
-
-let con = null;
-
-// Use a connection pool to simplify and stabilize DB access from multiple socket events.
-const pool = sql.createPool(mysqlconfig);
-
-function connectToDB(callback) {
-  // For compatibility with existing code that expects a `connection` with execute(..., cb)
-  if (callback) callback(pool);
-}
-
-// Quick check of pool connectivity (non-fatal)
-pool.getConnection((err, connection) => {
-  if (err) {
-    console.log("Warning: could not get DB connection from pool:", err.message);
-  } else {
-    console.log("DB pool connection OK");
-    connection.release();
-  }
-});
-
-function connectToDB(callback, retries = 10, delayMs = 2000) {
-  con = sql.createConnection(mysqlconfig);
-  con.connect((err) => {
-    if (err) {
-      console.log("Error connecting to database:", err.message);
-      if (retries > 0) {
-        console.log(
-          `Retrying in ${delayMs / 1000} seconds... (${retries} retries left)`,
-        );
-        setTimeout(() => connectToDB(callback, retries - 1, delayMs), delayMs);
-      } else {
-        console.log("All retries failed. Could not connect to the database.");
-      }
-    } else {
-      console.log("Connection successful!");
-      if (callback) callback(con);
-    }
-  });
-}
-
-// Función para obtener artículos de la base de datos según la dificultad
+// ============================================================================
+// FUNCIONES DE BASE DE DATOS
+// ============================================================================
 function getArticlesFromDB(difficulty, callback) {
-  const validDifficulties = ['easy', 'medium', 'hard'];
-  const tableName = `articles_${validDifficulties.includes(difficulty) ? difficulty : 'easy'}`;
-  
+  const validDifficulties = ["easy", "medium", "hard"];
+  const tableName = `articles_${validDifficulties.includes(difficulty) ? difficulty : "easy"}`;
+
   connectToDB((connection) => {
     connection.query(`SELECT id, text FROM ${tableName}`, (err, results) => {
       if (err) {
-        console.error(`Error obteniendo artículos de la BBDD (${tableName}):`, err);
+        console.error(
+          `Error obteniendo artículos de la BBDD (${tableName}):`,
+          err,
+        );
         return callback([]);
       }
-      callback(results.map(row => ({ id: row.id, text: row.text, completed: false })));
+      callback(
+        results.map((row) => ({
+          id: row.id,
+          text: row.text,
+          completed: false,
+        })),
+      );
     });
   });
 }
 
-// ============================================================================
-// FUNCIONES DE GESTIÓN DE IMÁGENES DE PERFIL
-// ============================================================================
 function getUserImage(userId, done) {
   connectToDB((connection) => {
     const q = "SELECT img FROM users WHERE id = ?";
@@ -620,17 +590,6 @@ function getUserInfo(userId, done) {
     const q = "SELECT username, img FROM users WHERE id = ?";
     connection.execute(q, [userId], (err, rows) => {
       if (err) {
-        console.error("Error obteniendo artículos de la BBDD:", err);
-        callback([]);
-        return;
-      }
-      // Convertir los resultados al formato que espera el frontend
-      const articles = results.map((row) => ({
-        id: row.id,
-        text: row.text,
-        completed: false,
-      }));
-      callback(articles);
         done(false, "DB_ERROR");
         return;
       }
@@ -645,7 +604,6 @@ function getUserInfo(userId, done) {
 
 function updateUserImage(userId, imagePath, done) {
   connectToDB((connection) => {
-    // Primero obtenemos la imagen anterior para eliminarla
     const q1 = "SELECT img FROM users WHERE id = ?";
     connection.execute(q1, [userId], (err, rows) => {
       if (err) {
@@ -654,7 +612,6 @@ function updateUserImage(userId, imagePath, done) {
       }
       const oldImage = rows && rows.length > 0 ? rows[0].img : null;
 
-      // Actualizamos la ruta de la imagen en la BD
       const q2 = "UPDATE users SET img = ? WHERE id = ?";
       connection.execute(q2, [imagePath, userId], (err, results) => {
         if (err) {
@@ -662,12 +619,12 @@ function updateUserImage(userId, imagePath, done) {
           return;
         }
 
-        // Eliminamos la imagen anterior del sistema de archivos si existe
         if (oldImage && oldImage !== imagePath) {
           const oldImagePath = path.join(__dirname, oldImage);
           if (fs.existsSync(oldImagePath)) {
             fs.unlink(oldImagePath, (unlinkErr) => {
-              if (unlinkErr) console.error("Error al eliminar imagen antigua:", unlinkErr);
+              if (unlinkErr)
+                console.error("Error al eliminar imagen antigua:", unlinkErr);
             });
           }
         }
@@ -736,6 +693,4 @@ function loginUser(username, password, done) {
   });
 }
 
-server.listen(3000, () =>
-  console.log("Server running on portakjshdgfhjga+ articles done: 1:3000"),
-);
+server.listen(3000, () => console.log("Server running on port 3000"));
