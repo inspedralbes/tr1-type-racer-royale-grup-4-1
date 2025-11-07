@@ -238,6 +238,8 @@ io.on("connection", (socket) => {
         username: player.username,
         articlesDone: 0,
       });
+      //Try to update the roomScore to this
+      io.to(roomName).emit("leaderboardUpdateInRoom", room.scores);
     }
     if (!room.players.find((p) => p.id === socket.id)) {
       player.room = roomName;
@@ -250,7 +252,6 @@ io.on("connection", (socket) => {
         io.to(roomName).emit("requestReady");
       }
     }
-    io.to(roomName).emit("leaderboardUpdateInRoom", room.scores);
     io.to(roomName).emit("updateRooms", rooms);
     io.to(roomName).emit("updateRoomPlayers", room.players);
   });
@@ -296,7 +297,6 @@ io.on("connection", (socket) => {
       if (roomPlayer) {
         roomPlayer.status = isReady ? "ready" : "waiting";
       }
-
       io.to(room.name).emit("updateRoomPlayers", room.players);
       console.log(
         `Player ${player.username || player.id} set ready=${isReady} in room ${room.name}`,
@@ -329,9 +329,15 @@ io.on("connection", (socket) => {
       let player = players.find((p) => p.id === socket.id);
       if (player) {
         socket.join(roomName);
+        //Since we're insta joining into the room make it so that we also update the score based on this
         player.room = roomName;
         player.status = "waiting";
         newRoom.players.push(player);
+        newRoom.scores.push({
+          id: socket.id,
+          username: player.username,
+          articlesDone: 0,
+        });
         console.log(
           `Player ${player.username || socket.id} created and joined room ${roomName}`,
         );
@@ -437,6 +443,19 @@ io.on("connection", (socket) => {
     });
   });
 
+  //Timeout logic
+  socket.on("timeOut", () => {
+    const player = players.find((p) => p.id === socket.id);
+    //TODO: Make it global instead, each user has the same time that starts
+    //when they first start typing, when they reach the time limit
+    //they emit "timeOut" to this, then emit to the room
+    //that the time has ran out and do something with that event
+    if (player && player.room) {
+      io.to(player.room).emit("timeRanOut");
+      //TODO: Maybe add a current score showcase so that the user's can see who did more
+      //and thus obtain the money this way by who typed more articles in that time
+    }
+  });
   socket.on("disconnect", () => {
     const player = players.find((p) => p.id === socket.id);
     console.log(
