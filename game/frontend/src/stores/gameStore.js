@@ -12,6 +12,10 @@ export const useGameStore = defineStore("rooms", () => {
   const roomFull = ref(false);
   const rooms = ref([]);
   const roomScore = ref([]);
+  
+  // Control de audio global
+  const backgroundMusic = ref(null);
+  const musicVolume = ref(parseInt(localStorage.getItem('musicVolume')) || 30);
 
   // Configurar listeners para eventos de socket
   const setupSocketListeners = () => {
@@ -137,6 +141,18 @@ export const useGameStore = defineStore("rooms", () => {
     console.log("Rooms actualizadas en store:", newRooms);
   }
 
+  function setBackgroundMusic(musicControl) {
+    backgroundMusic.value = musicControl;
+  }
+
+  function setMusicVolume(volume) {
+    musicVolume.value = volume;
+    localStorage.setItem('musicVolume', volume);
+    if (backgroundMusic.value) {
+      backgroundMusic.value.setVolume(volume / 100);
+    }
+  }
+
   const isRoomFull = computed(() => roomFull.value);
 
   return {
@@ -156,5 +172,9 @@ export const useGameStore = defineStore("rooms", () => {
     manager,
     roomFull,
     roomScore,
+    backgroundMusic,
+    musicVolume,
+    setBackgroundMusic,
+    setMusicVolume,
   };
 });

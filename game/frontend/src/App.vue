@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from "vue";
+import { ref, nextTick, onMounted, onUnmounted } from "vue";
 import GameEngine from "./components/GameEngine.vue";
 import MainMenu from "./components/MainMenu.vue";
 import Keyboard from "./components/Keyboard.vue";
@@ -27,6 +27,7 @@ import RoomsUserView from "./components/RoomsUserView.vue";
 import HostCreateLobby from "./components/HostCreateLobby.vue";
 import UserLobby from "./components/UserLobby.vue";
 import MoneyContainer from "./components/MoneyContainer.vue";
+import { useBackgroundMusicAutoplay } from "@/composables/useBackgroundMusicAutoplay.js";
   
 const startGame = ref(false);
 const showMainMenu = ref(false);
@@ -39,6 +40,23 @@ const store = useGameStore();
 const manager = store.manager;
 const showRoomsUserView = ref(false);
 manager.on("gameStart", handleGameStart);
+
+// Inicializar música de fondo con autoplay agresivo
+const musicControl = useBackgroundMusicAutoplay('/music/mainTheme.wav', {
+  volume: store.musicVolume / 100,
+  loop: true,
+  autoplay: true
+});
+
+onMounted(() => {
+  musicControl.init();
+  // Registrar el control de música en el store para acceso global
+  store.setBackgroundMusic(musicControl);
+});
+
+onUnmounted(() => {
+  musicControl.cleanup();
+});
 function handleJoinRoom() {
   showLobby.value = false;
   showRoomsUserView.value = true;

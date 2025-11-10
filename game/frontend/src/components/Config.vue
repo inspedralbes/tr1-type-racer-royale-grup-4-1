@@ -79,7 +79,7 @@ const gameStore = useGameStore();
 
 const isOpen = ref(false);
 const isDarkMode = ref(false);
-const volume = ref(50);
+const volume = ref(gameStore.musicVolume);
 const fileInput = ref(null);
 const isUploading = ref(false);
 const uploadMessage = ref('');
@@ -140,7 +140,8 @@ const toggleDarkMode = () => {
 };
 
 const changeVolume = () => {
-  console.log('Volumen:', volume.value);
+  gameStore.setMusicVolume(volume.value);
+  console.log('Volumen cambiado a:', volume.value);
 };
 
 const openFileSelector = () => {
