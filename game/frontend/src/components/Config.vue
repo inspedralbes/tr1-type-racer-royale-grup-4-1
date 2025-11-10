@@ -113,7 +113,11 @@ const loadUserProfile = () => {
   if (userId.value) {
     console.log('Cargando perfil de usuario para userId:', userId.value);
     // Cargar la información del usuario desde el servidor
-    fetch(`http://localhost:3000/api/get-user-info/${userId.value}`)
+    const apiUrl = import.meta.env.MODE === 'development' 
+      ? 'http://localhost:3000/api/get-user-info' 
+      : '/api/get-user-info';
+    
+    fetch(`${apiUrl}/${userId.value}`)
       .then(response => response.json())
       .then(data => {
         console.log('Respuesta del servidor:', data);
@@ -124,7 +128,10 @@ const loadUserProfile = () => {
           }
           // Construir la URL completa de la imagen si existe
           if (data.imagePath) {
-            profileImage.value = `http://localhost:3000${data.imagePath}`;
+            const baseUrl = import.meta.env.MODE === 'development' 
+              ? 'http://localhost:3000' 
+              : '';
+            profileImage.value = `${baseUrl}${data.imagePath}`;
             console.log('Imagen de perfil cargada:', profileImage.value);
           }
         }
@@ -189,7 +196,11 @@ const uploadImage = async (file) => {
 
     console.log('Enviando FormData al servidor...');
 
-    const response = await fetch('http://localhost:3000/api/upload-profile-image', {  
+    const apiUrl = import.meta.env.MODE === 'development' 
+      ? 'http://localhost:3000/api/upload-profile-image' 
+      : '/api/upload-profile-image';
+
+    const response = await fetch(apiUrl, {  
       method: 'POST',
       body: formData
     });
@@ -199,7 +210,10 @@ const uploadImage = async (file) => {
 
     if (data.ok) {
       // Construir la URL completa de la imagen
-      profileImage.value = `http://localhost:3000${data.imagePath}`;
+      const baseUrl = import.meta.env.MODE === 'development' 
+        ? 'http://localhost:3000' 
+        : '';
+      profileImage.value = `${baseUrl}${data.imagePath}`;
       showMessage('✅ Foto actualizada correctamente', 'success');
       console.log('Nueva ruta de imagen:', profileImage.value);
       
