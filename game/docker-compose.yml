@@ -17,6 +17,7 @@ services:
     command: node server.js
     depends_on:
       - db
+    restart: unless-stopped
 
   db:
     image: mysql:8.0
@@ -25,17 +26,19 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASS}
-      MYSQL_ROOT_PASSWORD: jMw3XxsM
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT}
     volumes:
       - ./db/db_init:/docker-entrypoint-initdb.d # MySQL will run all scripts here at first startup
       - ./db/db_data:/var/lib/mysql
+    restart: unless-stopped
 
   nginx:
     image: nginx:latest
     container_name: nginx
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       - backend
+    restart: unless-stopped
