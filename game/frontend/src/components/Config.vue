@@ -1,19 +1,19 @@
 <template>
   <div>
     <!-- Botón para abrir el popup -->
-    <button class="config-button" aria-label="Configuración" @click="isOpen = true">
+    <button class="config-button" aria-label="Configuración" @click="gameStore.playClickSound(); isOpen = true">
       <i class="fa-solid fa-gear"></i>
     </button>
 
     <!-- Popup -->
     <div v-if="isOpen" class="overlay" @click="isOpen = false">
       <div class="popup" @click.stop>
-        <button class="close-button" @click="isOpen = false">×</button>
+        <button class="close-button" @click="gameStore.playClickSound(); isOpen = false">×</button>
 
         <h3 class="heading">Configuración Usuario</h3>
 
         <!-- Foto de usuario -->
-        <div class="user-photo" @click="openFileSelector">
+        <div class="user-photo" @click="gameStore.playClickSound(); openFileSelector()">
           <img :src="profileImage" alt="Usuario" />
           <div class="loading-overlay" v-if="isUploading">
             <div class="spinner"></div>
@@ -36,7 +36,7 @@
         <h2 class="nombre">{{ username || 'Jugador' }}</h2>
 
         <div class="buttons">
-          <button class="btn" @click="openFileSelector">Cambiar foto</button>
+          <button class="btn" @click="gameStore.playClickSound(); openFileSelector()">Cambiar foto</button>
         </div>
 
         <!-- Mensaje de error/éxito -->

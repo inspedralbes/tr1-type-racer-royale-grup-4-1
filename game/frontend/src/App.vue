@@ -28,6 +28,7 @@ import HostCreateLobby from "./components/HostCreateLobby.vue";
 import UserLobby from "./components/UserLobby.vue";
 import MoneyContainer from "./components/MoneyContainer.vue";
 import { useBackgroundMusicAutoplay } from "@/composables/useBackgroundMusicAutoplay.js";
+import { useSoundEffect } from "@/composables/useSoundEffect.js";
   
 const startGame = ref(false);
 const showMainMenu = ref(false);
@@ -48,10 +49,17 @@ const musicControl = useBackgroundMusicAutoplay('/music/mainTheme.wav', {
   autoplay: true
 });
 
+// Inicializar sonido de clic de botones
+const clickSoundControl = useSoundEffect('/music/clickButton.mp3', {
+  volume: 0.5
+});
+
 onMounted(() => {
   musicControl.init();
-  // Registrar el control de música en el store para acceso global
+  clickSoundControl.init();
+  // Registrar controles de audio en el store para acceso global
   store.setBackgroundMusic(musicControl);
+  store.setClickSound(clickSoundControl);
 });
 
 onUnmounted(() => {

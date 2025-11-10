@@ -14,19 +14,19 @@
     <p class="welcome-text">Bienvenido, {{ gameStore.username }}</p>
 
     <div class="actions">
-      <button class="play-button btn" @click="handleCreateRoom">
+      <button class="play-button btn" @click="gameStore.playClickSound(); handleCreateRoom()">
         <span class="button-text">CREAR SALA</span>
         <span class="pixel-border"></span>
         <span class="button-pixels"></span>
       </button>
-      <button class="play-button btn" @click="handleJoinRoom">
+      <button class="play-button btn" @click="gameStore.playClickSound(); handleJoinRoom()">
         <span class="button-text">UNIRSE SALA</span>
         <span class="pixel-border"></span>
         <span class="button-pixels"></span>
       </button>
     </div>
 
-    <button class="back-button" aria-label="Volver" @click="emit('back')">
+    <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
       <i class="fa-solid fa-house"></i>
     </button>
   </div>

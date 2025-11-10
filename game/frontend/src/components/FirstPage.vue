@@ -17,8 +17,8 @@
 
 
     <div style="display:flex; gap:8px;">
-      <button @click="doRegister">Registrar</button>
-      <button @click="doLogin">Login</button>
+      <button @click="gameStore.playClickSound(); doRegister()">Registrar</button>
+      <button @click="gameStore.playClickSound(); doLogin()">Login</button>
     </div>
   </div>
 </template>

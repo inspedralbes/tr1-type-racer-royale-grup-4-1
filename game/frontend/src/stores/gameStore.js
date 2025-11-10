@@ -16,6 +16,7 @@ export const useGameStore = defineStore("rooms", () => {
   // Control de audio global
   const backgroundMusic = ref(null);
   const musicVolume = ref(parseInt(localStorage.getItem('musicVolume')) || 30);
+  const clickSound = ref(null);
 
   // Configurar listeners para eventos de socket
   const setupSocketListeners = () => {
@@ -153,6 +154,16 @@ export const useGameStore = defineStore("rooms", () => {
     }
   }
 
+  function setClickSound(soundControl) {
+    clickSound.value = soundControl;
+  }
+
+  function playClickSound() {
+    if (clickSound.value) {
+      clickSound.value.play();
+    }
+  }
+
   const isRoomFull = computed(() => roomFull.value);
 
   return {
@@ -176,5 +187,8 @@ export const useGameStore = defineStore("rooms", () => {
     musicVolume,
     setBackgroundMusic,
     setMusicVolume,
+    clickSound,
+    setClickSound,
+    playClickSound,
   };
 });

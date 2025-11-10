@@ -5,7 +5,7 @@
     <img src="@/img/table-with-coffee.png" alt="decor" class="bg-image" />
 
     <!-- Home button -->
-    <button class="back-button" aria-label="Volver" @click="emit('back')">
+    <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
       <i class="fa-solid fa-house"></i>
     </button>
 
@@ -29,7 +29,7 @@
           v-for="sala in salasFiltradas"
           :key="sala.id"
           :class="['sala-btn', { selected: sala.id === salaSeleccionada, full: sala.isFull }]"
-          @click="seleccionarSala(sala.id)"
+          @click="gameStore.playClickSound(); seleccionarSala(sala.id)"
           :disabled="sala.isFull"
         >
           <div class="sala-content">
@@ -52,7 +52,7 @@
       <button
         class="play-button"
         :disabled="!salaSeleccionada"
-        @click="unirseASala"
+        @click="gameStore.playClickSound(); unirseASala()"
       >
         <span class="button-text">ENTER</span>
       </button>
