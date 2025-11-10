@@ -27,9 +27,9 @@ jobs:
             git checkout prod
             git pull origin prod
             cd game
-            docker-compose down
-            docker-compose up -d --build
-            docker-compose ps
+            docker compose down
+            docker compose up -d --build
+            docker compose ps
       
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
@@ -41,11 +41,11 @@ jobs:
           script: |
             cd ${{ secrets.VPS_PROJECT_PATH }}/game
             # Check if all containers are running
-            if [ $(docker-compose ps -q | wc -l) -eq 3 ]; then
+            if [ $(docker compose ps -q | wc -l) -eq 3 ]; then
               echo "All containers are running successfully"
               exit 0
             else
               echo "Some containers failed to start"
-              docker-compose logs --tail=50
+              docker compose logs --tail=50
               exit 1
             fi
