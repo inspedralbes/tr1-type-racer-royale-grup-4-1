@@ -7,26 +7,56 @@ const bcrypt = require("bcrypt");
 const multer = require("multer");
 const fs = require("fs");
 const cors = require("cors");
-
 const app = express();
 const server = http.createServer(app);
 
-// Configuración de CORS
+// CORS configuration based on environment
+const allowedOrigins = [
+  "http://localhost:5173", // Vite dev server
+  "http://localhost", // nginx local
+  "http://127.0.0.1", // alternative localhost
+];
+
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: function (origin, callback) {
+    // In production (behind nginx), allow all origins since nginx handles CORS
+    // In development, check against allowedOrigins
+    if (process.env.NODE_ENV === "production") {
+      callback(null, true);
+    } else if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
 
+// Socket.IO configuration
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      // In production (behind nginx), allow all origins
+      // In development, check against allowedOrigins
+      if (process.env.NODE_ENV === "production") {
+        callback(null, true);
+      } else if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     credentials: true,
   },
+  // Important: these settings help with proxy environments
+  transports: ["websocket", "polling"],
+  allowEIO3: true,
 });
 
 // Middleware para parsear JSON y URL-encoded
@@ -34,7 +64,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Sirve el frontend de Vue
-app.use(express.static(path.join(__dirname, "../frontend/dist")));
+app.use(express.static(path.join(__dirname, "dist")));
 
 // ============================================================================
 // CONFIGURACIÓN DE MULTER PARA IMÁGENES
