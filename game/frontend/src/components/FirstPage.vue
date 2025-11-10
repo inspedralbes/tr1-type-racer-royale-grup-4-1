@@ -46,6 +46,7 @@ function doRegister() {
     if (res.ok) {
       gameStore.setUserId(res.userId);
       gameStore.setUsername(res.username);
+      gameStore.fetchUserMoney();
       console.log('Usuario registrado:', res.username, 'con ID:', res.userId);
       sm.callbacks['registerResult'] = undefined;
       emit('lobby');
@@ -66,6 +67,7 @@ function doLogin() {
     if (res.ok) {
       gameStore.setUserId(res.userId);
       gameStore.setUsername(res.username);
+      gameStore.fetchUserMoney();
       console.log('Usuario logueado:', res.username, 'con ID:', res.userId);
       sm.callbacks['loginResult'] = undefined;
       emit('lobby');

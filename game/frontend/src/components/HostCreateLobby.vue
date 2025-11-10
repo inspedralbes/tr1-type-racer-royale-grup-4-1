@@ -85,7 +85,9 @@ function createRoom() {
   // Emitir al servidor para crear la sala con nombre y dificultad
   gameStore.manager.emit("createRoom", {
     name: name,
-    difficulty: selectedDifficulty.value
+    difficulty: selectedDifficulty.value,
+    userId: gameStore.userId,
+    username: gameStore.username
   });
 
   emit("roomCreated", name);

@@ -88,7 +88,11 @@ const seleccionarSala = (salaId) => {
 const unirseASala = () => {
   if (!salaSeleccionada.value) return;
   gameStore.setRoomName(salaSeleccionada.value);
-  gameStore.manager.emit("joinRoom", salaSeleccionada.value);
+  gameStore.manager.emit("joinRoom", {
+    roomName: salaSeleccionada.value,
+    userId: gameStore.userId,
+    username: gameStore.username
+  });
   emit("joinedRoom");
 };
 

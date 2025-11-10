@@ -1,4 +1,5 @@
 <template>
+  <MoneyContainer v-if="store.userId" />
   <template v-if="!startGame">
     <FirstPage v-if="!showMainMenu && !showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
     <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
@@ -25,6 +26,7 @@ import Config from "./components/Config.vue";
 import RoomsUserView from "./components/RoomsUserView.vue";
 import HostCreateLobby from "./components/HostCreateLobby.vue";
 import UserLobby from "./components/UserLobby.vue";
+import MoneyContainer from "./components/MoneyContainer.vue";
   
 const startGame = ref(false);
 const showMainMenu = ref(false);
