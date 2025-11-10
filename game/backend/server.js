@@ -237,6 +237,7 @@ io.on("connection", (socket) => {
         id: socket.id,
         username: player.username,
         articlesDone: 0,
+        progress: 0, // Porcentaje de caracteres escritos (0-100)
       });
       //Try to update the roomScore to this
       io.to(roomName).emit("leaderboardUpdateInRoom", room.scores);
@@ -337,6 +338,7 @@ io.on("connection", (socket) => {
           id: socket.id,
           username: player.username,
           articlesDone: 0,
+          progress: 0, // Porcentaje de caracteres escritos (0-100)
         });
         console.log(
           `Player ${player.username || socket.id} created and joined room ${roomName}`,
@@ -353,7 +355,9 @@ io.on("connection", (socket) => {
     const difficulty =
       rooms.find((r) => r.name === data?.roomName)?.difficulty || "easy";
     getArticlesFromDB(difficulty, (articles) => {
-      socket.emit("articlesData", articles);
+      // Limitar a 1 artículo para pruebas con progreso por caracteres
+      const singleArticle = articles.slice(0, 1);
+      socket.emit("articlesData", singleArticle);
     });
   });
 
@@ -397,6 +401,44 @@ io.on("connection", (socket) => {
       userScore.articlesDone = articlesCompleted;
       io.to(player.room).emit("leaderboardUpdateInRoom", room.scores);
     }
+  });
+
+  // Actualizar progreso de caracteres en tiempo real
+  socket.on("updateProgress", (data) => {
+    const player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+    const room = rooms.find((r) => r.name === player.room);
+    if (!room) return;
+
+    let userScore = room.scores.find((s) => s.id === socket.id);
+    if (userScore) {
+      userScore.progress = data.progress; // Porcentaje de 0-100
+      io.to(player.room).emit("leaderboardUpdateInRoom", room.scores);
+    }
+  });
+
+  // Notificación de milestone a toda la sala
+  socket.on("playerMilestone", (data) => {
+    const player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+    
+    // Emitir a toda la sala (incluyendo al emisor)
+    io.to(player.room).emit("playerMilestone", {
+      username: player.username,
+      percent: data.percent,
+    });
+  });
+
+  // Notificación de error a toda la sala
+  socket.on("playerError", (data) => {
+    const player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+    
+    // Emitir a toda la sala (incluyendo al emisor)
+    io.to(player.room).emit("playerError", {
+      username: player.username,
+      errorCount: data.errorCount,
+    });
   });
 
   socket.on("userResults", (userResults) => {

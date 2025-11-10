@@ -32,15 +32,14 @@
                 <div class="player-header">
                   <span class="player-name">{{ gameStore.username }}</span>
                   <span class="player-count"
-                    >{{ userScore.articlesDone }}/{{ totalArticles }}</span
+                    >{{ Math.round(currentArticleProgress) }}%</span
                   >
                 </div>
                 <div class="progress-bar-container">
                   <div
                     class="progress-bar-fill"
                     :style="{
-                      width:
-                        getProgressPercentage(userScore.articlesDone) + '%',
+                      width: currentArticleProgress + '%',
                     }"
                   ></div>
                 </div>
@@ -88,7 +87,7 @@
                     >
                   </span>
                   <span class="player-count"
-                    >{{ score.articlesDone }}/{{ totalArticles }}</span
+                    >{{ score.progress || 0 }}%</span
                   >
                 </div>
 
@@ -96,7 +95,7 @@
                   <div
                     class="progress-bar-fill"
                     :style="{
-                      width: getProgressPercentage(score.articlesDone) + '%',
+                      width: (score.progress || 0) + '%',
                     }"
                   ></div>
                 </div>
@@ -110,16 +109,39 @@
         </div>
       </template>
     </div>
+    <!-- Notificaciones pop-up -->
+    <div class="notification-stack">
+      <GameNotification
+        v-for="(notif, i) in notifications"
+        :key="notif.id"
+        :message="notif.message"
+        :duration="notif.duration"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useGameStore } from "../stores/gameStore";
+import GameNotification from "./GameNotification.vue";
 
 const emit = defineEmits(["activeKey", "back"]);
 const gameStore = useGameStore();
 
+// Notificaciones pop-up
+const notifications = ref([]);
+let notifId = 0;
+function pushNotification(message, duration = 3500) {
+  const id = notifId++;
+  notifications.value.push({ id, message, duration });
+  setTimeout(() => {
+    notifications.value = notifications.value.filter((n) => n.id !== id);
+  }, duration + 500);
+}
+
+// Tracking de milestones ya notificados para evitar spam
+const notifiedMilestones = ref(new Set());
 const userScores = computed(() => gameStore.roomScore);
 console.log(userScores);
 const gameState = ref({
@@ -201,6 +223,15 @@ const userScore = computed(() => {
   );
 });
 
+// Porcentaje del artículo actual basado en caracteres escritos
+const currentArticleProgress = computed(() => {
+  if (!currentArticle.value.text || currentArticle.value.text.length === 0) {
+    return 0;
+  }
+  const typedLength = currentArticle.value.inputText?.length || 0;
+  return Math.min((typedLength / currentArticle.value.text.length) * 100, 100);
+});
+
 function getProgressPercentage(articlesDone) {
   if (totalArticles.value === 0) return 0;
   return Math.min((articlesDone / totalArticles.value) * 100, 100);
@@ -243,6 +274,8 @@ function completeArticle(timeTaken) {
   if (nextIndex !== -1) {
     gameState.value.currentIndex = nextIndex;
     textStartTime = 0;
+    // Resetear milestones notificados para el nuevo artículo
+    notifiedMilestones.value.clear();
   } else {
     console.log("Todos los artículos completados");
   }
@@ -271,6 +304,29 @@ watch(
       const targetChar = target[lastIndex];
       if (typedChar && typedChar !== targetChar) {
         gameState.value.totalErrors++;
+        // Notificar a toda la sala cada 3 errores
+        if (gameState.value.totalErrors % 3 === 0) {
+          gameStore.manager.emit("playerError", {
+            errorCount: gameState.value.totalErrors,
+          });
+        }
+      }
+      
+      // Calcular porcentaje del artículo actual basado en caracteres escritos
+      const currentPercent = Math.round((newValue.length / target.length) * 100);
+      
+      // Emitir progreso en tiempo real para actualizar barras de todos
+      gameStore.manager.emit("updateProgress", {
+        progress: currentPercent,
+      });
+      
+      const milestones = [25, 50, 75, 100];
+      
+      // Verificar si alcanzamos un nuevo milestone que no hemos notificado
+      if (milestones.includes(currentPercent) && !notifiedMilestones.value.has(currentPercent)) {
+        notifiedMilestones.value.add(currentPercent);
+        // Emitir evento al backend para que notifique a toda la sala
+        gameStore.manager.emit("playerMilestone", { percent: currentPercent });
       }
     }
   },
@@ -283,6 +339,15 @@ function handleKeyDown(event) {
   if (event.key === "Backspace") {
     article.inputText = article.inputText.slice(0, -1);
   } else if (event.key.length === 1) {
+    // Validación para limitar espacios consecutivos
+    if (event.key === ' ') {
+      // Si el último carácter escrito ya es un espacio, no permitir otro
+      if (article.inputText.length > 0 && article.inputText[article.inputText.length - 1] === ' ') {
+        event.preventDefault();
+        return;
+      }
+    }
+    
     article.inputText += event.key;
     startTimer();
     handleTextInput();
@@ -324,6 +389,15 @@ function handleUserScores(data) {
   gameStore.roomScore = data;
 }
 
+// Listeners para notificaciones de otros jugadores
+gameStore.manager.on("playerMilestone", (data) => {
+  pushNotification(`🎯 ${data.username} ha alcanzado el ${data.percent}%!`, 4000);
+});
+
+gameStore.manager.on("playerError", (data) => {
+  pushNotification(`⚠️ ${data.username} lleva ${data.errorCount} errores`, 3000);
+});
+
 onMounted(() => {
   document.addEventListener("keydown", handleKeyDown);
   loadArticles();
@@ -331,7 +405,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", handleKeyDown);
-  delete gameStore.manager.callbacks["articlesData"];
+  gameStore.manager.off("articlesData");
+  gameStore.manager.off("playerMilestone");
+  gameStore.manager.off("playerError");
   //Cleanup after timer is over
   if (timerInterval.value) {
     clearInterval(timerInterval.value);
@@ -683,5 +759,17 @@ onBeforeUnmount(() => {
     width: 100%;
     max-width: 600px;
   }
+}
+
+/* Notification stack */
+.notification-stack {
+  position: fixed;
+  top: 32px;
+  right: 32px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
 }
 </style>
