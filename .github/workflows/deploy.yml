@@ -1,0 +1,51 @@
+name: Deploy to Production VPS
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            cd ${{ secrets.VPS_PROJECT_PATH }}
+            git fetch origin
+            git checkout prod
+            git pull origin prod
+            cd game
+            docker-compose down
+            docker-compose up -d --build
+            docker-compose ps
+      
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            cd ${{ secrets.VPS_PROJECT_PATH }}/game
+            # Check if all containers are running
+            if [ $(docker-compose ps -q | wc -l) -eq 3 ]; then
+              echo "All containers are running successfully"
+              exit 0
+            else
+              echo "Some containers failed to start"
+              docker-compose logs --tail=50
+              exit 1
+            fi
