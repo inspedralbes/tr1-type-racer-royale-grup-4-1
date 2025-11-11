@@ -1,31 +1,64 @@
 <template>
   <div class="first-page">
-    <Config />
-    
-    <div class="scanlines"></div>
+    <div
+      v-if="isNewspaperVisible"
+      :class="['newspaper-layer', { 'hidden-content': !isNewspaperVisible }]"
+    >
+      <img
+        src="@/img/jhorunalismpaper.png"
+        alt="Portada de Journalism Race"
+        class="newspaper-image"
+      />
+      <button class="contract-overlay" @click="fillContract">Omplir contracte</button>
+      <button class="login-overlay" @click="openBadge">Entrar a l'oficina</button>
+    </div>
 
-    <div class="title-container">
-      <div class="pixel-stars">
-        <div class="pixel-star" v-for="n in 8" :key="n"></div>
+    <Transition name="badge-slide">
+      <div v-if="isBadgeVisible" class="badge-wrapper">
+        <div class="badge-content">
+          <img
+            src="@/img/carnetid.png"
+            alt="Carnet identificatiu"
+            class="badge-image"
+          />
+
+          <form class="badge-form" @submit.prevent="submitLogin">
+            <input
+              id="badge-username"
+              class="badge-input"
+              type="text"
+              v-model="username"
+              autocomplete="username"
+              placeholder="Escriu el teu usuari"
+            />
+
+            <input
+              id="badge-password"
+              class="badge-input"
+              type="text"
+              v-model="password"
+              autocomplete="current-password"
+              placeholder="Escriu la contrasenya"
+            />
+          </form>
+        </div>
+
+        <button
+          type="button"
+          class="badge-submit"
+          :disabled="isSubmitting"
+          @click="submitLogin"
+        >
+          <i class="fas fa-angle-right"></i>
+        </button>
       </div>
-      
-      <h1 class="title">
-        <span class="word word-1">JOURNALISM</span>
-        <span class="word word-2">RUN!</span>
-      </h1>
-    </div>
-
-
-    <div style="display:flex; gap:8px;">
-      <button @click="gameStore.playClickSound(); doRegister()">Registrar</button>
-      <button @click="gameStore.playClickSound(); doLogin()">Login</button>
-    </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
-import Config from "./Config.vue";
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+// import Config from "./Config.vue";
 import SocketManager from "../../services/socketManager";
 import { useGameStore } from '../stores/gameStore';
 
@@ -33,8 +66,37 @@ const emit = defineEmits(['lobby']);
 const gameStore = useGameStore();
 const sm = new SocketManager();
 
+const isNewspaperVisible = ref(true);
+const isBadgeVisible = ref(false);
+const username = ref('');
+const password = ref('');
+const isSubmitting = ref(false);
+
+const loginResultHandler = (res) => {
+  isSubmitting.value = false;
+
+  if (res?.ok) {
+    const cleanUsername = username.value.trim();
+    gameStore.setUserId(res.userId);
+    if (cleanUsername) {
+      gameStore.setUsername(cleanUsername);
+      sm.emit('saveUsername', cleanUsername);
+    }
+
+    isBadgeVisible.value = false;
+    isNewspaperVisible.value = true;
+    username.value = '';
+    password.value = '';
+
+    emit('lobby');
+  } else {
+    console.warn('Error de login:', res?.code || 'desconegut');
+  }
+};
+
 onMounted(() => {
   if (!sm.socket) sm.connect();
+  sm.on('loginResult', loginResultHandler);
 });
 
 function doRegister() {
@@ -78,6 +140,37 @@ function doLogin() {
   });
   sm.emit('login', { username, password });
 }
+
+onBeforeUnmount(() => {
+  if (sm.callbacks['loginResult'] === loginResultHandler) {
+    delete sm.callbacks['loginResult'];
+  }
+});
+
+function openBadge() {
+  isNewspaperVisible.value = false;
+  isBadgeVisible.value = true;
+  isSubmitting.value = false;
+  username.value = gameStore.username || '';
+  password.value = '';
+}
+
+function submitLogin() {
+  const user = username.value.trim();
+  const pass = password.value.trim();
+
+  if (!user || !pass) {
+    console.warn('Campos incompletos en el formulario de acceso');
+    return;
+  }
+
+  isSubmitting.value = true;
+  sm.emit('login', { username: user, password: pass });
+}
+
+function fillContract() {
+  alert('¡Contrato en construcción! Próximamente podrás completarlo.');
+}
 </script>
 
 <style scoped>
@@ -105,6 +198,16 @@ function doLogin() {
   width: 100%;
   height: 100vh;
   overflow: hidden;
+}
+
+.newspaper-layer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.hidden-content {
+  display: none !important;
 }
 
 /* --- ANIMACIONES Y EFECTOS VISUALES ORIGINALES (COLORES ADAPTADOS) --- */
@@ -399,4 +502,220 @@ function doLogin() {
     height: 8px;
   }
 }
+.newspaper-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  z-index: 5;
+  opacity: 0;
+  animation: riseUpCentered 0.8s ease-out forwards;
+}
+
+.login-overlay {
+  position: absolute;
+  width: 30vw;
+  max-width: 380px;
+  min-width: 220px;
+  height: 4.5rem;
+  top: 83%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(93, 60, 28, 0.95);
+  border: none;
+  border-radius: 2.5rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f7efdc;
+  cursor: pointer;
+  box-shadow: 0 12px 25px rgba(93, 61, 28, 0.186);
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+  z-index: 6;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  opacity: 0;
+  animation: riseUpCentered 0.8s ease-out forwards;
+}
+
+.login-overlay:hover {
+  transform: translate(-50%, -50%) scale(1.03);
+  box-shadow: 0 18px 32px rgba(93, 61, 28, 0.264);
+}
+
+.login-overlay:active {
+  transform: translate(-50%, -50%) scale(0.98);
+  box-shadow: 0 8px 18px rgba(93, 60, 28, 0.35);
+}
+
+.contract-overlay {
+  position: absolute;
+  width: 22vw;
+  max-width: 260px;
+  min-width: 180px;
+  height: 3.8rem;
+  top: 40%;
+  left: 34%;
+  transform: translate(-50%, -50%) rotate(-7deg);
+  background: rgba(255, 224, 86, 0.92);
+  border: none;
+  border-radius: 1.2rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #7a5217;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.08rem;
+  z-index: 6;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  opacity: 0;
+  animation: riseUpStick 0.8s ease-out forwards;
+}
+
+.contract-overlay:hover {
+  transform: translate(-50%, -50%) rotate(-7deg) scale(1.04);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+.contract-overlay:active {
+  transform: translate(-50%, -50%) rotate(-7deg) scale(0.98);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+@keyframes riseUpCentered {
+  0% {
+    transform: translate(-50%, 10%);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+@keyframes riseUpStick {
+  0% {
+    transform: translate(-50%, -20%) rotate(-7deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(-7deg);
+    opacity: 1;
+  }
+}
+
+.badge-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 0;
+}
+
+.badge-content {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.badge-image {
+  width: clamp(460px, 70vw, 620px);
+  max-height: 100vh;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.28));
+  transform: translateY(-40px);
+}
+
+.badge-form {
+  position: absolute;
+  top: 78%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: clamp(220px, 32vw, 340px);
+}
+
+.badge-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #5d3c1c;
+  text-align: left;
+}
+
+.badge-input {
+  padding: 0.7rem 0.9rem;
+  border: 2px solid #5d3c1c;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  color: #5d3c1c;
+  width: 58%;
+  margin-bottom: 10%;
+  transform: translate(20%, -50%);
+
+}
+
+.badge-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(93, 60, 28, 0.25);
+}
+
+.badge-error {
+  margin: 0.25rem 0 0;
+  color: #c0392b;
+  font-weight: 600;
+  text-align: center;
+}
+
+.badge-submit {
+  position: absolute;
+  right: clamp(40px, 10vw, 120px);
+  top: 55%;
+ 
+  transform: translateX(-300%);
+  width: clamp(60px, 8vw, 90px);
+  height: clamp(60px, 8vw, 90px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #8BA59B;
+  color: #f7efdc;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 12px 22px rgba(93, 60, 28, 0.32);
+}
+
+
+.badge-submit i {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.badge-slide-enter-active,
+.badge-slide-leave-active {
+  transition: transform 0.6s ease, opacity 0.6s ease;
+}
+
+.badge-slide-enter-from,
+.badge-slide-leave-to {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+.badge-slide-enter-to,
+.badge-slide-leave-from {
+  transform: translateX(0);
+  opacity: 1;
+}
 </style>
+

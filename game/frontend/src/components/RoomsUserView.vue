@@ -1,9 +1,6 @@
 <template>
   <Config />
   <div class="salas-container">
-    <!-- Decorative image -->
-    <img src="@/img/table-with-coffee.png" alt="decor" class="bg-image" />
-
     <!-- Home button -->
     <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
       <i class="fa-solid fa-house"></i>

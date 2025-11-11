@@ -13,6 +13,19 @@
         <div class="game-layout">
           <!-- User Scoreboard (Left side) -->
           <div class="user-scoreboard">
+            <div
+              class="timer-container"
+              :class="{ 'timer-warning': timeRemaining <= 30 }"
+            >
+              <div class="timer-icon">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+              <div class="timer-display">
+                <span class="timer-minutes">{{ formattedMinutes }}</span>
+                <span class="timer-separator">:</span>
+                <span class="timer-seconds">{{ formattedSeconds }}</span>
+              </div>
+            </div>
             <h3 class="user-scoreboard-title">Tu Progreso</h3>
             <div class="user-scoreboard-content">
               <div class="player-entry current-user">
@@ -108,7 +121,7 @@ const emit = defineEmits(["activeKey", "back"]);
 const gameStore = useGameStore();
 
 const userScores = computed(() => gameStore.roomScore);
-
+console.log(userScores);
 const gameState = ref({
   articles: [],
   currentIndex: 0,
@@ -117,6 +130,42 @@ const gameState = ref({
   completedArticles: 0,
 });
 
+// Timer state
+const timeRemaining = ref(60); // 120 seconds
+const timerInterval = ref(null);
+
+const formattedMinutes = computed(() => {
+  const minutes = Math.floor(timeRemaining.value / 60);
+  return String(minutes).padStart(2, "0");
+});
+
+const formattedSeconds = computed(() => {
+  const seconds = timeRemaining.value % 60;
+  return String(seconds).padStart(2, "0");
+});
+
+function startCountdown() {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+  }
+
+  timerInterval.value = setInterval(() => {
+    if (timeRemaining.value > 0) {
+      timeRemaining.value--;
+    } else {
+      clearInterval(timerInterval.value);
+      handleTimeout();
+    }
+  }, 1000);
+}
+
+function handleTimeout() {
+  console.log("Time's up!");
+  gameStore.manager.emit("timeOut");
+
+  // Optional: You can add additional logic here
+  // For example, disable input or show a message
+}
 const currentArticle = computed(() => {
   return (
     gameState.value.articles[gameState.value.currentIndex] || {
@@ -258,6 +307,8 @@ function loadArticles() {
         completed: false,
       }));
       gameState.value.isLoading = false;
+      //Upon loading the articles it will start the countdown
+      startCountdown();
     } else {
       gameState.value.isLoading = false;
     }
@@ -269,6 +320,7 @@ function loadArticles() {
 gameStore.manager.on("leaderboardUpdateInRoom", handleUserScores);
 
 function handleUserScores(data) {
+  console.log("scores have been retireved!", data);
   gameStore.roomScore = data;
 }
 
@@ -280,6 +332,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", handleKeyDown);
   delete gameStore.manager.callbacks["articlesData"];
+  //Cleanup after timer is over
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+  }
 });
 </script>
 
@@ -387,7 +443,73 @@ onBeforeUnmount(() => {
   background: #fffef8;
   box-shadow: 6px 6px 0 #000;
 }
+/* Timer Styles */
+.timer-container {
+  background-color: white;
+  color: black;
+  border: 3px solid #000;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 4px 4px 0 #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
 
+.timer-container.timer-warning {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.timer-icon {
+  font-size: 2rem;
+  color: black;
+}
+
+.timer-display {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: "Courier New", monospace;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: black;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.timer-minutes,
+.timer-seconds {
+  min-width: 2ch;
+  text-align: center;
+}
+
+.timer-separator {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.3;
+  }
+}
 /* Scoreboard Styles */
 .scoreboard {
   width: 250px;
