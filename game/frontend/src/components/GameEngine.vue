@@ -75,7 +75,10 @@
                 v-for="(score, index) in sortedScores"
                 :key="score.id || index"
                 class="player-entry"
-                :class="{ 'is-leader': index === 0 && getAggregatePercentForScore(score) > 0 }"
+                :class="{
+                  'is-leader':
+                    index === 0 && getAggregatePercentForScore(score) > 0,
+                }"
               >
                 <div class="player-header">
                   <span class="player-name">
@@ -153,7 +156,7 @@ const gameState = ref({
 });
 
 // Timer state
-const timeRemaining = ref(60); // 120 seconds
+const timeRemaining = ref(120); // 120 seconds
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {
@@ -184,9 +187,6 @@ function startCountdown() {
 function handleTimeout() {
   console.log("Time's up!");
   gameStore.manager.emit("timeOut");
-
-  // Optional: You can add additional logic here
-  // For example, disable input or show a message
 }
 const currentArticle = computed(() => {
   return (
@@ -218,7 +218,7 @@ const sortedScores = computed(() => {
     if (pb !== pa) return pb - pa; // mayor porcentaje primero
     const ad = (b.articlesDone || 0) - (a.articlesDone || 0);
     if (ad !== 0) return ad;
-    return (a.username || '').localeCompare(b.username || '');
+    return (a.username || "").localeCompare(b.username || "");
   });
 });
 
@@ -272,7 +272,50 @@ function startTimer() {
 }
 
 function handleTextInput() {
-  if (currentArticle.value.inputText === currentArticle.value.text) {
+  const article = currentArticle.value;
+  if (!article) return;
+
+  // Track errors as before
+  const target = article.text;
+  const newValue = article.inputText;
+  const oldValue = newValue.slice(0, -1);
+
+  if (newValue.length > oldValue.length) {
+    const lastIndex = newValue.length - 1;
+    const typedChar = newValue[lastIndex];
+    const targetChar = target[lastIndex];
+    if (typedChar && typedChar !== targetChar) {
+      gameState.value.totalErrors++;
+      if (gameState.value.totalErrors % 3 === 0) {
+        gameStore.manager.emit("playerError", {
+          errorCount: gameState.value.totalErrors,
+        });
+      }
+    }
+
+    const currentPercent = Math.round((newValue.length / target.length) * 100);
+
+    if (currentPercent < 100) {
+      gameStore.manager.emit("updateProgress", {
+        progress: currentPercent,
+      });
+    }
+
+    const milestones = [25, 50, 75, 100];
+    if (
+      milestones.includes(currentPercent) &&
+      !notifiedMilestones.value.has(currentPercent)
+    ) {
+      notifiedMilestones.value.add(currentPercent);
+      gameStore.manager.emit("playerMilestone", {
+        percent: currentPercent,
+        articleNumber: gameState.value.currentIndex + 1,
+      });
+    }
+  }
+
+  // ✅ Complete article when typed length reaches target length, ignoring mistakes
+  if (article.inputText.length >= article.text.length) {
     const timeTaken = Date.now() - textStartTime;
     completeArticle(timeTaken);
   }
@@ -337,10 +380,12 @@ watch(
           });
         }
       }
-      
+
       // Calcular porcentaje del artículo actual basado en caracteres escritos
-      const currentPercent = Math.round((newValue.length / target.length) * 100);
-      
+      const currentPercent = Math.round(
+        (newValue.length / target.length) * 100,
+      );
+
       // Emitir progreso en tiempo real para actualizar barras de todos
       // Evitar emitir 100% porque el evento de completar artículo resetea el progreso a 0
       if (currentPercent < 100) {
@@ -348,14 +393,20 @@ watch(
           progress: currentPercent,
         });
       }
-      
+
       const milestones = [25, 50, 75, 100];
-      
+
       // Verificar si alcanzamos un nuevo milestone que no hemos notificado
-      if (milestones.includes(currentPercent) && !notifiedMilestones.value.has(currentPercent)) {
+      if (
+        milestones.includes(currentPercent) &&
+        !notifiedMilestones.value.has(currentPercent)
+      ) {
         notifiedMilestones.value.add(currentPercent);
         // Emitir evento al backend para que notifique a toda la sala
-        gameStore.manager.emit("playerMilestone", { percent: currentPercent, articleNumber: gameState.value.currentIndex + 1 });
+        gameStore.manager.emit("playerMilestone", {
+          percent: currentPercent,
+          articleNumber: gameState.value.currentIndex + 1,
+        });
       }
     }
   },
@@ -369,14 +420,17 @@ function handleKeyDown(event) {
     article.inputText = article.inputText.slice(0, -1);
   } else if (event.key.length === 1) {
     // Validación para limitar espacios consecutivos
-    if (event.key === ' ') {
+    if (event.key === " ") {
       // Si el último carácter escrito ya es un espacio, no permitir otro
-      if (article.inputText.length > 0 && article.inputText[article.inputText.length - 1] === ' ') {
+      if (
+        article.inputText.length > 0 &&
+        article.inputText[article.inputText.length - 1] === " "
+      ) {
         event.preventDefault();
         return;
       }
     }
-    
+
     article.inputText += event.key;
     startTimer();
     handleTextInput();
@@ -421,14 +475,23 @@ function handleUserScores(data) {
 // Listeners para notificaciones de otros jugadores
 gameStore.manager.on("playerMilestone", (data) => {
   if (data.percent === 100) {
-    pushNotification(`� ${data.username} ha completado el artículo ${data.articleNumber}`, 4500);
+    pushNotification(
+      `� ${data.username} ha completado el artículo ${data.articleNumber}`,
+      4500,
+    );
   } else {
-    pushNotification(`�🎯 ${data.username} ha alcanzado el ${data.percent}% del artículo ${data.articleNumber}`, 4000);
+    pushNotification(
+      `�🎯 ${data.username} ha alcanzado el ${data.percent}% del artículo ${data.articleNumber}`,
+      4000,
+    );
   }
 });
 
 gameStore.manager.on("playerError", (data) => {
-  pushNotification(`⚠️ ${data.username} lleva ${data.errorCount} errores`, 3000);
+  pushNotification(
+    `⚠️ ${data.username} lleva ${data.errorCount} errores`,
+    3000,
+  );
 });
 
 onMounted(() => {
