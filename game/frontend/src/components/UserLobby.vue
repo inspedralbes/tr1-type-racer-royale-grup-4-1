@@ -139,7 +139,9 @@ import { useGameStore } from '../stores/gameStore';
 const emit = defineEmits(['back', 'startGame']);
 const gameStore = useGameStore();
 
-const maxJugadores = ref(4);
+// CÓDIGO ANTERIOR: const maxJugadores = ref(4);
+// MODIFICADO: Ahora se obtiene dinámicamente de la sala actual
+const maxJugadores = ref(4); // Default value, se actualiza en actualizarJugadores
 const jugadores = ref([]);
 const nombreSala = computed(() => gameStore.currentRoom || 'Sala');
 const isCurrentPlayerReady = ref(false);
@@ -162,6 +164,9 @@ const actualizarJugadores = (rooms) => {
   const salaActual = rooms.find(r => r.name === gameStore.currentRoom);
   if (salaActual) {
     jugadores.value = [...salaActual.players];
+    // CÓDIGO ANTERIOR: maxJugadores era siempre 4
+    // MODIFICADO: Ahora se actualiza con el maxPlayers de la sala (con fallback a 4)
+    maxJugadores.value = salaActual.maxPlayers || 4;
   } else {
     // Si la sala ya no existe, volver al lobby
     emit('back');

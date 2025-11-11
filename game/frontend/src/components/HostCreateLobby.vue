@@ -34,6 +34,19 @@
         <option value="hard">Difícil</option>
       </select>
     </div>
+    
+    <div class="difficulty-container">
+      <label class="difficulty-label">Jugadores:</label>
+      <select 
+        v-model="maxPlayers" 
+        class="difficulty-select"
+      >
+        <option :value="2">2 jugadores</option>
+        <option :value="3">3 jugadores</option>
+        <option :value="4">4 jugadores</option>
+        <option :value="5">5 jugadores</option>
+      </select>
+    </div>
     <br><br>
     <div class="button-container">
       <button class="play-button btn" @click="gameStore.playClickSound(); goBack()">
@@ -67,6 +80,7 @@ const gameStore = useGameStore();
 
 const roomName = ref("");
 const selectedDifficulty = ref("easy");
+const maxPlayers = ref(4); // Por defecto 4 jugadores
 
 function goBack() {
   // Emit the backToLobby event and ensure we're showing the Lobby view
@@ -82,10 +96,11 @@ function createRoom() {
     return;
   }
 
-  // Emitir al servidor para crear la sala con nombre y dificultad
+  // Emitir al servidor para crear la sala con nombre, dificultad, maxPlayers, userId y username
   gameStore.manager.emit("createRoom", {
     name: name,
     difficulty: selectedDifficulty.value,
+    maxPlayers: maxPlayers.value,
     userId: gameStore.userId,
     username: gameStore.username
   });
