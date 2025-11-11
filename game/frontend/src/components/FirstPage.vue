@@ -30,16 +30,20 @@
               v-model="username"
               autocomplete="username"
               placeholder="Escriu el teu usuari"
+              :disabled="isSubmitting"
             />
 
             <input
               id="badge-password"
               class="badge-input"
-              type="text"
+              type="password"
               v-model="password"
               autocomplete="current-password"
               placeholder="Escriu la contrasenya"
+              :disabled="isSubmitting"
             />
+
+            <p v-if="errorMessage" class="badge-error">{{ errorMessage }}</p>
           </form>
         </div>
 
@@ -48,6 +52,51 @@
           class="badge-submit"
           :disabled="isSubmitting"
           @click="submitLogin"
+        >
+          <i class="fas fa-angle-right"></i>
+        </button>
+      </div>
+    </Transition>
+
+    <Transition name="badge-slide">
+      <div v-if="isRegisterVisible" class="badge-wrapper">
+        <div class="badge-content">
+          <img
+            src="@/img/carnetid.png"
+            alt="Contracte de registre"
+            class="badge-image"
+          />
+
+          <form class="badge-form" @submit.prevent="submitRegister">
+            <input
+              id="register-username"
+              class="badge-input"
+              type="text"
+              v-model="registerUsername"
+              autocomplete="username"
+              placeholder="Escriu el teu usuari"
+              :disabled="isSubmitting"
+            />
+
+            <input
+              id="register-password"
+              class="badge-input"
+              type="password"
+              v-model="registerPassword"
+              autocomplete="new-password"
+              placeholder="Escriu la contrasenya"
+              :disabled="isSubmitting"
+            />
+
+            <p v-if="errorMessage" class="badge-error">{{ errorMessage }}</p>
+          </form>
+        </div>
+
+        <button
+          type="button"
+          class="badge-submit"
+          :disabled="isSubmitting"
+          @click="submitRegister"
         >
           <i class="fas fa-angle-right"></i>
         </button>
@@ -68,9 +117,13 @@ const sm = new SocketManager();
 
 const isNewspaperVisible = ref(true);
 const isBadgeVisible = ref(false);
+const isRegisterVisible = ref(false);
 const username = ref('');
 const password = ref('');
+const registerUsername = ref('');
+const registerPassword = ref('');
 const isSubmitting = ref(false);
+const errorMessage = ref('');
 
 const loginResultHandler = (res) => {
   isSubmitting.value = false;
@@ -87,16 +140,55 @@ const loginResultHandler = (res) => {
     isNewspaperVisible.value = true;
     username.value = '';
     password.value = '';
+    errorMessage.value = '';
 
+    console.log('✅ Login exitoso:', cleanUsername);
     emit('lobby');
   } else {
-    console.warn('Error de login:', res?.code || 'desconegut');
+    errorMessage.value = res?.code === 'INVALID_CREDENTIALS' 
+      ? 'Usuario o contraseña incorrectos'
+      : res?.code === 'USER_NOT_FOUND'
+      ? 'Usuario no encontrado'
+      : 'Error al iniciar sesión. Intenta de nuevo.';
+    console.warn('❌ Error de login:', res?.code || 'desconocido');
+  }
+};
+
+const registerResultHandler = (res) => {
+  isSubmitting.value = false;
+
+  if (res?.ok) {
+    const cleanUsername = registerUsername.value.trim();
+    gameStore.setUserId(res.userId);
+    if (cleanUsername) {
+      gameStore.setUsername(cleanUsername);
+      sm.emit('saveUsername', cleanUsername);
+    }
+
+    isRegisterVisible.value = false;
+    isNewspaperVisible.value = true;
+    registerUsername.value = '';
+    registerPassword.value = '';
+    errorMessage.value = '';
+
+    console.log('✅ Registro exitoso:', cleanUsername);
+    emit('lobby');
+  } else {
+    errorMessage.value = res?.code === 'USER_ALREADY_EXISTS'
+      ? 'Este usuario ya existe'
+      : res?.code === 'INVALID_USERNAME'
+      ? 'Nombre de usuario inválido'
+      : res?.code === 'INVALID_PASSWORD'
+      ? 'Contraseña inválida (mínimo 4 caracteres)'
+      : 'Error al registrarse. Intenta de nuevo.';
+    console.warn('❌ Error de registro:', res?.code || 'desconocido');
   }
 };
 
 onMounted(() => {
   if (!sm.socket) sm.connect();
   sm.on('loginResult', loginResultHandler);
+  sm.on('registerResult', registerResultHandler);
 });
 
 function doRegister() {
@@ -145,12 +237,16 @@ onBeforeUnmount(() => {
   if (sm.callbacks['loginResult'] === loginResultHandler) {
     delete sm.callbacks['loginResult'];
   }
+  if (sm.callbacks['registerResult'] === registerResultHandler) {
+    delete sm.callbacks['registerResult'];
+  }
 });
 
 function openBadge() {
   isNewspaperVisible.value = false;
   isBadgeVisible.value = true;
   isSubmitting.value = false;
+  errorMessage.value = '';
   username.value = gameStore.username || '';
   password.value = '';
 }
@@ -160,16 +256,45 @@ function submitLogin() {
   const pass = password.value.trim();
 
   if (!user || !pass) {
-    console.warn('Campos incompletos en el formulario de acceso');
+    errorMessage.value = 'Por favor, completa todos los campos';
+    console.warn('⚠️ Campos incompletos en el formulario de acceso');
     return;
   }
 
+  errorMessage.value = '';
   isSubmitting.value = true;
+  console.log('🔄 Intentando login con usuario:', user);
   sm.emit('login', { username: user, password: pass });
 }
 
 function fillContract() {
-  alert('¡Contrato en construcción! Próximamente podrás completarlo.');
+  isNewspaperVisible.value = false;
+  isRegisterVisible.value = true;
+  isSubmitting.value = false;
+  errorMessage.value = '';
+  registerUsername.value = '';
+  registerPassword.value = '';
+}
+
+function submitRegister() {
+  const user = registerUsername.value.trim();
+  const pass = registerPassword.value.trim();
+
+  if (!user || !pass) {
+    errorMessage.value = 'Por favor, completa todos los campos';
+    console.warn('⚠️ Campos incompletos en el formulario de registro');
+    return;
+  }
+
+  if (pass.length < 4) {
+    errorMessage.value = 'La contraseña debe tener al menos 4 caracteres';
+    return;
+  }
+
+  errorMessage.value = '';
+  isSubmitting.value = true;
+  console.log('🔄 Intentando registrar usuario:', user);
+  sm.emit('register', { username: user, password: pass });
 }
 </script>
 
@@ -667,11 +792,28 @@ function fillContract() {
   box-shadow: 0 0 0 3px rgba(93, 60, 28, 0.25);
 }
 
+.badge-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.5);
+}
+
 .badge-error {
-  margin: 0.25rem 0 0;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem;
   color: #c0392b;
+  background: rgba(192, 57, 43, 0.1);
+  border-radius: 0.5rem;
   font-weight: 600;
+  font-size: 0.9rem;
   text-align: center;
+  animation: errorShake 0.3s ease-in-out;
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
 .badge-submit {
@@ -694,6 +836,20 @@ function fillContract() {
   box-shadow: 0 12px 22px rgba(93, 60, 28, 0.32);
 }
 
+
+.badge-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.badge-submit:hover:not(:disabled) {
+  transform: translateX(-300%) scale(1.05);
+  box-shadow: 0 16px 28px rgba(93, 60, 28, 0.4);
+}
+
+.badge-submit:active:not(:disabled) {
+  transform: translateX(-300%) scale(0.95);
+}
 
 .badge-submit i {
   font-size: clamp(1.8rem, 4vw, 2.6rem);
