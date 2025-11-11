@@ -7,7 +7,7 @@
       <button class="lobby-button" @click="handleJoinRoom">Unirse sala</button>
     </div>
 
-    <button class="back-button" aria-label="Volver" @click="emit('back')">
+    <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
       <i class="fa-solid fa-house"></i>
     </button>
   </div>

@@ -8,7 +8,7 @@
       <div class="pixel-star" v-for="n in 20" :key="n"></div>
     </div>
 
-    <button class="back-button" aria-label="Volver" @click="handleBack">
+    <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); handleBack()">
       <i class="fa-solid fa-house"></i>
     </button>
 
@@ -80,15 +80,15 @@
       <div class="betting-section">
         <div class="betting-title">Apuesta por ti mismo</div>
         <div class="betting-controls">
-          <button class="bet-btn" @click="decreaseBet" :disabled="currentBet <= 0">-</button>
+          <button class="bet-btn" @click="gameStore.playClickSound(); decreaseBet()" :disabled="currentBet <= 0">-</button>
           <div class="bet-display">
             <span class="bet-amount">{{ currentBet }} $</span>
           </div>
-          <button class="bet-btn" @click="increaseBet" :disabled="currentBet >= gameStore.money">+</button>
+          <button class="bet-btn" @click="gameStore.playClickSound(); increaseBet()" :disabled="currentBet >= gameStore.money">+</button>
         </div>
         <button 
           class="confirm-bet-btn" 
-          @click="confirmBet"
+          @click="gameStore.playClickSound(); confirmBet()"
           :disabled="currentBet === 0 || currentBet === confirmedBet"
         >
           {{ confirmedBet > 0 ? 'Actualizar' : 'Confirmar' }}
@@ -103,7 +103,7 @@
         <button 
           v-if="!isCurrentPlayerReady"
           class="ready-button" 
-          @click="toggleReady"
+          @click="gameStore.playClickSound(); toggleReady()"
           :disabled="jugadores.length < maxJugadores"
         >
           <span class="pixel-border"></span>
@@ -115,7 +115,7 @@
         <button 
           v-else
           class="ready-button not-ready" 
-          @click="toggleReady"
+          @click="gameStore.playClickSound(); toggleReady()"
         >
           <span class="pixel-border"></span>
           <span class="button-text">
