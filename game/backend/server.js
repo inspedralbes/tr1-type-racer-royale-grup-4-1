@@ -263,6 +263,7 @@ io.on("connection", (socket) => {
         id: socket.id,
         username: player.username,
         articlesDone: 0,
+        progress: 0, // Porcentaje de caracteres escritos (0-100)
       });
       //Try to update the roomScore to this
       io.to(roomName).emit("leaderboardUpdateInRoom", room.scores);
@@ -381,6 +382,7 @@ io.on("connection", (socket) => {
           id: socket.id,
           username: player.username,
           articlesDone: 0,
+          progress: 0, // Porcentaje de caracteres escritos (0-100)
         });
         console.log(
           `Player ${player.username || socket.id} created and joined room ${roomName}`,
@@ -397,7 +399,9 @@ io.on("connection", (socket) => {
     const difficulty =
       rooms.find((r) => r.name === data?.roomName)?.difficulty || "easy";
     getArticlesFromDB(difficulty, (articles) => {
-      socket.emit("articlesData", articles);
+      // Limitar a 4 artículos: cada artículo representa el 25% del progreso total
+      const limitedArticles = articles.slice(0, 4);
+      socket.emit("articlesData", limitedArticles);
     });
   });
 
@@ -463,10 +467,48 @@ io.on("connection", (socket) => {
     let userScore = room.scores.find((s) => s.id === socket.id);
     if (userScore) {
       userScore.articlesDone = articlesCompleted;
+      // Al completar un artículo, el progreso del artículo actual vuelve a 0
+      userScore.progress = 0;
       io.to(player.room).emit("leaderboardUpdateInRoom", room.scores);
     }
   });
 
+  // Actualizar progreso de caracteres en tiempo real
+  socket.on("updateProgress", (data) => {
+    const player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+    const room = rooms.find((r) => r.name === player.room);
+    if (!room) return;
+
+    let userScore = room.scores.find((s) => s.id === socket.id);
+    if (userScore) {
+      userScore.progress = data.progress; // Porcentaje de 0-100
+      io.to(player.room).emit("leaderboardUpdateInRoom", room.scores);
+    }
+  });
+
+  // Notificación de milestone a toda la sala
+  socket.on("playerMilestone", (data) => {
+    const player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+    
+    // Emitir a toda la sala (incluyendo al emisor)
+    io.to(player.room).emit("playerMilestone", {
+      username: player.username,
+      percent: data.percent,
+      articleNumber: data.articleNumber,
+    });
+  });
+
+  // Notificación de error a toda la sala
+  socket.on("playerError", (data) => {
+    const player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+    
+    // Emitir a toda la sala (incluyendo al emisor)
+    io.to(player.room).emit("playerError", {
+      username: player.username,
+      errorCount: data.errorCount,
   socket.on("placeBet", (data) => {
     const { roomName, amount, previousBet } = data;
     if (!roomName || amount == null || amount <= 0) {

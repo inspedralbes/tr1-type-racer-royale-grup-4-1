@@ -22,15 +22,16 @@ export default class SocketManager {
     });
 
     this.socket.on("connect", () => {
-      console.log("✅ Conectado al servidor de socket");
+      console.log("Conectado al servidor de socket");
       // Volver a registrar todos los callbacks después de reconectar
       Object.entries(this.callbacks).forEach(([event, callback]) => {
+        this.socket.off(event, callback);
         this.socket.on(event, callback);
       });
     });
 
     this.socket.on("connect_error", (error) => {
-      console.error("❌ Error de conexión:", error.message);
+      console.error("Error de conexión:", error.message);
     });
 
     this.socket.on("disconnect", (reason) => {
@@ -41,20 +42,26 @@ export default class SocketManager {
       console.log(`🔄 Intentando reconectar (${attemptNumber})...`);
     });
 
-    this.socket.onAny((event, ...args) => {
-      console.debug(`📡 Evento recibido [${event}]:`, ...args);
-      if (this.callbacks[event]) {
-        this.callbacks[event](...args);
-      }
-    });
+    // Eliminado onAny para evitar doble invocación de callbacks (ya registramos con socket.on)
   }
 
   on(eventName, callback) {
+    // Si ya existe un callback registrado para este evento, lo quitamos primero
+    if (this.callbacks[eventName] && this.socket) {
+      this.socket.off(eventName, this.callbacks[eventName]);
+    }
     this.callbacks[eventName] = callback;
-    // Asegurarse de que el socket esté escuchando el evento
     if (this.socket) {
       this.socket.on(eventName, callback);
     }
+  }
+
+  off(eventName) {
+    const existing = this.callbacks[eventName];
+    if (existing && this.socket) {
+      this.socket.off(eventName, existing);
+    }
+    delete this.callbacks[eventName];
   }
   //Sending the server data
   emit(eventName, data) {
