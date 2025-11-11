@@ -886,13 +886,11 @@ app.post("/api/update-user-money", (req, res) => {
   }
   updateUserMoney(userId, amount, (ok, payload) => {
     if (!ok) {
-      return res
-        .status(500)
-        .json({
-          ok: false,
-          message: "Error al actualizar dinero",
-          code: payload,
-        });
+      return res.status(500).json({
+        ok: false,
+        message: "Error al actualizar dinero",
+        code: payload,
+      });
     }
     res.json({ ok: true, money: payload.money });
   });
