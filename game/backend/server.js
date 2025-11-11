@@ -660,18 +660,6 @@ io.on("connection", (socket) => {
   });
 
   //Timeout logic
-  socket.on("timeOut", () => {
-    const player = players.find((p) => p.id === socket.id);
-    //TODO: Make it global instead, each user has the same time that starts
-    //when they first start typing, when they reach the time limit
-    //they emit "timeOut" to this, then emit to the room
-    //that the time has ran out and do something with that event
-    if (player && player.room) {
-      io.to(player.room).emit("timeRanOut");
-      //TODO: Maybe add a current score showcase so that the user's can see who did more
-      //and thus obtain the money this way by who typed more articles in that time
-    }
-  });
   socket.on("disconnect", () => {
     const player = players.find((p) => p.id === socket.id);
     console.log(
@@ -816,13 +804,11 @@ app.post("/api/update-user-money", (req, res) => {
   }
   updateUserMoney(userId, amount, (ok, payload) => {
     if (!ok) {
-      return res
-        .status(500)
-        .json({
-          ok: false,
-          message: "Error al actualizar dinero",
-          code: payload,
-        });
+      return res.status(500).json({
+        ok: false,
+        message: "Error al actualizar dinero",
+        code: payload,
+      });
     }
     res.json({ ok: true, money: payload.money });
   });
