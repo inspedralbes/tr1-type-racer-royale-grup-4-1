@@ -659,19 +659,89 @@ io.on("connection", (socket) => {
     });
   });
 
-  //Timeout logic
-  socket.on("timeOut", () => {
+  //Game ended logic - when timer runs out
+  socket.on("gameEnded", (finalData) => {
     const player = players.find((p) => p.id === socket.id);
-    //TODO: Make it global instead, each user has the same time that starts
-    //when they first start typing, when they reach the time limit
-    //they emit "timeOut" to this, then emit to the room
-    //that the time has ran out and do something with that event
-    if (player && player.room) {
-      io.to(player.room).emit("timeRanOut");
-      //TODO: Maybe add a current score showcase so that the user's can see who did more
-      //and thus obtain the money this way by who typed more articles in that time
+    if (!player || !player.room) return;
+    
+    const room = rooms.find((r) => r.name === player.room);
+    if (!room) return;
+
+    // Update final score for this player
+    let userScore = room.scores.find((s) => s.id === socket.id);
+    if (userScore) {
+      userScore.articlesDone = finalData.articlesCompleted;
+      userScore.errors = finalData.totalErrors;
+      userScore.progress = finalData.progress;
+      userScore.finished = true;
+    }
+
+    console.log(`Player ${player.username} finished game with:`, finalData);
+
+    // Check if all players have finished
+    const allFinished = room.players.every(p => {
+      const score = room.scores.find(s => s.id === p.id);
+      return score && score.finished;
+    });
+
+    if (allFinished) {
+      // Calculate final rankings
+      const rankings = room.scores.sort((a, b) => {
+        // Sort by articles completed first
+        if (b.articlesDone !== a.articlesDone) {
+          return b.articlesDone - a.articlesDone;
+        }
+        // Then by errors (fewer is better)
+        if (a.errors !== b.errors) {
+          return a.errors - b.errors;
+        }
+        // Then by progress
+        return b.progress - a.progress;
+      });
+
+      // Award prize money to winner
+      const winner = rankings[0];
+      const winnerPlayer = players.find(p => p.id === winner.id);
+      const totalPot = room.totalPot || 0;
+
+      if (winnerPlayer && winnerPlayer.userId && totalPot > 0) {
+        updateUserMoney(winnerPlayer.userId, totalPot, (ok, payload) => {
+          if (ok) {
+            console.log(`Winner ${winnerPlayer.username} received ${totalPot}. New balance: ${payload.money}`);
+          }
+        });
+      }
+
+      // Prepare podium data
+      const podiumData = {
+        rankings: rankings.map((score, index) => ({
+          position: index + 1,
+          username: score.username,
+          articlesCompleted: score.articlesDone,
+          errors: score.errors || 0,
+          progress: score.progress || 0
+        })),
+        totalPot: totalPot,
+        winner: winner.username
+      };
+
+      // Send podium data to all players in the room
+      io.to(player.room).emit("showPodium", podiumData);
+      
+      console.log(`Game ended in room ${player.room}. Winner: ${winner.username}`);
+      
+      // Reset room state
+      room.status = "finished";
     }
   });
+
+  socket.on("timeOut", () => {
+    const player = players.find((p) => p.id === socket.id);
+    if (player && player.room) {
+      io.to(player.room).emit("timeRanOut");
+    }
+  });
+
   socket.on("disconnect", () => {
     const player = players.find((p) => p.id === socket.id);
     console.log(
