@@ -156,7 +156,7 @@ const gameState = ref({
 });
 
 // Timer state
-const timeRemaining = ref(120); // 120 seconds
+const timeRemaining = ref(120); // 120 seconds (2 minutes)
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {
@@ -186,7 +186,16 @@ function startCountdown() {
 
 function handleTimeout() {
   console.log("Time's up!");
-  gameStore.manager.emit("timeOut");
+  
+  // Send final results to server
+  const finalResults = {
+    username: gameStore.username,
+    articlesCompleted: gameState.value.completedArticles,
+    totalErrors: gameState.value.totalErrors,
+    progress: Math.round(overallProgress.value),
+  };
+  
+  gameStore.manager.emit("gameEnded", finalResults);
 }
 const currentArticle = computed(() => {
   return (

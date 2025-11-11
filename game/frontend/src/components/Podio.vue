@@ -1,66 +1,61 @@
 <template>
   <div class="podio-page">
     <div class="panel">
-      <h1 class="title">PODIO</h1>
+      <h1 class="title">🏆 PODIO 🏆</h1>
 
       <div class="podio-grid">
         <!-- LEFT: podium positions -->
         <div class="podium-left">
-          <!-- Mostrar en orden: 1 arriba, luego 2, 3, 4 -->
-          <div class="podium-row first">
-            <div class="position large">1</div>
-            <div class="player-name large">{{ winners[0] }}</div>
-          </div>
-
-          <div class="podium-row second">
-            <div class="position">2</div>
-            <div class="player-name">{{ winners[1] }}</div>
-          </div>
-
-          <div class="podium-row third">
-            <div class="position">3</div>
-            <div class="player-name">{{ winners[2] }}</div>
-          </div>
-
-          <div class="podium-row fourth">
-            <div class="position">4</div>
-            <div class="player-name">{{ winners[3] }}</div>
+          <div v-for="(player, index) in displayedRankings" :key="index" 
+               class="podium-row" 
+               :class="getRankClass(index)">
+            <div class="position" :class="{ large: index === 0 }">
+              {{ player.position }}
+            </div>
+            <div class="player-info" :class="{ large: index === 0 }">
+              <div class="player-name">{{ player.username }}</div>
+              <div class="player-stats-mini">
+                <span>📝 {{ player.articlesCompleted }} artículos</span>
+                <span>❌ {{ player.errors }} errores</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- RIGHT: statistics / results placeholder -->
+        <!-- RIGHT: statistics / results -->
         <div class="podium-right">
-          <div class="stat-block">
-            <div class="stat-title">Resultado general</div>
-            <div class="stat-content"> <!-- Placeholder: reemplazar con datos reales -->
-              <div class="stat-row">
-                <div class="label">Ganador</div>
-                <div class="value">{{ winners[0] }}</div>
-              </div>
-              <div class="stat-row">
-                <div class="label">Puntuación</div>
-                <div class="value">{{ stats.score ?? '-' }}</div>
+          <div class="stat-block winner-block">
+            <div class="stat-title">🎉 Ganador</div>
+            <div class="stat-content">
+              <div class="winner-info">
+                <div class="winner-name">{{ podiumData.winner }}</div>
+                <div class="prize-money">Premio: {{ podiumData.totalPot }} 💰</div>
               </div>
             </div>
           </div>
 
           <div class="stat-block">
-            <div class="stat-title">Estadísticas</div>
+            <div class="stat-title">Clasificación Completa</div>
             <div class="stat-content">
-              <div class="stat-row">
-                <div class="label">Precisión</div>
-                <div class="bar"><div class="bar-fill" :style="{ width: (stats.accuracy || 0) + '%' }"></div></div>
-                <div class="value">{{ stats.accuracy ?? 0 }}%</div>
-              </div>
-              <div class="stat-row">
-                <div class="label">Tiempo</div>
-                <div class="bar"><div class="bar-fill" :style="{ width: (stats.timePercent || 0) + '%' }"></div></div>
-                <div class="value">{{ stats.time ?? '-' }}</div>
-              </div>
-              <div class="stat-row">
-                <div class="label">Otras</div>
-                <div class="bar"><div class="bar-fill" :style="{ width: (stats.otherPercent || 0) + '%' }"></div></div>
-                <div class="value">{{ stats.other ?? '-' }}</div>
+              <div v-for="player in podiumData.rankings" :key="player.username" class="player-detail">
+                <div class="player-detail-header">
+                  <span class="rank-badge">{{ player.position }}º</span>
+                  <span class="player-detail-name">{{ player.username }}</span>
+                </div>
+                <div class="player-detail-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">Artículos:</span>
+                    <span class="stat-value">{{ player.articlesCompleted }}/4</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Errores:</span>
+                    <span class="stat-value">{{ player.errors }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Progreso:</span>
+                    <span class="stat-value">{{ player.progress }}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -68,21 +63,35 @@
       </div>
 
       <div class="actions">
-        <button class="play-button" @click="$emit('back')">Volver</button>
-        <button class="play-button" @click="$emit('playAgain')">Repetir</button>
+        <button class="btn" @click="$emit('back')">Volver al Inicio</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 
 const props = defineProps({
-  // Array esperado: [first, second, third, fourth]
-  winners: { type: Array, default: () => ["---", "---", "---", "---"] },
-  // Estadísticas placeholder, estructura libre por ahora
-  stats: { type: Object, default: () => ({ score: '-', accuracy: 0, time: '-', timePercent: 0, other: '-', otherPercent: 0 }) }
-})
+  podiumData: { 
+    type: Object, 
+    default: () => ({ 
+      rankings: [],
+      totalPot: 0,
+      winner: '---'
+    }) 
+  }
+});
+
+// Show top 4 players
+const displayedRankings = computed(() => {
+  return props.podiumData.rankings.slice(0, 4);
+});
+
+function getRankClass(index) {
+  const classes = ['first', 'second', 'third', 'fourth'];
+  return classes[index] || '';
+}
 </script>
 
 <style scoped>
@@ -138,7 +147,8 @@ const props = defineProps({
 .podium-row.fourth { transform: translateY(0); opacity: 0.9; }
 
 .position.large { width: 96px; height: 96px; font-size: 1.5rem; }
-.player-name.large { font-size: 1.25rem; }
+.player-info.large .player-name { font-size: 1.4rem; }
+.player-info.large .player-stats-mini { font-size: 0.9rem; }
 
 .position {
   width: 72px;
@@ -151,11 +161,30 @@ const props = defineProps({
   justify-content: center;
   font-weight: 700;
   font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .player-name {
   font-weight: 700;
   color: #222020;
+  font-size: 1.1rem;
+}
+
+.player-stats-mini {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.player-stats-mini span {
+  white-space: nowrap;
 }
 
 .podium-right {
@@ -170,65 +199,110 @@ const props = defineProps({
   border-radius: 6px;
 }
 
+.winner-block {
+  background: linear-gradient(135deg, #ffd93d 0%, #ffbe0b 100%);
+  border: 2px solid #f59e0b;
+}
+
 .stat-title {
   font-weight: 700;
   margin-bottom: 0.5rem;
+  font-size: 1.1rem;
 }
 
-.stat-row {
+.winner-info {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.winner-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #222020;
+  margin-bottom: 0.5rem;
+}
+
+.prize-money {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.player-detail {
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.player-detail-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin: 0.45rem 0;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.label {
-  width: 90px;
-  color: #222020;
-  font-weight: 600;
-}
-
-.bar {
-  flex: 1;
-  height: 14px;
-  background: rgba(0,0,0,0.06);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.bar-fill {
-  height: 100%;
+.rank-badge {
   background: #6b5bff;
-  width: 0%;
-  transition: width 400ms ease;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
-.value {
-  width: 60px;
-  text-align: right;
+.player-detail-name {
   font-weight: 700;
+  font-size: 1rem;
+  color: #222020;
+}
+
+.player-detail-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.stat-label {
+  color: #666;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #222020;
 }
 
 .actions {
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
   display: flex;
   justify-content: center;
   gap: 1rem;
 }
 
 .btn {
-  padding: 0.8rem 1.6rem;
-  font-size: 1rem;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
   background-color: #ffffff;
   color: #000000;
-  border: none;
+  border: 2px solid #000;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: 3px 3px 0 #000;
 }
 
-.btn:hover { background-color: #f0f0f0; transform: scale(1.03); }
+.btn:hover { 
+  background-color: #f0f0f0; 
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #000;
+}
 
 @media (max-width: 800px) {
   .podio-grid { grid-template-columns: 1fr; }
