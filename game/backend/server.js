@@ -152,7 +152,9 @@ io.on("connection", (socket) => {
         if (player) {
           player.userId = payload.userId;
           player.username = userData.username;
-          console.log(`✅ Usuario registrado: ${userData.username} con userId: ${payload.userId} asignado al socket: ${socket.id}`);
+          console.log(
+            `✅ Usuario registrado: ${userData.username} con userId: ${payload.userId} asignado al socket: ${socket.id}`,
+          );
 
           getUserImage(payload.userId, (imgOk, imgPayload) => {
             if (imgOk && imgPayload.img) {
@@ -160,9 +162,15 @@ io.on("connection", (socket) => {
             }
           });
         } else {
-          console.log(`❌ No se encontró el jugador con socket.id: ${socket.id} para asignar userId`);
+          console.log(
+            `❌ No se encontró el jugador con socket.id: ${socket.id} para asignar userId`,
+          );
         }
-        socket.emit("registerResult", { ok: true, userId: payload.userId, username: userData.username });
+        socket.emit("registerResult", {
+          ok: true,
+          userId: payload.userId,
+          username: userData.username,
+        });
       } else {
         socket.emit("registerResult", { ok: false, code: payload });
       }
@@ -181,7 +189,9 @@ io.on("connection", (socket) => {
         if (player) {
           player.userId = payload.userId;
           player.username = userData.username;
-          console.log(`✅ Usuario logueado: ${userData.username} con userId: ${payload.userId} asignado al socket: ${socket.id}`);
+          console.log(
+            `✅ Usuario logueado: ${userData.username} con userId: ${payload.userId} asignado al socket: ${socket.id}`,
+          );
 
           getUserImage(payload.userId, (imgOk, imgPayload) => {
             if (imgOk && imgPayload.img) {
@@ -189,10 +199,16 @@ io.on("connection", (socket) => {
             }
           });
         } else {
-          console.log(`❌ No se encontró el jugador con socket.id: ${socket.id} para asignar userId`);
+          console.log(
+            `❌ No se encontró el jugador con socket.id: ${socket.id} para asignar userId`,
+          );
         }
 
-        socket.emit("loginResult", { ok: true, userId: payload.userId, username: userData.username });
+        socket.emit("loginResult", {
+          ok: true,
+          userId: payload.userId,
+          username: userData.username,
+        });
       } else {
         socket.emit("loginResult", { ok: false, code: payload });
       }
@@ -229,14 +245,14 @@ io.on("connection", (socket) => {
   socket.on("joinRoom", (data) => {
     // Support both old format (string) and new format (object)
     let roomName, userId, username;
-    if (typeof data === 'string') {
+    if (typeof data === "string") {
       roomName = data;
     } else {
       roomName = data.roomName;
       userId = data.userId;
       username = data.username;
     }
-    
+
     socket.join(roomName);
     let room = rooms.find((r) => r.name === roomName);
     if (!room) {
@@ -248,16 +264,18 @@ io.on("connection", (socket) => {
       console.log("Player not found:", socket.id);
       return;
     }
-    
+
     // Update player with userId and username if provided
     if (userId) {
       player.userId = userId;
-      console.log(`✅ UserId ${userId} asignado al jugador ${socket.id} al unirse a la sala`);
+      console.log(
+        `✅ UserId ${userId} asignado al jugador ${socket.id} al unirse a la sala`,
+      );
     }
     if (username) {
       player.username = username;
     }
-    
+
     if (!room.scores.find((s) => s.id === socket.id)) {
       room.scores.push({
         id: socket.id,
@@ -281,7 +299,7 @@ io.on("connection", (socket) => {
     }
     io.to(roomName).emit("updateRooms", rooms);
     io.to(roomName).emit("updateRoomPlayers", room.players);
-    
+
     // Enviar el bote total actual al jugador que se une
     if (room.totalPot > 0) {
       socket.emit("updateTotalPot", room.totalPot);
@@ -367,12 +385,14 @@ io.on("connection", (socket) => {
         // Update player with userId and username if provided
         if (userId) {
           player.userId = userId;
-          console.log(`✅ UserId ${userId} asignado al jugador ${socket.id} al crear la sala`);
+          console.log(
+            `✅ UserId ${userId} asignado al jugador ${socket.id} al crear la sala`,
+          );
         }
         if (username) {
           player.username = username;
         }
-        
+
         socket.join(roomName);
         //Since we're insta joining into the room make it so that we also update the score based on this
         player.room = roomName;
@@ -424,21 +444,26 @@ io.on("connection", (socket) => {
       // Devolver la apuesta del jugador a la base de datos y recalcular el bote
       if (room.bets && room.bets[socket.id] && player && player.userId) {
         const refundAmount = room.bets[socket.id];
-        
+
         // Devolver el dinero a la base de datos
         updateUserMoney(player.userId, refundAmount, (ok, payload) => {
           if (ok) {
-            console.log(`Apuesta de ${refundAmount} devuelta al jugador ${socket.id}. Nuevo dinero: ${payload.money}`);
+            console.log(
+              `Apuesta de ${refundAmount} devuelta al jugador ${socket.id}. Nuevo dinero: ${payload.money}`,
+            );
             // Notificar al jugador su nuevo balance
             socket.emit("betRefunded", { newMoney: payload.money });
           } else {
             console.error(`Error al devolver apuesta al jugador ${socket.id}`);
           }
         });
-        
+
         delete room.bets[socket.id];
-        room.totalPot = Object.values(room.bets).reduce((sum, bet) => sum + bet, 0);
-        
+        room.totalPot = Object.values(room.bets).reduce(
+          (sum, bet) => sum + bet,
+          0,
+        );
+
         // Notificar a los demás del nuevo bote total
         io.to(roomName).emit("updateTotalPot", room.totalPot);
         console.log(`Nuevo bote total: ${room.totalPot}`);
@@ -491,7 +516,7 @@ io.on("connection", (socket) => {
   socket.on("playerMilestone", (data) => {
     const player = players.find((p) => p.id === socket.id);
     if (!player || !player.room) return;
-    
+
     // Emitir a toda la sala (incluyendo al emisor)
     io.to(player.room).emit("playerMilestone", {
       username: player.username,
@@ -504,38 +529,56 @@ io.on("connection", (socket) => {
   socket.on("playerError", (data) => {
     const player = players.find((p) => p.id === socket.id);
     if (!player || !player.room) return;
-    
     // Emitir a toda la sala (incluyendo al emisor)
     io.to(player.room).emit("playerError", {
       username: player.username,
       errorCount: data.errorCount,
+    });
+  });
   socket.on("placeBet", (data) => {
     const { roomName, amount, previousBet } = data;
     if (!roomName || amount == null || amount <= 0) {
-      socket.emit("betConfirmed", { success: false, message: "Datos de apuesta inválidos" });
+      socket.emit("betConfirmed", {
+        success: false,
+        message: "Datos de apuesta inválidos",
+      });
       return;
     }
 
     const room = rooms.find((r) => r.name === roomName);
     if (!room) {
-      socket.emit("betConfirmed", { success: false, message: "Sala no encontrada" });
+      socket.emit("betConfirmed", {
+        success: false,
+        message: "Sala no encontrada",
+      });
       return;
     }
 
     const player = players.find((p) => p.id === socket.id);
     if (!player) {
       console.log(`❌ Jugador no encontrado con socket.id: ${socket.id}`);
-      socket.emit("betConfirmed", { success: false, message: "Usuario no encontrado" });
+      socket.emit("betConfirmed", {
+        success: false,
+        message: "Usuario no encontrado",
+      });
       return;
     }
-    
+
     if (!player.userId) {
-      console.log(`❌ Jugador ${player.username} no tiene userId asignado. Player:`, player);
-      socket.emit("betConfirmed", { success: false, message: "Usuario no encontrado - sin userId" });
+      console.log(
+        `❌ Jugador ${player.username} no tiene userId asignado. Player:`,
+        player,
+      );
+      socket.emit("betConfirmed", {
+        success: false,
+        message: "Usuario no encontrado - sin userId",
+      });
       return;
     }
-    
-    console.log(`✅ Player ${player.username} (userId: ${player.userId}) intentando apostar ${amount}`);
+
+    console.log(
+      `✅ Player ${player.username} (userId: ${player.userId}) intentando apostar ${amount}`,
+    );
 
     // Calcular la diferencia entre la nueva apuesta y la anterior
     const currentBet = room.bets[socket.id] || 0;
@@ -544,7 +587,10 @@ io.on("connection", (socket) => {
     // Actualizar el dinero en la base de datos (descontar la diferencia)
     updateUserMoney(player.userId, -difference, (ok, payload) => {
       if (!ok) {
-        socket.emit("betConfirmed", { success: false, message: "Error al actualizar dinero en la base de datos" });
+        socket.emit("betConfirmed", {
+          success: false,
+          message: "Error al actualizar dinero en la base de datos",
+        });
         return;
       }
 
@@ -552,9 +598,14 @@ io.on("connection", (socket) => {
       room.bets[socket.id] = amount;
 
       // Actualizar el bote total
-      room.totalPot = Object.values(room.bets).reduce((sum, bet) => sum + bet, 0);
+      room.totalPot = Object.values(room.bets).reduce(
+        (sum, bet) => sum + bet,
+        0,
+      );
 
-      console.log(`Apuesta colocada: ${player.username} apostó ${amount} en ${roomName}. Diferencia: ${difference}. Bote total: ${room.totalPot}. Nuevo dinero: ${payload.money}`);
+      console.log(
+        `Apuesta colocada: ${player.username} apostó ${amount} en ${roomName}. Diferencia: ${difference}. Bote total: ${room.totalPot}. Nuevo dinero: ${payload.money}`,
+      );
 
       // Confirmar al jugador que apostó, enviando el nuevo balance
       socket.emit("betConfirmed", { success: true, newMoney: payload.money });
@@ -639,9 +690,14 @@ io.on("connection", (socket) => {
       if (room.bets && room.bets[socket.id]) {
         const betAmount = room.bets[socket.id];
         delete room.bets[socket.id];
-        room.totalPot = Object.values(room.bets).reduce((sum, bet) => sum + bet, 0);
+        room.totalPot = Object.values(room.bets).reduce(
+          (sum, bet) => sum + bet,
+          0,
+        );
         io.to(room.name).emit("updateTotalPot", room.totalPot);
-        console.log(`Apuesta de ${betAmount} eliminada por desconexión. Nuevo bote total: ${room.totalPot}`);
+        console.log(
+          `Apuesta de ${betAmount} eliminada por desconexión. Nuevo bote total: ${room.totalPot}`,
+        );
       }
 
       if (room.players.length === 0) {
@@ -730,7 +786,12 @@ app.get("/api/get-user-info/:userId", (req, res) => {
         .status(404)
         .json({ ok: false, message: "Usuario no encontrado", code: payload });
     }
-    res.json({ ok: true, username: payload.username, imagePath: payload.img, money: payload.money });
+    res.json({
+      ok: true,
+      username: payload.username,
+      imagePath: payload.img,
+      money: payload.money,
+    });
   });
 });
 
@@ -757,7 +818,11 @@ app.post("/api/update-user-money", (req, res) => {
     if (!ok) {
       return res
         .status(500)
-        .json({ ok: false, message: "Error al actualizar dinero", code: payload });
+        .json({
+          ok: false,
+          message: "Error al actualizar dinero",
+          code: payload,
+        });
     }
     res.json({ ok: true, money: payload.money });
   });
@@ -819,7 +884,11 @@ function getUserInfo(userId, done) {
         done(false, "USER_NOT_FOUND");
         return;
       }
-      done(true, { username: rows[0].username, img: rows[0].img, money: rows[0].money || 0 });
+      done(true, {
+        username: rows[0].username,
+        img: rows[0].img,
+        money: rows[0].money || 0,
+      });
     });
   });
 }
