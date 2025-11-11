@@ -99,6 +99,46 @@ onMounted(() => {
   sm.on('loginResult', loginResultHandler);
 });
 
+function doRegister() {
+  const username = prompt('Usuario:');
+  const password = prompt('Contraseña:');
+  if (!username || !password) return;
+
+  sm.on('registerResult', (res) => {
+    if (res.ok) {
+      gameStore.setUserId(res.userId);
+      gameStore.setUsername(res.username);
+      gameStore.fetchUserMoney();
+      console.log('Usuario registrado:', res.username, 'con ID:', res.userId);
+      sm.callbacks['registerResult'] = undefined;
+      emit('lobby');
+    } else {
+      alert(`Error: ${res.code}`);
+      sm.callbacks['registerResult'] = undefined;
+    }
+  });
+  sm.emit('register', { username, password });
+}
+
+function doLogin() {
+  const username = prompt('Usuario:');
+  const password = prompt('Contraseña:');
+  if (!username || !password) return;
+
+  sm.on('loginResult', (res) => {
+    if (res.ok) {
+      gameStore.setUserId(res.userId);
+      gameStore.setUsername(res.username);
+      gameStore.fetchUserMoney();
+      console.log('Usuario logueado:', res.username, 'con ID:', res.userId);
+      sm.callbacks['loginResult'] = undefined;
+      emit('lobby');
+    } else {
+      alert(`Error: ${res.code}`);
+      sm.callbacks['loginResult'] = undefined;
+    }
+  });
+  sm.emit('login', { username, password });
 onBeforeUnmount(() => {
   if (sm.callbacks['loginResult'] === loginResultHandler) {
     delete sm.callbacks['loginResult'];

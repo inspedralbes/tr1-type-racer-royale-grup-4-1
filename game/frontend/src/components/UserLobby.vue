@@ -65,32 +65,67 @@
       <div class="countdown-text">¡Preparados!</div>
     </div>
 
-    <div class="actions">
-      <button 
-        v-if="!isCurrentPlayerReady"
-        class="ready-button" 
-        @click="toggleReady"
-        :disabled="jugadores.length < maxJugadores"
-      >
-        <span class="pixel-border"></span>
-        <span class="button-text">
-          <i class="fa-solid fa-check"></i> ESTOY LISTO
-        </span>
-        <div class="button-pixels"></div>
-      </button>
-      <button 
-        v-else
-        class="ready-button not-ready" 
-        @click="toggleReady"
-      >
-        <span class="pixel-border"></span>
-        <span class="button-text">
-          <i class="fa-solid fa-xmark"></i> CANCELAR
-        </span>
-        <div class="button-pixels"></div>
-      </button>
-      <div v-if="jugadores.length < maxJugadores" class="waiting-message">
-        Esperando {{ maxJugadores - jugadores.length }} jugador(es) más...
+    <!-- Actions Container with Pot, Betting and Ready Button -->
+    <div class="actions-container">
+      <!-- Total Pot Display -->
+      <div v-if="totalPot > 0" class="pot-display">
+        <div class="pot-icon">💰</div>
+        <div class="pot-info">
+          <span class="pot-label">Bote Total</span>
+          <span class="pot-amount">{{ totalPot }} $</span>
+        </div>
+      </div>
+
+      <!-- Betting Section -->
+      <div class="betting-section">
+        <div class="betting-title">Apuesta por ti mismo</div>
+        <div class="betting-controls">
+          <button class="bet-btn" @click="decreaseBet" :disabled="currentBet <= 0">-</button>
+          <div class="bet-display">
+            <span class="bet-amount">{{ currentBet }} $</span>
+          </div>
+          <button class="bet-btn" @click="increaseBet" :disabled="currentBet >= gameStore.money">+</button>
+        </div>
+        <button 
+          class="confirm-bet-btn" 
+          @click="confirmBet"
+          :disabled="currentBet === 0 || currentBet === confirmedBet"
+        >
+          {{ confirmedBet > 0 ? 'Actualizar' : 'Confirmar' }}
+        </button>
+        <div v-if="confirmedBet > 0" class="bet-confirmed">
+          ✓ Apostado: {{ confirmedBet }} $
+        </div>
+      </div>
+
+      <!-- Ready Button Section -->
+      <div class="actions">
+        <button 
+          v-if="!isCurrentPlayerReady"
+          class="ready-button" 
+          @click="toggleReady"
+          :disabled="jugadores.length < maxJugadores"
+        >
+          <span class="pixel-border"></span>
+          <span class="button-text">
+            <i class="fa-solid fa-check"></i> ESTOY LISTO
+          </span>
+          <div class="button-pixels"></div>
+        </button>
+        <button 
+          v-else
+          class="ready-button not-ready" 
+          @click="toggleReady"
+        >
+          <span class="pixel-border"></span>
+          <span class="button-text">
+            <i class="fa-solid fa-xmark"></i> CANCELAR
+          </span>
+          <div class="button-pixels"></div>
+        </button>
+        <div v-if="jugadores.length < maxJugadores" class="waiting-message">
+          Esperando {{ maxJugadores - jugadores.length }} jugador(es) más...
+        </div>
       </div>
     </div>
   </div>
@@ -111,6 +146,12 @@ const isCurrentPlayerReady = ref(false);
 const showCountdown = ref(false);
 const countdownValue = ref(3);
 let countdownInterval = null;
+
+// Betting state
+const currentBet = ref(0);
+const confirmedBet = ref(0);
+const totalPot = ref(0);
+const betStep = 5;
 
 const slotsVacios = computed(() => {
   return maxJugadores.value - jugadores.value.length;
@@ -176,6 +217,44 @@ const startCountdown = () => {
   }, 1000);
 };
 
+// Betting functions
+const increaseBet = () => {
+  if (currentBet.value + betStep <= gameStore.money) {
+    currentBet.value += betStep;
+  } else {
+    currentBet.value = gameStore.money;
+  }
+};
+
+const decreaseBet = () => {
+  if (currentBet.value - betStep >= 0) {
+    currentBet.value -= betStep;
+  } else {
+    currentBet.value = 0;
+  }
+};
+
+const confirmBet = () => {
+  if (currentBet.value > 0 && currentBet.value <= gameStore.money) {
+    const previousBet = confirmedBet.value;
+    const difference = currentBet.value - previousBet;
+    
+    // Verificar que el jugador tenga suficiente dinero para la diferencia
+    if (difference > 0 && gameStore.money < difference) {
+      alert('No tienes suficiente dinero');
+      return;
+    }
+    
+    confirmedBet.value = currentBet.value;
+    gameStore.manager.emit('placeBet', {
+      roomName: gameStore.currentRoom,
+      amount: currentBet.value,
+      previousBet: previousBet
+    });
+    console.log('Apuesta confirmada:', currentBet.value, 'Diferencia:', difference);
+  }
+};
+
 // Helper function to get profile image URL
 const getProfileImageUrl = (imagePath) => {
   if (!imagePath) return '';
@@ -230,6 +309,36 @@ onMounted(() => {
   gameStore.manager.on('playerLeft', ({ playerId, roomName }) => {
     console.log(`Jugador ${playerId} abandonó la sala ${roomName}`);
     // El estado se actualizará automáticamente con updateRoomPlayers
+  });
+  
+  // Escuchar actualizaciones del bote total
+  gameStore.manager.on('updateTotalPot', (pot) => {
+    console.log('Bote total actualizado:', pot);
+    totalPot.value = pot;
+  });
+  
+  // Escuchar confirmación de apuesta
+  gameStore.manager.on('betConfirmed', ({ success, message, newMoney }) => {
+    if (success) {
+      console.log('Apuesta confirmada exitosamente. Nuevo dinero:', newMoney);
+      // Actualizar el dinero del jugador con el valor de la base de datos
+      if (newMoney !== undefined) {
+        gameStore.setMoney(newMoney);
+      }
+    } else {
+      alert(message || 'Error al confirmar apuesta');
+      currentBet.value = confirmedBet.value;
+    }
+  });
+  
+  // Escuchar devolución de apuesta al salir de la sala
+  gameStore.manager.on('betRefunded', ({ newMoney }) => {
+    console.log('Apuesta devuelta. Nuevo dinero:', newMoney);
+    if (newMoney !== undefined) {
+      gameStore.setMoney(newMoney);
+    }
+    confirmedBet.value = 0;
+    currentBet.value = 0;
   });
 });
 
@@ -538,14 +647,199 @@ onUnmounted(() => {
     2px 2px 0 #000, 0 2px 0 #000, -2px 2px 0 #000, -2px 0 0 #000;
 }
 
+/* Pot Display */
+.pot-display {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  padding: 1rem 1.5rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+  border: 3px solid #FF8C00;
+  z-index: 5;
+  animation: potPulse 2s ease-in-out infinite;
+  flex: 0 0 auto;
+}
+
+@keyframes potPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 30px rgba(255, 215, 0, 0.6);
+  }
+}
+
+.pot-icon {
+  font-size: 2rem;
+  animation: bounce 1.5s infinite;
+}
+
+.pot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.pot-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+}
+
+.pot-amount {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #000;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Actions Container - Side by Side Layout */
+.actions-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 900px;
+  z-index: 5;
+}
+
+/* Betting Section */
+.betting-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  background: rgba(255, 140, 0, 0.2);
+  padding: 1.2rem 1.5rem;
+  border-radius: 20px;
+  border: 2px solid #FFA500;
+  z-index: 5;
+  min-width: 280px;
+  flex: 0 0 auto;
+}
+
+.betting-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFD700;
+  text-transform: uppercase;
+  text-shadow:
+    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
+    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000;
+}
+
+.betting-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bet-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #FFD700;
+  color: #000;
+  font-size: 1.5rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.bet-btn:hover:not(:disabled) {
+  background: #FFA500;
+  transform: scale(1.1);
+  box-shadow: 0 6px 15px rgba(255, 165, 0, 0.4);
+}
+
+.bet-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.bet-btn:disabled {
+  background: #999;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.bet-display {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.6rem 1.5rem;
+  border-radius: 15px;
+  min-width: 100px;
+  text-align: center;
+  border: 2px solid #FFD700;
+}
+
+.bet-amount {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #000;
+}
+
+.confirm-bet-btn {
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  background: #32CD32;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-bet-btn:hover:not(:disabled) {
+  background: #3AE03A;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(50, 205, 50, 0.4);
+}
+
+.confirm-bet-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.confirm-bet-btn:disabled {
+  background: #999;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.bet-confirmed {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #32CD32;
+  text-shadow:
+    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
+    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000;
+  animation: confirmPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes confirmPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 /* Actions & ready button */
 .actions {
-  margin-top: 2rem; 
   display: flex; 
   flex-direction: column;
   align-items: center;
   gap: 1rem;
   z-index: 5;
+  flex: 0 0 auto;
 }
 
 .ready-button {
@@ -703,5 +997,15 @@ onUnmounted(() => {
   .player-card { padding: 1.2rem; }
   .player-number { width: 40px; height: 40px; font-size: 1.2rem; }
   .player-name { font-size: 1.2rem; }
+  
+  .actions-container {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .betting-section {
+    min-width: 250px;
+  }
 }
 </style>
