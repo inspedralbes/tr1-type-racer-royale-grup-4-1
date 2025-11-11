@@ -32,14 +32,14 @@
                 <div class="player-header">
                   <span class="player-name">{{ gameStore.username }}</span>
                   <span class="player-count"
-                    >{{ Math.round(currentArticleProgress) }}%</span
+                    >{{ Math.round(overallProgress) }}%</span
                   >
                 </div>
                 <div class="progress-bar-container">
                   <div
                     class="progress-bar-fill"
                     :style="{
-                      width: currentArticleProgress + '%',
+                      width: overallProgress + '%',
                     }"
                   ></div>
                 </div>
@@ -75,7 +75,7 @@
                 v-for="(score, index) in sortedScores"
                 :key="score.id || index"
                 class="player-entry"
-                :class="{ 'is-leader': index === 0 && score.articlesDone > 0 }"
+                :class="{ 'is-leader': index === 0 && getAggregatePercentForScore(score) > 0 }"
               >
                 <div class="player-header">
                   <span class="player-name">
@@ -87,7 +87,7 @@
                     >
                   </span>
                   <span class="player-count"
-                    >{{ score.progress || 0 }}%</span
+                    >{{ Math.round(getAggregatePercentForScore(score)) }}%</span
                   >
                 </div>
 
@@ -95,7 +95,7 @@
                   <div
                     class="progress-bar-fill"
                     :style="{
-                      width: (score.progress || 0) + '%',
+                      width: getAggregatePercentForScore(score) + '%',
                     }"
                   ></div>
                 </div>
@@ -211,7 +211,15 @@ const allCompleted = computed(() =>
 const totalArticles = computed(() => gameState.value.articles.length);
 
 const sortedScores = computed(() => {
-  return [...userScores.value].sort((a, b) => b.articlesDone - a.articlesDone);
+  const arr = Array.isArray(userScores.value) ? [...userScores.value] : [];
+  return arr.sort((a, b) => {
+    const pa = getAggregatePercentForScore(a);
+    const pb = getAggregatePercentForScore(b);
+    if (pb !== pa) return pb - pa; // mayor porcentaje primero
+    const ad = (b.articlesDone || 0) - (a.articlesDone || 0);
+    if (ad !== 0) return ad;
+    return (a.username || '').localeCompare(b.username || '');
+  });
 });
 
 const userScore = computed(() => {
@@ -232,9 +240,27 @@ const currentArticleProgress = computed(() => {
   return Math.min((typedLength / currentArticle.value.text.length) * 100, 100);
 });
 
+// Progreso total agregando artículos completados + avance del artículo actual
+const overallProgress = computed(() => {
+  const total = totalArticles.value || 0;
+  if (total === 0) return 0;
+  const partial = (currentArticleProgress.value || 0) / 100;
+  const completed = gameState.value.completedArticles || 0;
+  return Math.min(((completed + partial) / total) * 100, 100);
+});
+
 function getProgressPercentage(articlesDone) {
   if (totalArticles.value === 0) return 0;
   return Math.min((articlesDone / totalArticles.value) * 100, 100);
+}
+
+// Progreso agregado para un jugador: artículos completados + avance actual
+function getAggregatePercentForScore(score) {
+  const total = totalArticles.value || 0;
+  if (total === 0) return 0;
+  const completed = score?.articlesDone || 0;
+  const partial = (score?.progress || 0) / 100;
+  return Math.min(((completed + partial) / total) * 100, 100);
 }
 
 let textStartTime = 0;
@@ -316,9 +342,12 @@ watch(
       const currentPercent = Math.round((newValue.length / target.length) * 100);
       
       // Emitir progreso en tiempo real para actualizar barras de todos
-      gameStore.manager.emit("updateProgress", {
-        progress: currentPercent,
-      });
+      // Evitar emitir 100% porque el evento de completar artículo resetea el progreso a 0
+      if (currentPercent < 100) {
+        gameStore.manager.emit("updateProgress", {
+          progress: currentPercent,
+        });
+      }
       
       const milestones = [25, 50, 75, 100];
       
@@ -326,7 +355,7 @@ watch(
       if (milestones.includes(currentPercent) && !notifiedMilestones.value.has(currentPercent)) {
         notifiedMilestones.value.add(currentPercent);
         // Emitir evento al backend para que notifique a toda la sala
-        gameStore.manager.emit("playerMilestone", { percent: currentPercent });
+        gameStore.manager.emit("playerMilestone", { percent: currentPercent, articleNumber: gameState.value.currentIndex + 1 });
       }
     }
   },
@@ -391,7 +420,11 @@ function handleUserScores(data) {
 
 // Listeners para notificaciones de otros jugadores
 gameStore.manager.on("playerMilestone", (data) => {
-  pushNotification(`🎯 ${data.username} ha alcanzado el ${data.percent}%!`, 4000);
+  if (data.percent === 100) {
+    pushNotification(`� ${data.username} ha completado el artículo ${data.articleNumber}`, 4500);
+  } else {
+    pushNotification(`�🎯 ${data.username} ha alcanzado el ${data.percent}% del artículo ${data.articleNumber}`, 4000);
+  }
 });
 
 gameStore.manager.on("playerError", (data) => {

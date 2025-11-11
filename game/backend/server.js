@@ -355,9 +355,9 @@ io.on("connection", (socket) => {
     const difficulty =
       rooms.find((r) => r.name === data?.roomName)?.difficulty || "easy";
     getArticlesFromDB(difficulty, (articles) => {
-      // Limitar a 1 artículo para pruebas con progreso por caracteres
-      const singleArticle = articles.slice(0, 1);
-      socket.emit("articlesData", singleArticle);
+      // Limitar a 4 artículos: cada artículo representa el 25% del progreso total
+      const limitedArticles = articles.slice(0, 4);
+      socket.emit("articlesData", limitedArticles);
     });
   });
 
@@ -399,6 +399,8 @@ io.on("connection", (socket) => {
     let userScore = room.scores.find((s) => s.id === socket.id);
     if (userScore) {
       userScore.articlesDone = articlesCompleted;
+      // Al completar un artículo, el progreso del artículo actual vuelve a 0
+      userScore.progress = 0;
       io.to(player.room).emit("leaderboardUpdateInRoom", room.scores);
     }
   });
@@ -426,6 +428,7 @@ io.on("connection", (socket) => {
     io.to(player.room).emit("playerMilestone", {
       username: player.username,
       percent: data.percent,
+      articleNumber: data.articleNumber,
     });
   });
 
