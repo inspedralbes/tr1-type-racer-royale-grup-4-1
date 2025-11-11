@@ -70,7 +70,11 @@ function handleRoomData(data) {
 }
 
 function joinRoomViaName() {
-  manager.emit("joinRoom", roomName.value);
+  manager.emit("joinRoom", {
+    roomName: roomName.value,
+    userId: store.userId,
+    username: store.username
+  });
   store.setRoomName(roomName.value);
 }
 

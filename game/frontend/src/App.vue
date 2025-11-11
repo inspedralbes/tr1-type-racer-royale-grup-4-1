@@ -1,4 +1,5 @@
 <template>
+  <MoneyContainer v-if="store.userId" />
   <template v-if="!startGame">
     <FirstPage v-if="!showMainMenu && !showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
     <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
@@ -14,7 +15,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from "vue";
+import { ref, nextTick, onMounted, onUnmounted } from "vue";
 import GameEngine from "./components/GameEngine.vue";
 import MainMenu from "./components/MainMenu.vue";
 import Keyboard from "./components/Keyboard.vue";
@@ -25,6 +26,9 @@ import Config from "./components/Config.vue";
 import RoomsUserView from "./components/RoomsUserView.vue";
 import HostCreateLobby from "./components/HostCreateLobby.vue";
 import UserLobby from "./components/UserLobby.vue";
+import MoneyContainer from "./components/MoneyContainer.vue";
+import { useBackgroundMusicAutoplay } from "@/composables/useBackgroundMusicAutoplay.js";
+import { useSoundEffect } from "@/composables/useSoundEffect.js";
   
 const startGame = ref(false);
 const showMainMenu = ref(false);
@@ -37,6 +41,30 @@ const store = useGameStore();
 const manager = store.manager;
 const showRoomsUserView = ref(false);
 manager.on("gameStart", handleGameStart);
+
+// Inicializar música de fondo con autoplay agresivo
+const musicControl = useBackgroundMusicAutoplay('/music/mainTheme.wav', {
+  volume: store.musicVolume / 100,
+  loop: true,
+  autoplay: true
+});
+
+// Inicializar sonido de clic de botones
+const clickSoundControl = useSoundEffect('/music/clickButton.mp3', {
+  volume: 0.5
+});
+
+onMounted(() => {
+  musicControl.init();
+  clickSoundControl.init();
+  // Registrar controles de audio en el store para acceso global
+  store.setBackgroundMusic(musicControl);
+  store.setClickSound(clickSoundControl);
+});
+
+onUnmounted(() => {
+  musicControl.cleanup();
+});
 function handleJoinRoom() {
   showLobby.value = false;
   showRoomsUserView.value = true;
