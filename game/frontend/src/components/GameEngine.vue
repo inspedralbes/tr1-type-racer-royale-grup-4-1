@@ -314,7 +314,7 @@ function handleTextInput() {
     }
   }
 
-  // ✅ Complete article when typed length reaches target length, ignoring mistakes
+  //Complete article when typed length reaches target length, ignoring mistakes
   if (article.inputText.length >= article.text.length) {
     const timeTaken = Date.now() - textStartTime;
     completeArticle(timeTaken);
