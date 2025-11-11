@@ -39,7 +39,7 @@
             </div>
             <div class="sala-playercount player-column">
               <span class="player-count"
-                >{{ sala.jugadores }}/{{ maxJugadoresPorSala }}</span
+                >{{ sala.jugadores }}/{{ sala.maxPlayers }}</span
               >
             </div>
           </div>
@@ -67,7 +67,8 @@ import { useGameStore } from "../stores/gameStore";
 
 const emit = defineEmits(["back", "joinedRoom"]);
 const gameStore = useGameStore();
-const maxJugadoresPorSala = ref(4);
+// CÓDIGO ANTERIOR: const maxJugadoresPorSala = ref(4);
+// MODIFICADO: Ya no es necesario porque cada sala tiene su propio maxPlayers
 const salaSeleccionada = ref(null);
 
 const salasFiltradas = computed(() =>
@@ -77,7 +78,10 @@ const salasFiltradas = computed(() =>
       id: sala.name,
       nombre: sala.name,
       jugadores: sala.players.length,
-      isFull: sala.players.length >= maxJugadoresPorSala.value,
+      // CÓDIGO ANTERIOR: isFull: sala.players.length >= maxJugadoresPorSala.value,
+      // MODIFICADO: Ahora usa el maxPlayers específico de cada sala (con fallback a 4)
+      maxPlayers: sala.maxPlayers || 4,
+      isFull: sala.players.length >= (sala.maxPlayers || 4),
     })),
 );
 

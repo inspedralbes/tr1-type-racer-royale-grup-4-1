@@ -24,6 +24,11 @@ export default class SocketManager {
     this.socket.on("connect", () => {
       console.log("Conectado al servidor de socket");
       // Volver a registrar todos los callbacks después de reconectar
+      // MODIFICADO: Ahora hacemos off antes de on para evitar duplicados
+      // CÓDIGO ANTERIOR:
+      // Object.entries(this.callbacks).forEach(([event, callback]) => {
+      //   this.socket.on(event, callback);
+      // });
       Object.entries(this.callbacks).forEach(([event, callback]) => {
         this.socket.off(event, callback);
         this.socket.on(event, callback);
@@ -43,10 +48,23 @@ export default class SocketManager {
     });
 
     // Eliminado onAny para evitar doble invocación de callbacks (ya registramos con socket.on)
+    // CÓDIGO ANTERIOR COMENTADO (causaba notificaciones duplicadas):
+    // this.socket.onAny((event, ...args) => {
+    //   console.debug(`📡 Evento recibido [${event}]:`, ...args);
+    //   if (this.callbacks[event]) {
+    //     this.callbacks[event](...args);
+    //   }
+    // });
   }
 
   on(eventName, callback) {
     // Si ya existe un callback registrado para este evento, lo quitamos primero
+    // MODIFICADO: Antes no se hacía off previo, causando duplicados
+    // CÓDIGO ANTERIOR:
+    // this.callbacks[eventName] = callback;
+    // if (this.socket) {
+    //   this.socket.on(eventName, callback);
+    // }
     if (this.callbacks[eventName] && this.socket) {
       this.socket.off(eventName, this.callbacks[eventName]);
     }
@@ -56,6 +74,7 @@ export default class SocketManager {
     }
   }
 
+  // MÉTODO AÑADIDO: Para limpiar listeners correctamente al desmontar componentes
   off(eventName) {
     const existing = this.callbacks[eventName];
     if (existing && this.socket) {
@@ -63,6 +82,7 @@ export default class SocketManager {
     }
     delete this.callbacks[eventName];
   }
+  
   //Sending the server data
   emit(eventName, data) {
     if (this.socket) {
