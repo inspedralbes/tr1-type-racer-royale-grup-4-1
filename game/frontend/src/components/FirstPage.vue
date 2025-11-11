@@ -139,6 +139,8 @@ function doLogin() {
     }
   });
   sm.emit('login', { username, password });
+}
+
 onBeforeUnmount(() => {
   if (sm.callbacks['loginResult'] === loginResultHandler) {
     delete sm.callbacks['loginResult'];
