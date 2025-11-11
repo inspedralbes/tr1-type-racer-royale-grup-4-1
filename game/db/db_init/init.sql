@@ -34,7 +34,8 @@ CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
     password VARCHAR(100) NOT NULL,
-    img VARCHAR(255) DEFAULT NULL
+    img VARCHAR(255) DEFAULT NULL,
+    money INT DEFAULT 25
 );
 
 ALTER TABLE users ADD UNIQUE KEY uk_users_username (username);

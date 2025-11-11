@@ -1,32 +1,13 @@
 <template>
   <div class="lobby">
-    <div class="scanlines"></div>
-    <div class="pixel-stars">
-      <div class="pixel-star" v-for="n in 8" :key="n"></div>
-    </div>
-    <div class="title-container">
-      <h1 class="title">
-        <span class="word word-1">Lobby</span>
-      </h1>
-    </div>
-
     <Config />
-    <p class="welcome-text">Bienvenido, {{ gameStore.username }}</p>
 
     <div class="actions">
-      <button class="play-button btn" @click="handleCreateRoom">
-        <span class="button-text">CREAR SALA</span>
-        <span class="pixel-border"></span>
-        <span class="button-pixels"></span>
-      </button>
-      <button class="play-button btn" @click="handleJoinRoom">
-        <span class="button-text">UNIRSE SALA</span>
-        <span class="pixel-border"></span>
-        <span class="button-pixels"></span>
-      </button>
+      <button class="lobby-button" @click="handleCreateRoom">Crear sala</button>
+      <button class="lobby-button" @click="handleJoinRoom">Unirse sala</button>
     </div>
 
-    <button class="back-button" aria-label="Volver" @click="emit('back')">
+    <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
       <i class="fa-solid fa-house"></i>
     </button>
   </div>
@@ -69,294 +50,91 @@ function handleJoinRoom() {
 </script>
 
 <style scoped>
-
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
-
-body, html {
-  margin: 0; padding: 0; overflow: hidden;
-  font-family: 'Poppins', sans-serif;
-}
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 
 .lobby {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  height: 100vh; width: 100%;
-  box-sizing: border-box; position: relative;
-  background-size: cover;
-  color: #333; text-align: center;
-  padding: 2rem 0;
-  overflow: hidden;
-}
-
-/* Scanlines CRT effect */
-.scanlines {
-  position: fixed; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0,0,0,0.04) 0px,
-    transparent 1px,
-    transparent 2px,
-    rgba(0,0,0,0.04) 3px
-  );
-  animation: scanlineMove 8s linear infinite;
-  z-index: 10;
-}
-@keyframes scanlineMove {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(4px); }
-}
-
-/* Pixel stars */
-.pixel-stars {
-  position: absolute; width: 120%; height: 120%;
-  pointer-events: none; z-index: 1;
-}
-.pixel-star {
-  position: absolute; width: 12px; height: 12px;
-  background: #FFA500;
-  box-shadow: 0 0 10px #FFA500, inset 0 0 5px #fff;
-  animation: pixelStarBlink 1.5s ease-in-out infinite;
-}
-.pixel-star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
-.pixel-star:nth-child(2) { top: 20%; right: 15%; animation-delay: 0.3s; }
-.pixel-star:nth-child(3) { top: 70%; left: 15%; animation-delay: 0.6s; }
-.pixel-star:nth-child(4) { top: 80%; right: 20%; animation-delay: 0.9s; }
-.pixel-star:nth-child(5) { top: 30%; left: 5%; animation-delay: 0.2s; }
-.pixel-star:nth-child(6) { top: 50%; right: 10%; animation-delay: 0.5s; }
-.pixel-star:nth-child(7) { top: 15%; left: 85%; animation-delay: 0.8s; }
-.pixel-star:nth-child(8) { top: 65%; left: 80%; animation-delay: 0.4s; }
-@keyframes pixelStarBlink {
-  0%,50%,100% { opacity: 1; transform: scale(1) rotate(0deg); }
-  25% { opacity: 0.3; transform: scale(1.3) rotate(45deg); }
-  75% { opacity: 0.5; transform: scale(0.8) rotate(-45deg); }
-}
-
-/* Title with glitch and float */
-.title-container {
-  position: relative; display: flex; flex-direction: column; align-items: center;
-  animation: glitchContainer 5s infinite;
-  margin-bottom: 1rem; margin-top: -1rem;
-}
-@keyframes glitchContainer {
-  0%,90%,100% { transform: translate(0,0); }
-  91% { transform: translate(-2px,1px); }
-  92% { transform: translate(2px,-1px); }
-  93% { transform: translate(-1px,2px); }
-  94% { transform: translate(1px,-2px); }
-}
-.title {
-  font-size: 6rem; font-weight: 900; margin: 0;
-  display: flex; flex-direction: column; line-height: 1;
-  text-transform: uppercase;
-  animation: titleGlitch 3s infinite, titleFloat 4s ease-in-out infinite;
-}
-.word {
-  display: block;
-  animation: wordBlink 2s ease-in-out infinite;
-}
-.word-1 {
-  color: #FFD700;
-  text-shadow:
-    -1px -1px 0 #000,
-    0 -1px 0 #000,
-    1px -1px 0 #000,
-    1px 0 0 #000,
-    1px 1px 0 #000,
-    0 1px 0 #000,
-    -1px 1px 0 #000,
-    -1px 0 0 #000,
-    0 0 10px rgba(0,0,0,0.5);
-  font-weight: 900;
-}
-@keyframes titleGlitch {
-  0%,85%,100% { transform: skew(0deg); }
-  86% { transform: skew(-1deg); }
-  88% { transform: skew(1deg); }
-  90% { transform: skew(0deg); }
-}
-@keyframes titleFloat {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-@keyframes wordBlink {
-  0%,100% { opacity: 1; }
-  50% { opacity: 0.8; }
-}
-
-/* Input group */
-.name-input-wrapper {
-  width: 100%; display: flex; justify-content: center;
-  margin: 1rem 0;
-}
-.name-input-container {
-  display: flex; justify-content: center;
-  max-width: 500px; width: 100%;
-  padding: 0 1rem;
-}
-.input-group {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 1.2rem; width: 100%; max-width: 300px; margin: 1rem 0;
-}
-.name-input {
-  padding: 0.8rem 1.5rem;
-  font-size: 1.2rem;
-  border: 2px solid #333;
-  border-radius: 4px;
-  outline: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  height: 100vh;
   width: 100%;
-  text-align: center;
-  box-sizing: border-box;
-  height: 48px;
+  background: url('@/img/bgimage.png') no-repeat center center;
+  background-size: cover;
   font-family: 'Poppins', sans-serif;
+  position: relative;
 }
 
-/* Submit button */
-.submit-button {
-  padding: 0 1.5rem;
-  font-size: 1rem;
-  background: linear-gradient(90deg, #4CAF50, #45a049);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap;
+.actions {
+  display: flex;
+  gap: 2.5rem;
+}
+
+.lobby-button {
+  padding: 1rem 2.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  letter-spacing: 0.08rem;
+  color: #fff;
+  background: rgba(91, 63, 27, 0.92);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+}
+
+.lobby-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.32);
+}
+
+.lobby-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+.back-button {
+  position: absolute;
+  left: 5vw;
+  bottom: 6vh;
+  width: 56px;
   height: 48px;
-  width: 100%;
+  border: none;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.submit-button:hover {
-  background: linear-gradient(90deg, #FFA500, #FFD700);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255,140,0,0.4);
-}
-.submit-button:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-
-/* Welcome text */
-.welcome-text {
-  font-size: 1.5rem;
-  color: #FF9500;  /* naranja vibrante */
-  font-weight: 600;
-  margin: 0 0 2rem;
-  text-shadow:
-    0 0 4px #FFB347,
-    0 0 1px rgba(0, 0, 0, 0.4);
-  letter-spacing: 0.03em;
-}
-
-/* Actions container */
-.actions {
-  display: flex; gap: 6rem; margin-top: 2rem;
-}
-.btn {
-  padding: 1rem 3rem;
-  font-size: 1.5rem;
-  background-color: #FF8C00;
-  color: #fff;
-  border: none;
-  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #2f2314;
   cursor: pointer;
-  position: relative;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-  overflow: hidden;
-  animation: buttonPulse 1.5s ease-in-out infinite;
-}
-.button-text {
-  position: relative; z-index: 2;
-  display: inline-block;
-  animation: textGlow 1.5s ease-in-out infinite;
-}
-@keyframes buttonPulse {
-  0%,100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1);}
-  50% { box-shadow: 0 6px 25px rgba(255,140,0,0.5);}
-}
-.pixel-border {
-  position: absolute;
-  inset: 4px;
-  border-radius: 50px;
-  border: 2px dashed #FFA500;
-  animation: borderDash 1s linear infinite;
-  pointer-events: none;
-}
-@keyframes borderDash {
-  0%,100% { border-color: #FFA500; }
-  50% { border-color: #fff; }
-}
-.button-pixels {
-  position: absolute;
-  top: 0; left: -100%;
-  width: 100%; height: 100%;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent 3px,
-    rgba(255,255,255,0.2) 3px,
-    rgba(255,255,255,0.2) 6px
-  );
-  animation: pixelScan 1.2s linear infinite;
-  pointer-events: none;
-}
-@keyframes pixelScan {
-  0% { left: -100%; }
-  100% { left: 100%; }
-}
-.play-button:hover, .btn:hover {
-  background-color: #FFA500;
-  transform: translateY(-5px) translateX(-2px);
-  box-shadow: 0 8px 30px rgba(255,140,0,0.6);
-}
-.play-button:hover .button-text {
-  animation: textFlicker 0.1s ease-in-out infinite;
-}
-@keyframes textFlicker {
-  0%,100% { opacity: 1; }
-  50% { opacity: 0.9; }
-}
-.play-button:active, .btn:active {
-  transform: translateY(2px) translateX(1px);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Back button */
-.back-button {
-  position: absolute; left: 5vw; bottom: 6vh;
-  background: #fff;
-  color: #000;
-  border: none;
-  border-radius: 8px;
-  width: 56px;
-  height: 48px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 40;
-}
 .back-button:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.05);
+  transform: scale(1.08);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
 }
+
+.back-button:active {
+  transform: scale(0.95);
+}
+
 .back-button i {
   font-size: 1.25rem;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-  .title { font-size: 4rem; }
-  .actions { gap: 1.2rem; }
-  .actions .play-button { padding: 0.6rem 1.6rem; font-size: 0.9rem; }
-  .actions .button-text { font-size: 0.8rem; padding: 0.4rem 0.8rem; }
-}
+  .actions {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
 
+  .lobby-button {
+    width: 220px;
+  }
+}
 </style>

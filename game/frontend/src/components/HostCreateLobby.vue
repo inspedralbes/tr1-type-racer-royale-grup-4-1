@@ -36,21 +36,21 @@
     </div>
     <br><br>
     <div class="button-container">
-      <button class="play-button btn" @click="goBack">
+      <button class="play-button btn" @click="gameStore.playClickSound(); goBack()">
         <span class="button-text">ATRÁS</span>
         <span class="pixel-border"></span>
         <span class="button-pixels"></span>
        
       </button>
      
-      <button class="play-button btn" @click="createRoom">
+      <button class="play-button btn" @click="gameStore.playClickSound(); createRoom()">
         <span class="button-text">CREAR</span>
         <span class="pixel-border"></span>
         <span class="button-pixels"></span>
       </button>
     </div>
 
-    <button class="back-button" aria-label="Volver" @click="goBack">
+    <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); goBack()">
       <i class="fa-solid fa-house"></i>
     </button>
   </div>
@@ -85,7 +85,9 @@ function createRoom() {
   // Emitir al servidor para crear la sala con nombre y dificultad
   gameStore.manager.emit("createRoom", {
     name: name,
-    difficulty: selectedDifficulty.value
+    difficulty: selectedDifficulty.value,
+    userId: gameStore.userId,
+    username: gameStore.username
   });
 
   emit("roomCreated", name);
