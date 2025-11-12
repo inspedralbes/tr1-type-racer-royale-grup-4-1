@@ -397,6 +397,7 @@ io.on("connection", (socket) => {
   socket.on("createRoom", (data) => {
     const roomName = data.name;
     const difficulty = data.difficulty;
+    console.log(`Creating room ${roomName} with difficulty ${difficulty}`);
     const gameMode = data.gameMode || 'normal';
     const userId = data.userId;
     const username = data.username;
@@ -490,10 +491,17 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("getArticles", (data) => {
-    const difficulty =
-      rooms.find((r) => r.name === data?.roomName)?.difficulty || "easy";
-    getArticlesFromDB(difficulty, (articles) => {
+  socket.on("getArticles", () => {
+    const player = players.find((p) => p.id === socket.id);
+    const room = player.room;
+    const roomDificulty = rooms.find((r) => r.name === room).difficulty;
+    console.log(
+      `Getting articles for room ${player.room} with difficulty ${roomDificulty}`,
+    );
+    console.log(
+      `Current rooms: ${JSON.stringify(rooms.map((r) => ({ name: r.name, difficulty: r.difficulty })))}`,
+    );
+    getArticlesFromDB(roomDificulty, (articles) => {
       // Limitar a 4 artículos: cada artículo representa el 25% del progreso total
       const limitedArticles = articles.slice(0, 4);
       socket.emit("articlesData", limitedArticles);
@@ -807,7 +815,7 @@ io.on("connection", (socket) => {
   socket.on("gameEnded", (finalData) => {
     const player = players.find((p) => p.id === socket.id);
     if (!player || !player.room) return;
-    
+
     const room = rooms.find((r) => r.name === player.room);
     if (!room) return;
 
@@ -823,8 +831,8 @@ io.on("connection", (socket) => {
     console.log(`Player ${player.username} finished game with:`, finalData);
 
     // Check if all players have finished
-    const allFinished = room.players.every(p => {
-      const score = room.scores.find(s => s.id === p.id);
+    const allFinished = room.players.every((p) => {
+      const score = room.scores.find((s) => s.id === p.id);
       return score && score.finished;
     });
 
@@ -845,13 +853,15 @@ io.on("connection", (socket) => {
 
       // Award prize money to winner
       const winner = rankings[0];
-      const winnerPlayer = players.find(p => p.id === winner.id);
+      const winnerPlayer = players.find((p) => p.id === winner.id);
       const totalPot = room.totalPot || 0;
 
       if (winnerPlayer && winnerPlayer.userId && totalPot > 0) {
         updateUserMoney(winnerPlayer.userId, totalPot, (ok, payload) => {
           if (ok) {
-            console.log(`Winner ${winnerPlayer.username} received ${totalPot}. New balance: ${payload.money}`);
+            console.log(
+              `Winner ${winnerPlayer.username} received ${totalPot}. New balance: ${payload.money}`,
+            );
           }
         });
       }
@@ -863,17 +873,19 @@ io.on("connection", (socket) => {
           username: score.username,
           articlesCompleted: score.articlesDone,
           errors: score.errors || 0,
-          progress: score.progress || 0
+          progress: score.progress || 0,
         })),
         totalPot: totalPot,
-        winner: winner.username
+        winner: winner.username,
       };
 
       // Send podium data to all players in the room
       io.to(player.room).emit("showPodium", podiumData);
-      
-      console.log(`Game ended in room ${player.room}. Winner: ${winner.username}`);
-      
+
+      console.log(
+        `Game ended in room ${player.room}. Winner: ${winner.username}`,
+      );
+
       // Reset room state
       room.status = "finished";
     }

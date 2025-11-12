@@ -13,7 +13,7 @@
       <template v-else>
         <div class="game-layout">
           <!-- User Scoreboard (Left side) -->
-          <div class="user-scoreboard card-paper">
+          <div class="user-scoreboard">
             <div
               class="timer-container"
               :class="{ 'timer-warning': timeRemaining <= 30 }"
@@ -31,7 +31,7 @@
             <div class="user-scoreboard-content">
               <div class="player-entry current-user">
                 <div class="player-header">
-                  <span class="player-name" :title="gameStore.username">{{ gameStore.username }}</span>
+                  <span class="player-name">{{ gameStore.username }}</span>
                   <span class="player-count"
                     >{{ Math.round(overallProgress) }}%</span
                   >
@@ -54,15 +54,15 @@
           </div>
           <!-- Text Display Section -->
           <div v-if="!allCompleted" class="full-text-container">
-            <div class="text-display card-paper">
-            <span
+            <div class="text-display">
+              <span
                 v-for="(letter, i) in currentArticle.inputText"
-              :key="'input-' + i"
-              :class="getLetterClass(i)"
-            >
-              {{ letter }}
-            </span>
-            <span class="remaining-text">{{ remainingText }}</span>
+                :key="'input-' + i"
+                :class="getLetterClass(i)"
+              >
+                {{ letter }}
+              </span>
+              <span class="remaining-text">{{ remainingText }}</span>
             </div>
           </div>
 
@@ -74,7 +74,7 @@
           </div>
 
           <!-- Scoreboard Section -->
-          <div class="scoreboard card-paper">
+          <div class="scoreboard">
             <h3 class="scoreboard-title">Room progress</h3>
             <div class="scoreboard-content">
               <div
@@ -87,7 +87,7 @@
                 }"
               >
                 <div class="player-header">
-                  <span class="player-name" :title="score.username">
+                  <span class="player-name">
                     {{ score.username }}
                     <span
                       v-if="score.username === gameStore.username"
@@ -174,7 +174,7 @@ watch(currentRoomData, (newRoom) => {
 }, { immediate: true });
 
 // Timer state
-const timeRemaining = ref(120); // 120 seconds (2 minutes)
+const timeRemaining = ref(180); // 120 seconds (2 minutes)
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {
@@ -237,7 +237,7 @@ function handleTimeout() {
     totalErrors: gameState.value.totalErrors,
     progress: Math.round(overallProgress.value),
   };
-  
+
   gameStore.manager.emit("gameEnded", finalResults);
 }
 const currentArticle = computed(() => {
@@ -385,7 +385,7 @@ function completeArticle(timeTaken) {
     articleIndex: gameState.value.currentIndex,
     articlesCompleted: gameState.value.completedArticles,
   };
-  
+
   console.log("Resultados del usuario:", userResults);
   gameStore.manager.emit("userResults", userResults);
   gameStore.manager.emit("articleCompleted", gameState.value.completedArticles);
@@ -405,11 +405,11 @@ function completeArticle(timeTaken) {
 function getLetterClass(index) {
   const inputText = currentArticle.value.inputText || "";
   const fullText = currentArticle.value.text || "";
-  
+
   if (index >= inputText.length || index >= fullText.length) {
     return "";
   }
-  
+
   return inputText[index] === fullText[index]
     ? "correct-letter"
     : "incorrect-letter";
@@ -506,7 +506,7 @@ function handleSuddenDeathElimination() {
 
 function handleKeyDown(event) {
   const article = currentArticle.value;
-  if (!article || article.completed || isEliminated.value) return;
+  if (!article || article.completed) return;
 
   if (event.key === "Backspace") {
     article.inputText = article.inputText.slice(0, -1);
@@ -538,7 +538,7 @@ function loadArticles() {
   if (gameStore.manager.callbacks["articlesData"]) {
     delete gameStore.manager.callbacks["articlesData"];
   }
-  
+
   gameStore.manager.on("articlesData", (articles) => {
     if (articles && articles.length > 0) {
       gameState.value.articles = articles.map((a) => ({
@@ -547,22 +547,13 @@ function loadArticles() {
         completed: false,
       }));
       gameState.value.isLoading = false;
-      
-      // Obtener el modo de juego de la sala actual
-      const room = gameStore.rooms.find(r => r.name === gameStore.currentRoom);
-      if (room?.gameMode) {
-        gameMode.value = room.gameMode;
-        console.log('🎮 Modo de juego cargado:', gameMode.value);
-      }
-      
       //Upon loading the articles it will start the countdown
       startCountdown();
     } else {
       gameState.value.isLoading = false;
     }
   });
-  
-  gameStore.manager.emit("getArticles");
+  gameStore.manager.emit("getArticles", { roomName: gameStore.roomName });
 }
 
 gameStore.manager.on("leaderboardUpdateInRoom", handleUserScores);
@@ -636,6 +627,8 @@ onMounted(() => {
     }
   }, 500);
   
+onMounted(() => {
+  document.addEventListener("keydown", handleKeyDown);
   loadArticles();
 });
 
@@ -644,8 +637,6 @@ onBeforeUnmount(() => {
   gameStore.manager.off("articlesData");
   gameStore.manager.off("playerMilestone");
   gameStore.manager.off("playerError");
-  gameStore.manager.off("eliminatedFromGame");
-  gameStore.manager.off("playerEliminated");
   //Cleanup after timer is over
   if (timerInterval.value) {
     clearInterval(timerInterval.value);
@@ -657,18 +648,29 @@ onBeforeUnmount(() => {
 .game-engine {
   position: relative;
   min-height: 100vh;
-  background: var(--color-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-2xl) var(--spacing-xl);
 }
 
 .back-button {
   position: absolute;
-  top: var(--spacing-xl);
-  left: var(--spacing-xl);
+  left: 5vw;
+  bottom: 50vh;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
   z-index: 10;
+}
+
+.back-button:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
 }
 
 .container {
@@ -676,8 +678,11 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: var(--spacing-xl);
-  width: 100%;
+  padding: 2rem 0;
+  margin-top: 5vh;
+  position: relative;
+  font-family: "Playfair Display", serif;
+  min-height: 60vh;
 }
 
 .game-layout {
@@ -697,37 +702,37 @@ onBeforeUnmount(() => {
 }
 
 .text-display {
-  font-size: 2rem;
+  font-size: 2em;
   line-height: 1.6;
   text-align: left;
   word-wrap: break-word;
-  padding: var(--spacing-lg) var(--spacing-xl);
-  border-radius: var(--radius-xl);
-  border: 2px solid var(--color-primary);
-  box-shadow: var(--shadow-md);
-  background: var(--bg-card);
+  background-color: #f9f9f9;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  border: 2px solid #000;
+  box-shadow: 3px 3px 0 #000;
   min-height: 120px;
   max-height: 500px;
   overflow-y: auto;
 }
 
 .correct-letter {
-  color: var(--text-white);
-  background-color: var(--color-secondary);
+  color: white;
+  background-color: #4caf50;
 }
 
 .incorrect-letter {
-  color: var(--text-white);
-  background-color: var(--color-danger);
+  color: white;
+  background-color: #f44336;
 }
 
 .remaining-text {
-  color: var(--text-muted);
+  color: rgba(0, 0, 0, 0.4);
 }
 
 .loading {
   font-size: 2em;
-  color: var(--color-primary);
+  color: #222020;
   text-align: center;
   font-weight: 600;
 }
@@ -737,32 +742,30 @@ onBeforeUnmount(() => {
   max-width: 900px;
   text-align: center;
   font-size: 1.5rem;
-  color: var(--color-primary);
-  border: 3px solid var(--color-primary);
-  padding: var(--spacing-xl);
-  background: var(--bg-card);
-  box-shadow: var(--shadow-lg);
+  color: #222;
+  border: 3px solid #000;
+  padding: 2rem;
+  background: #fffef8;
+  box-shadow: 6px 6px 0 #000;
 }
 /* Timer Styles */
 .timer-container {
-  background: var(--bg-card);
-  color: var(--color-primary);
-  border: 3px solid var(--color-primary);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-  box-shadow: var(--shadow-md);
+  background-color: white;
+  color: black;
+  border: 3px solid #000;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 4px 4px 0 #000;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-md);
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  gap: 1rem;
+  transition: all 0.3s ease;
 }
 
 .timer-container.timer-warning {
-  background: color-mix(in srgb, var(--color-danger) 75%, var(--bg-card) 25%);
-  color: var(--text-white);
-  border-color: var(--color-danger);
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
   animation: pulse 1s infinite;
 }
 
@@ -777,8 +780,8 @@ onBeforeUnmount(() => {
 }
 
 .timer-icon {
-  font-size: 2.2rem;
-  color: inherit;
+  font-size: 2rem;
+  color: black;
 }
 
 .timer-display {
@@ -788,7 +791,8 @@ onBeforeUnmount(() => {
   font-family: "Courier New", monospace;
   font-size: 2.5rem;
   font-weight: 700;
-  color: inherit;
+  color: black;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .timer-minutes,
@@ -814,7 +818,11 @@ onBeforeUnmount(() => {
 /* Scoreboard Styles */
 .scoreboard {
   width: 250px;
-  padding: var(--spacing-lg);
+  background: #ffffff;
+  border: 2px solid #000;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 #000;
+  padding: 1.5rem;
 }
 
 .scoreboard-title {
@@ -822,34 +830,34 @@ onBeforeUnmount(() => {
   font-size: 1.5rem;
   font-weight: 700;
   text-align: center;
-  color: var(--color-primary);
-  border-bottom: 2px solid var(--color-primary);
+  color: #222;
+  border-bottom: 2px solid #000;
   padding-bottom: 0.75rem;
 }
 
 .scoreboard-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 1rem;
 }
 
 .player-entry {
-  background: var(--bg-page);
-  border: 2px solid color-mix(in srgb, var(--color-primary) 30%, var(--bg-body) 70%);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  background: #f9f9f9;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  padding: 1rem;
+  transition: all 0.3s ease;
 }
 
 .player-entry.is-leader {
-  background: color-mix(in srgb, var(--color-secondary) 60%, var(--bg-card) 40%);
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  border-color: #c92a2a;
+  box-shadow: 0 4px 12px rgba(201, 42, 42, 0.3);
 }
 
 .player-entry.is-leader .player-name,
 .player-entry.is-leader .player-count {
-  color: var(--text-white);
+  color: white;
   font-weight: 700;
 }
 
@@ -857,62 +865,58 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: 0.75rem;
 }
 
 .player-name {
   font-size: 1.1rem;
   font-weight: 600;
   color: #222;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
 }
 
 .you-label {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: #666;
   font-weight: 400;
   margin-left: 0.5rem;
 }
 
 .is-leader .you-label {
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .player-count {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-primary);
+  color: #555;
 }
 
 .progress-bar-container {
-  background: color-mix(in srgb, var(--bg-card) 70%, var(--bg-hover) 30%);
-  border-radius: var(--radius-lg);
+  background: #e0e0e0;
+  border-radius: 8px;
   height: 24px;
   overflow: hidden;
   position: relative;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--bg-body) 70%);
+  border: 1px solid #ccc;
 }
 
 .progress-bar-fill {
   height: 100%;
-  background: color-mix(in srgb, var(--color-secondary) 80%, var(--color-primary) 20%);
-  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, #4caf50 0%, #45a049 100%);
+  border-radius: 8px;
   transition: width 0.5s ease;
   position: relative;
 }
 
 .is-leader .progress-bar-fill {
-  background: color-mix(in srgb, var(--color-primary) 65%, var(--text-white) 35%);
-  box-shadow: 0 0 10px rgba(91, 63, 27, 0.35);
+  background: linear-gradient(90deg, #ffd93d 0%, #ffbe0b 100%);
+  box-shadow: 0 0 10px rgba(255, 190, 11, 0.5);
 }
 
 .empty-scoreboard {
   text-align: center;
   padding: 2rem 1rem;
-  color: var(--text-muted);
+  color: #999;
   font-size: 1rem;
 }
 
@@ -936,7 +940,11 @@ onBeforeUnmount(() => {
 /* User Scoreboard (Left side) */
 .user-scoreboard {
   width: 250px;
-  padding: var(--spacing-lg);
+  background: #ffffff;
+  border: 2px solid #000;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 #000;
+  padding: 1rem;
   flex-shrink: 0;
   align-self: flex-start;
 }
@@ -946,37 +954,33 @@ onBeforeUnmount(() => {
   font-size: 1.3rem;
   font-weight: 700;
   text-align: center;
-  color: var(--color-primary);
-  border-bottom: 2px solid var(--color-primary);
+  color: #222;
+  border-bottom: 2px solid #000;
   padding-bottom: 0.5rem;
 }
 
 .user-scoreboard-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 1rem;
 }
 
 .user-scoreboard .player-entry {
-  background: var(--bg-page);
-  border: 2px solid color-mix(in srgb, var(--color-primary) 30%, var(--bg-body) 70%);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
+  background: #f9f9f9;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  padding: 1rem;
 }
 
 .user-scoreboard .player-name {
   font-size: 1.1rem;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 150px;
 }
 
 .user-scoreboard .player-count {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-primary);
+  color: #555;
 }
 
 @media (max-width: 1024px) {
