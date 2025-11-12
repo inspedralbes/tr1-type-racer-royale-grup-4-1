@@ -31,7 +31,7 @@
             <div class="user-scoreboard-content">
               <div class="player-entry current-user">
                 <div class="player-header">
-                  <span class="player-name">{{ gameStore.username }}</span>
+                  <span class="player-name" :title="gameStore.username">{{ gameStore.username }}</span>
                   <span class="player-count"
                     >{{ Math.round(overallProgress) }}%</span
                   >
@@ -82,7 +82,7 @@
                 }"
               >
                 <div class="player-header">
-                  <span class="player-name">
+                  <span class="player-name" :title="score.username">
                     {{ score.username }}
                     <span
                       v-if="score.username === gameStore.username"
@@ -831,6 +831,10 @@ onBeforeUnmount(() => {
   font-size: 1.1rem;
   font-weight: 600;
   color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 .you-label {
@@ -934,6 +938,10 @@ onBeforeUnmount(() => {
 .user-scoreboard .player-name {
   font-size: 1.1rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .user-scoreboard .player-count {

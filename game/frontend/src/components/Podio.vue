@@ -13,7 +13,7 @@
               {{ player.position }}
             </div>
             <div class="player-info" :class="{ large: index === 0 }">
-              <div class="player-name">{{ player.username }}</div>
+              <div class="player-name" :title="player.username">{{ player.username }}</div>
               <div class="player-stats-mini">
                 <span>📝 {{ player.articlesCompleted }} artículos</span>
                 <span>❌ {{ player.errors }} errores</span>
@@ -28,7 +28,7 @@
             <div class="stat-title">🎉 Ganador</div>
             <div class="stat-content">
               <div class="winner-info">
-                <div class="winner-name">{{ podiumData.winner }}</div>
+                <div class="winner-name" :title="podiumData.winner">{{ podiumData.winner }}</div>
                 <div class="prize-money">Premio: {{ podiumData.totalPot }} 💰</div>
               </div>
             </div>
@@ -40,7 +40,7 @@
               <div v-for="player in podiumData.rankings" :key="player.username" class="player-detail">
                 <div class="player-detail-header">
                   <span class="rank-badge">{{ player.position }}º</span>
-                  <span class="player-detail-name">{{ player.username }}</span>
+                  <span class="player-detail-name" :title="player.username">{{ player.username }}</span>
                 </div>
                 <div class="player-detail-stats">
                   <div class="stat-item">
@@ -174,6 +174,10 @@ function getRankClass(index) {
   font-weight: 700;
   color: #222020;
   font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .player-stats-mini {
@@ -220,6 +224,12 @@ function getRankClass(index) {
   font-weight: 800;
   color: #222020;
   margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .prize-money {
@@ -255,6 +265,10 @@ function getRankClass(index) {
   font-weight: 700;
   font-size: 1rem;
   color: #222020;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .player-detail-stats {

@@ -37,7 +37,7 @@
             <i v-else class="fa-solid fa-user player-icon"></i>
           </div>
           <div class="player-info">
-            <span class="player-name">{{ jugador.username }}</span>
+            <span class="player-name" :title="jugador.username">{{ jugador.username }}</span>
             <span v-if="jugador.status === 'ready'" class="ready-badge">
               <i class="fa-solid fa-check"></i> LISTO
             </span>
@@ -547,6 +547,10 @@ onUnmounted(() => {
 }
 .player-name {
   font-size: 1.4rem; font-weight: 700; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 .player-card.empty .player-name {
   color: #666; font-style: italic; text-shadow: none;
