@@ -1,16 +1,19 @@
 <template>
-  <MoneyContainer v-if="store.userId && !isFirstPageVisible" />
-  <template v-if="!startGame">
+  <MoneyContainer v-if="store.userId" />
+  <template v-if="showPodio">
+    <Podio :podiumData="podiumData" @back="handleBackFromPodio" />
+  </template>
+  <template v-else-if="startGame">
+    <GameEngine @activeKey="handleActiveKey" @back="handleBackFromGame" />
+    <Keyboard :activeKey="currActiveKey" />
+  </template>
+  <template v-else>
     <FirstPage v-if="!showMainMenu && !showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
     <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
     <HostCreateLobby v-else-if="showHostCreateLobby" @backToLobby="handleBackFromCreateLobby" @roomCreated="handleRoomCreated" />
     <RoomsUserView v-else-if="showRoomsUserView" @back="handleBackFromRooms" @joinedRoom="handleJoinedRoom" />
     <UserLobby v-else-if="showUserLobby" @back="handleBackFromUserLobby" @startGame="handleGameStart" />
     <MainMenu v-else-if="showMainMenu" />
-  </template>
-  <template v-else>
-    <GameEngine @activeKey="handleActiveKey" @back="handleBackFromGame" />
-    <Keyboard :activeKey="currActiveKey" />
   </template>
 </template>
 
@@ -27,6 +30,7 @@ import RoomsUserView from "./components/RoomsUserView.vue";
 import HostCreateLobby from "./components/HostCreateLobby.vue";
 import UserLobby from "./components/UserLobby.vue";
 import MoneyContainer from "./components/MoneyContainer.vue";
+import Podio from "./components/Podio.vue";
 import { useBackgroundMusicAutoplay } from "@/composables/useBackgroundMusicAutoplay.js";
 import { useSoundEffect } from "@/composables/useSoundEffect.js";
   
@@ -36,6 +40,8 @@ const showLobby = ref(false);
 const showConfig = ref(false);
 const showHostCreateLobby = ref(false); 
 const showUserLobby = ref(false);
+const showPodio = ref(false);
+const podiumData = ref(null);
 const currActiveKey = ref("");
 const store = useGameStore();
 const manager = store.manager;
@@ -69,6 +75,26 @@ onMounted(() => {
   // Registrar controles de audio en el store para acceso global
   store.setBackgroundMusic(musicControl);
   store.setClickSound(clickSoundControl);
+  
+  // Listen for podium navigation event from server
+  manager.on('showPodium', (data) => {
+    console.log('Navigating to podium with data:', data);
+    podiumData.value = data;
+    startGame.value = false;
+    showPodio.value = true;
+    
+    // Update user money after game ends
+    if (store.userId) {
+      fetch(`http://localhost:3000/api/get-user-money/${store.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            store.setMoney(data.money);
+          }
+        })
+        .catch(err => console.error('Error fetching updated money:', err));
+    }
+  });
 });
 
 onUnmounted(() => {
@@ -146,6 +172,26 @@ function handleActiveKey(key) {
   requestAnimationFrame(() => {
     currActiveKey.value = key;
   });
+}
+
+function handleBackFromPodio() {
+  showPodio.value = false;
+  podiumData.value = {
+    rankings: [],
+    totalPot: 0,
+    winner: ''
+  };
+  // Leave the room
+  if (store.currentRoom) {
+    store.manager.emit('leaveRoom', store.currentRoom);
+    store.setRoomName('');
+  }
+  // Return to first page
+  showLobby.value = false;
+  showRoomsUserView.value = false;
+  showHostCreateLobby.value = false;
+  showUserLobby.value = false;
+  showMainMenu.value = false;
 }
 </script>
 
