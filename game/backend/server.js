@@ -253,7 +253,6 @@ io.on("connection", (socket) => {
       username = data.username;
     }
 
-    socket.join(roomName);
     let room = rooms.find((r) => r.name === roomName);
     if (!room) {
       console.log("Room not found:", roomName);
@@ -276,33 +275,67 @@ io.on("connection", (socket) => {
       player.username = username;
     }
 
-    if (!room.scores.find((s) => s.id === socket.id)) {
-      room.scores.push({
-        id: socket.id,
-        username: player.username,
-        articlesDone: 0,
-        progress: 0, // Porcentaje de caracteres escritos (0-100)
-      });
-      //Try to update the roomScore to this
-      io.to(roomName).emit("leaderboardUpdateInRoom", room.scores);
-    }
-    if (!room.players.find((p) => p.id === socket.id)) {
-      player.room = roomName;
-      player.status = "waiting";
-      room.players.push(player);
-
-      if (room.players.length === ROOM_CAPACITY) {
-        room.isFull = true;
-        io.to(roomName).emit("roomFull", true);
-        io.to(roomName).emit("requestReady");
+    // Verificar y deducir entrada para modo Muerte Súbita
+    if (room.gameMode === 'muerte-subita') {
+      if (!userId) {
+        socket.emit('joinRoomFailed', { message: 'Debes iniciar sesión para unirte a una sala de Muerte Súbita' });
+        return;
       }
+      
+      // Deducir la entrada de 100
+      updateUserMoney(userId, -100, (ok, payload) => {
+        if (!ok) {
+          socket.emit('joinRoomFailed', { message: 'No tienes suficiente dinero (necesitas 100)' });
+          return;
+        }
+        
+        console.log(`Entrada de 100 deducida al unirse a sala Muerte Súbita. Nuevo balance: ${payload.money}`);
+        socket.emit('moneyUpdated', { newMoney: payload.money });
+        
+        // Añadir la entrada al bote
+        room.bets[socket.id] = 100;
+        room.totalPot += 100;
+        
+        // Continuar con la unión a la sala
+        joinRoomAfterPayment();
+      });
+    } else {
+      socket.join(roomName);
+      joinRoomAfterPayment();
     }
-    io.to(roomName).emit("updateRooms", rooms);
-    io.to(roomName).emit("updateRoomPlayers", room.players);
+    
+    function joinRoomAfterPayment() {
+      socket.join(roomName);
+      
+      if (!room.scores.find((s) => s.id === socket.id)) {
+        room.scores.push({
+          id: socket.id,
+          username: player.username,
+          articlesDone: 0,
+          progress: 0,
+          errors: 0,
+        });
+        io.to(roomName).emit("leaderboardUpdateInRoom", room.scores);
+      }
+      if (!room.players.find((p) => p.id === socket.id)) {
+        player.room = roomName;
+        player.status = "waiting";
+        room.players.push(player);
 
-    // Enviar el bote total actual al jugador que se une
-    if (room.totalPot > 0) {
-      socket.emit("updateTotalPot", room.totalPot);
+        if (room.players.length === ROOM_CAPACITY) {
+          room.isFull = true;
+          io.to(roomName).emit("roomFull", true);
+          io.to(roomName).emit("requestReady");
+        }
+      }
+      io.to(roomName).emit("updateRooms", rooms);
+      io.to(roomName).emit("updateRoomPlayers", room.players);
+
+      // Enviar el bote total actual al jugador que se une
+      if (room.totalPot > 0) {
+        socket.emit("updateTotalPot", room.totalPot);
+        io.to(roomName).emit("updateTotalPot", room.totalPot);
+      }
     }
   });
 
@@ -364,6 +397,7 @@ io.on("connection", (socket) => {
   socket.on("createRoom", (data) => {
     const roomName = data.name;
     const difficulty = data.difficulty;
+    const gameMode = data.gameMode || 'normal';
     const userId = data.userId;
     const username = data.username;
 
@@ -372,11 +406,14 @@ io.on("connection", (socket) => {
       const newRoom = {
         name: roomName,
         difficulty: difficulty,
+        gameMode: gameMode,
         players: [],
         status: "waiting",
         scores: [],
         bets: {},
         totalPot: 0,
+        entryFee: gameMode === 'muerte-subita' ? 100 : 0,
+        eliminatedPlayers: [],
       };
       rooms.push(newRoom);
 
@@ -393,23 +430,61 @@ io.on("connection", (socket) => {
           player.username = username;
         }
 
-        socket.join(roomName);
-        //Since we're insta joining into the room make it so that we also update the score based on this
-        player.room = roomName;
-        player.status = "waiting";
-        newRoom.players.push(player);
-        newRoom.scores.push({
-          id: socket.id,
-          username: player.username,
-          articlesDone: 0,
-          progress: 0, // Porcentaje de caracteres escritos (0-100)
-        });
-        console.log(
-          `Player ${player.username || socket.id} created and joined room ${roomName}`,
-        );
-        io.to(roomName).emit("updateRoomPlayers", newRoom.players);
+        // Verificar y deducir entrada para modo Muerte Súbita
+        if (gameMode === 'muerte-subita') {
+          if (!userId) {
+            socket.emit('roomCreationFailed', { message: 'Debes iniciar sesión para crear una sala de Muerte Súbita' });
+            rooms = rooms.filter(r => r.name !== roomName);
+            return;
+          }
+          
+          // Deducir la entrada de 100
+          updateUserMoney(userId, -100, (ok, payload) => {
+            if (!ok) {
+              socket.emit('roomCreationFailed', { message: 'No tienes suficiente dinero para crear una sala de Muerte Súbita (necesitas 100)' });
+              rooms = rooms.filter(r => r.name !== roomName);
+              return;
+            }
+            
+            console.log(`Entrada de 100 deducida al crear sala Muerte Súbita. Nuevo balance: ${payload.money}`);
+            socket.emit('moneyUpdated', { newMoney: payload.money });
+            
+            // Añadir la entrada al bote
+            newRoom.totalPot = 100;
+            newRoom.bets[socket.id] = 100;
+            
+            // Continuar con la creación de la sala
+            joinRoomAfterPayment();
+          });
+        } else {
+          joinRoomAfterPayment();
+        }
+        
+        function joinRoomAfterPayment() {
+          socket.join(roomName);
+          player.room = roomName;
+          player.status = "waiting";
+          newRoom.players.push(player);
+          newRoom.scores.push({
+            id: socket.id,
+            username: player.username,
+            articlesDone: 0,
+            progress: 0,
+            errors: 0,
+          });
+          console.log(
+            `Player ${player.username || socket.id} created and joined room ${roomName}`,
+          );
+          io.to(roomName).emit("updateRoomPlayers", newRoom.players);
+          io.emit("updateRooms", rooms);
+          
+          if (newRoom.totalPot > 0) {
+            io.to(roomName).emit("updateTotalPot", newRoom.totalPot);
+          }
+        }
+      } else {
+        io.emit("updateRooms", rooms);
       }
-      io.emit("updateRooms", rooms);
     } else {
       console.log("Room already exists!");
     }
@@ -442,21 +517,27 @@ io.on("connection", (socket) => {
       console.log(`Jugador ${socket.id} eliminado de la sala ${roomName}`);
 
       // Devolver la apuesta del jugador a la base de datos y recalcular el bote
+      // EXCEPTO en modo Muerte Súbita donde la entrada no se devuelve
       if (room.bets && room.bets[socket.id] && player && player.userId) {
         const refundAmount = room.bets[socket.id];
 
-        // Devolver el dinero a la base de datos
-        updateUserMoney(player.userId, refundAmount, (ok, payload) => {
-          if (ok) {
-            console.log(
-              `Apuesta de ${refundAmount} devuelta al jugador ${socket.id}. Nuevo dinero: ${payload.money}`,
-            );
-            // Notificar al jugador su nuevo balance
-            socket.emit("betRefunded", { newMoney: payload.money });
-          } else {
-            console.error(`Error al devolver apuesta al jugador ${socket.id}`);
-          }
-        });
+        // Solo devolver si NO es modo Muerte Súbita
+        if (room.gameMode !== 'muerte-subita') {
+          // Devolver el dinero a la base de datos
+          updateUserMoney(player.userId, refundAmount, (ok, payload) => {
+            if (ok) {
+              console.log(
+                `Apuesta de ${refundAmount} devuelta al jugador ${socket.id}. Nuevo dinero: ${payload.money}`,
+              );
+              // Notificar al jugador su nuevo balance
+              socket.emit("betRefunded", { newMoney: payload.money });
+            } else {
+              console.error(`Error al devolver apuesta al jugador ${socket.id}`);
+            }
+          });
+        } else {
+          console.log(`Entrada de ${refundAmount} NO devuelta (Muerte Súbita)`);
+        }
 
         delete room.bets[socket.id];
         room.totalPot = Object.values(room.bets).reduce(
@@ -529,6 +610,69 @@ io.on("connection", (socket) => {
   socket.on("playerError", (data) => {
     const player = players.find((p) => p.id === socket.id);
     if (!player || !player.room) return;
+    
+    const room = rooms.find((r) => r.name === player.room);
+    if (!room) return;
+    
+    // Si es modo Muerte Súbita y el jugador comete un error, eliminarlo
+    if (room.gameMode === 'muerte-subita' && data.errorCount > 0) {
+      // Marcar al jugador como eliminado
+      if (!room.eliminatedPlayers) {
+        room.eliminatedPlayers = [];
+      }
+      
+      if (!room.eliminatedPlayers.includes(socket.id)) {
+        room.eliminatedPlayers.push(socket.id);
+        
+        // Notificar al jugador que fue eliminado
+        socket.emit('eliminatedFromGame', { 
+          message: 'Has sido eliminado por cometer un error en modo Muerte Súbita' 
+        });
+        
+        // Notificar a toda la sala
+        io.to(player.room).emit('playerEliminated', {
+          username: player.username,
+          playerId: socket.id
+        });
+        
+        console.log(`Jugador ${player.username} eliminado de sala ${player.room} por error en Muerte Súbita`);
+        
+        // Verificar si solo queda un jugador activo
+        const activePlayers = room.players.filter(p => !room.eliminatedPlayers.includes(p.id));
+        if (activePlayers.length === 1) {
+          // Hay un ganador
+          const winner = activePlayers[0];
+          const totalPot = room.totalPot || 0;
+          
+          if (winner.userId && totalPot > 0) {
+            updateUserMoney(winner.userId, totalPot, (ok, payload) => {
+              if (ok) {
+                console.log(`Ganador ${winner.username} recibió ${totalPot}. Nuevo balance: ${payload.money}`);
+              }
+            });
+          }
+          
+          // Preparar datos del podio
+          const podiumData = {
+            rankings: [{
+              position: 1,
+              username: winner.username,
+              articlesCompleted: 0,
+              errors: 0,
+              progress: 0
+            }],
+            totalPot: totalPot,
+            winner: winner.username,
+            gameMode: 'muerte-subita'
+          };
+          
+          // Mostrar podio
+          io.to(player.room).emit('showPodium', podiumData);
+          room.status = 'finished';
+        }
+      }
+    }
+    
     // Emitir a toda la sala (incluyendo al emisor)
     io.to(player.room).emit("playerError", {
       username: player.username,
@@ -756,7 +900,8 @@ io.on("connection", (socket) => {
       const before = room.players.length;
       room.players = room.players.filter((p) => p.id !== socket.id);
 
-      // Eliminar la apuesta del jugador y recalcular el bote (sin devolver, ya se desconectó)
+      // Eliminar la apuesta del jugador y recalcular el bote
+      // En Muerte Súbita, la entrada se queda en el bote
       if (room.bets && room.bets[socket.id]) {
         const betAmount = room.bets[socket.id];
         delete room.bets[socket.id];
@@ -1073,15 +1218,10 @@ function getUserMoney(userId, done) {
 
 function updateUserMoney(userId, amount, done) {
   connectToDB((connection) => {
-    const q = "UPDATE users SET money = money + ? WHERE id = ?";
-    connection.execute(q, [amount, userId], (err, results) => {
-      if (err) {
-        done(false, "DB_ERROR");
-        return;
-      }
-      // Get the updated money value
-      const q2 = "SELECT money FROM users WHERE id = ?";
-      connection.execute(q2, [userId], (err, rows) => {
+    // First check current money if we're deducting
+    if (amount < 0) {
+      const checkQuery = "SELECT money FROM users WHERE id = ?";
+      connection.execute(checkQuery, [userId], (err, rows) => {
         if (err) {
           done(false, "DB_ERROR");
           return;
@@ -1090,9 +1230,43 @@ function updateUserMoney(userId, amount, done) {
           done(false, "USER_NOT_FOUND");
           return;
         }
-        done(true, { money: rows[0].money || 0 });
+        
+        const currentMoney = rows[0].money || 0;
+        if (currentMoney + amount < 0) {
+          done(false, "INSUFFICIENT_FUNDS");
+          return;
+        }
+        
+        // Proceed with the update
+        performUpdate();
       });
-    });
+    } else {
+      // For positive amounts, proceed directly
+      performUpdate();
+    }
+    
+    function performUpdate() {
+      const q = "UPDATE users SET money = money + ? WHERE id = ?";
+      connection.execute(q, [amount, userId], (err, results) => {
+        if (err) {
+          done(false, "DB_ERROR");
+          return;
+        }
+        // Get the updated money value
+        const q2 = "SELECT money FROM users WHERE id = ?";
+        connection.execute(q2, [userId], (err, rows) => {
+          if (err) {
+            done(false, "DB_ERROR");
+            return;
+          }
+          if (!rows || rows.length === 0) {
+            done(false, "USER_NOT_FOUND");
+            return;
+          }
+          done(true, { money: rows[0].money || 0 });
+        });
+      });
+    }
   });
 }
 

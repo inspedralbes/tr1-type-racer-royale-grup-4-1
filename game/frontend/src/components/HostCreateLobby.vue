@@ -28,11 +28,29 @@
       <select 
         v-model="selectedDifficulty" 
         class="difficulty-select"
+        :disabled="selectedGameMode === 'muerte-subita'"
       >
         <option value="easy">Fácil</option>
         <option value="medium">Medio</option>
         <option value="hard">Difícil</option>
       </select>
+      <p v-if="selectedGameMode === 'muerte-subita'" class="difficulty-note">
+        La dificultad se establece automáticamente en Difícil para Muerte Súbita
+      </p>
+    </div>
+    
+    <div class="gamemode-container">
+      <label class="gamemode-label">Modo de Juego:</label>
+      <select 
+        v-model="selectedGameMode" 
+        class="gamemode-select"
+      >
+        <option value="normal">Normal</option>
+        <option value="muerte-subita">Muerte Súbita (100)</option>
+      </select>
+      <p v-if="selectedGameMode === 'muerte-subita'" class="gamemode-warning">
+        Entrada: 100 | Un error = Eliminación | El ganador se lleva todo
+      </p>
     </div>
     <br><br>
     <div class="button-container">
@@ -59,7 +77,7 @@
 <script setup>
 import Config from "./Config.vue";
 
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useGameStore } from '../stores/gameStore';
 
 const emit = defineEmits(["backToLobby", "roomCreated"]);
@@ -67,6 +85,14 @@ const gameStore = useGameStore();
 
 const roomName = ref("");
 const selectedDifficulty = ref("easy");
+const selectedGameMode = ref("normal");
+
+// Watch for game mode changes to auto-set difficulty
+watch(selectedGameMode, (newMode) => {
+  if (newMode === 'muerte-subita') {
+    selectedDifficulty.value = 'hard';
+  }
+});
 
 function goBack() {
   // Emit the backToLobby event and ensure we're showing the Lobby view
@@ -82,15 +108,55 @@ function createRoom() {
     return;
   }
 
-  // Emitir al servidor para crear la sala con nombre y dificultad
+  // Verificar si tiene suficiente dinero para modo Muerte Súbita
+  if (selectedGameMode.value === 'muerte-subita') {
+    if (!gameStore.userId) {
+      alert("Debes iniciar sesión para jugar en modo Muerte Súbita.");
+      return;
+    }
+    // El servidor verificará el dinero y deducirá la entrada
+  }
+
+  // Configurar listeners para respuestas del servidor
+  const handleRoomCreationFailed = (data) => {
+    alert(data.message || "Error al crear la sala");
+    gameStore.manager.off("roomCreationFailed", handleRoomCreationFailed);
+  };
+
+  const handleMoneyUpdated = (data) => {
+    gameStore.setMoney(data.newMoney);
+    gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
+  };
+
+  const handleRoomCreated = () => {
+    emit("roomCreated", name);
+    gameStore.manager.off("roomCreationFailed", handleRoomCreationFailed);
+    gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
+  };
+
+  // Configurar listeners temporales
+  gameStore.manager.on("roomCreationFailed", handleRoomCreationFailed);
+  gameStore.manager.on("moneyUpdated", handleMoneyUpdated);
+
+  // Emitir al servidor para crear la sala con nombre, dificultad y modo de juego
   gameStore.manager.emit("createRoom", {
     name: name,
     difficulty: selectedDifficulty.value,
+    gameMode: selectedGameMode.value,
     userId: gameStore.userId,
     username: gameStore.username
   });
 
-  emit("roomCreated", name);
+  // Si no es modo muerte súbita, emitir inmediatamente
+  if (selectedGameMode.value !== 'muerte-subita') {
+    handleRoomCreated();
+  } else {
+    // Para muerte súbita, esperar confirmación del servidor
+    setTimeout(() => {
+      // Si no hay error después de 2 segundos, asumir éxito
+      handleRoomCreated();
+    }, 2000);
+  }
 }
 </script>
 
@@ -232,7 +298,7 @@ body, html {
 .button-container {
   display: flex;
   justify-content: center;
-  gap: 6rem;  /* Increased to 6rem for even more space between buttons */
+  gap: 6rem;  
   width: 100%;
   max-width: 500px;
   margin-bottom: 2rem;
@@ -303,6 +369,82 @@ body, html {
 
 .difficulty-select:hover {
   border-color: #FFA500;
+}
+
+.difficulty-select:disabled {
+  background: rgba(200, 200, 200, 0.5);
+  color: #666;
+  cursor: not-allowed;
+  border-color: #ccc;
+}
+
+.difficulty-note {
+  font-size: 0.85rem;
+  color: #FFA500;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.8rem;
+  background: rgba(255, 165, 0, 0.1);
+  border-radius: 4px;
+  border: 1px solid #FFA500;
+}
+
+.gamemode-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 1.5rem 0;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gamemode-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  font-family: 'Poppins', sans-serif;
+}
+
+.gamemode-select {
+  padding: 0.8rem 1.5rem;
+  font-size: 1.2rem;
+  border: 2px solid #333;
+  border-radius: 4px;
+  outline: none;
+  width: 100%;
+  max-width: 300px;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  box-sizing: border-box;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.gamemode-select:focus {
+  border-color: #FFD700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.gamemode-select:hover {
+  border-color: #FFA500;
+}
+
+.gamemode-warning {
+  font-size: 0.9rem;
+  color: #ff4444;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 68, 68, 0.1);
+  border-radius: 4px;
+  border: 1px solid #ff4444;
 }
 
 .button-group {
