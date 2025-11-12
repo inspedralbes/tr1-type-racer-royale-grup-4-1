@@ -1,7 +1,7 @@
 <template>
   <div class="host-create-lobby">
     <Config />
-
+    
     <button class="btn-icon back-button" aria-label="Volver" @click="gameStore.playClickSound(); goBack()">
       <i class="fa-solid fa-house"></i>
     </button>
@@ -31,7 +31,6 @@
             id="difficulty"
             v-model="selectedDifficulty"
             class="select-field"
-            :disabled="selectedGameMode === 'muerte-subita'"
           >
             <option value="easy">Fàcil</option>
             <option value="medium">Mitjana</option>
@@ -39,27 +38,6 @@
           </select>
           <i class="fa-solid fa-chevron-down select-icon"></i>
         </div>
-        <p v-if="selectedGameMode === 'muerte-subita'" class="field-note">
-          La dificultat s'estableix automàticament en Difícil per a Mort Súbita
-        </p>
-      </div>
-
-      <div class="form-field">
-        <label for="gamemode">Mode de Joc</label>
-        <div class="select-wrapper">
-          <select
-            id="gamemode"
-            v-model="selectedGameMode"
-            class="select-field"
-          >
-            <option value="normal">Normal</option>
-            <option value="muerte-subita">Mort Súbita (100)</option>
-          </select>
-          <i class="fa-solid fa-chevron-down select-icon"></i>
-        </div>
-        <p v-if="selectedGameMode === 'muerte-subita'" class="field-warning">
-          Entrada: 100 | Un error = Eliminació | El guanyador s'ho emporta tot
-        </p>
       </div>
 
       <div class="form-actions">
@@ -157,7 +135,6 @@ function createRoom() {
 </script>
 
 <style scoped>
-
 .host-create-lobby {
   position: relative;
   min-height: 100vh;
@@ -166,13 +143,13 @@ function createRoom() {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xl);
-  padding: var(--spacing-2xl) var(--spacing-xl) var(--spacing-2xl);
+  padding: var(--spacing-2xl) var(--spacing-xl);
   background: url('@/img/bgimage.png') center/cover no-repeat;
   text-align: center;
 }
 
 .hero {
-  max-width: 520px;
+  max-width: min(520px, 90vw);
   color: var(--text-white);
   text-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
@@ -182,39 +159,9 @@ function createRoom() {
   font-family: 'Playfair Display', serif;
   font-size: clamp(2.4rem, 5vw, 3.2rem);
   text-transform: uppercase;
-  color: #FFD700;
-  text-shadow:
-    -1px -1px 0 #000,
-     0   -1px 0 #000,
-     1px -1px 0 #000,
-     1px  0   0 #000,
-     1px  1px 0 #000,
-     0    1px 0 #000,
-    -1px  1px 0 #000,
-    -1px  0   0 #000;
-  animation: titleGlitch 3s infinite, titleFloat 4s ease-in-out infinite;
+  color: var(--text-white);
+  letter-spacing: 0.08rem;
 }
-
-@keyframes glitchContainer {
-  0%, 90%, 100% { transform: translate(0, 0); }
-  91% { transform: translate(-2px, 1px); }
-  92% { transform: translate(2px, -1px); }
-  93% { transform: translate(-1px, 2px); }
-  94% { transform: translate(1px, -2px); }
-}
-
-@keyframes titleGlitch {
-  0%, 85%, 100% { transform: skew(0deg); }
-  86% { transform: skew(-1deg); }
-  88% { transform: skew(1deg); }
-  90% { transform: skew(0deg); }
-}
-
-@keyframes titleFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
 
 .hero-subtitle {
   margin: 0;
@@ -222,41 +169,22 @@ function createRoom() {
 }
 
 .form-card {
-  width: min(520px, 90vw);
+  width: min(520px, 92vw);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
   text-align: left;
 }
 
-
-.field-note {
-  font-size: 0.85rem;
-  color: var(--color-warning);
-  font-weight: 500;
-  margin-top: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: rgba(255, 165, 0, 0.1);
-  border-radius: var(--border-radius);
-  border: 1px solid var(--color-warning);
+.difficulty-note,
+.gamemode-warning {
+  margin: var(--spacing-xs) 0 0 0;
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--color-primary) 70%, var(--color-warning) 30%);
 }
 
-.field-warning {
-  font-size: 0.85rem;
-  color: var(--color-danger);
-  font-weight: 600;
-  margin-top: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: rgba(255, 68, 68, 0.1);
-  border-radius: var(--border-radius);
-  border: 1px solid var(--color-danger);
-}
-
-.select-field:disabled {
-  background: rgba(200, 200, 200, 0.5);
-  color: #666;
-  cursor: not-allowed;
-  border-color: #ccc;
+.gamemode-warning {
+  color: color-mix(in srgb, var(--color-danger) 70%, var(--color-primary) 30%);
 }
 
 .form-field label {
@@ -301,10 +229,6 @@ function createRoom() {
 }
 
 @media (max-width: 768px) {
-  .hero {
-    max-width: 90vw;
-  }
-
   .form-actions {
     flex-direction: column;
   }
@@ -314,5 +238,4 @@ function createRoom() {
     left: var(--spacing-lg);
   }
 }
-
 </style>

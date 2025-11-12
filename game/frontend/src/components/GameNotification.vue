@@ -1,6 +1,6 @@
 <template>
   <Transition name="fade">
-    <div v-if="show" class="notification-item">
+    <div v-if="show" class="toast">
       {{ message }}
     </div>
   </Transition>
@@ -19,18 +19,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.notification-item {
-  background: #222;
-  color: #fff;
-  border: 2px solid #fff;
-  padding: 10px 18px;
-  border-radius: 8px;
-  box-shadow: 2px 2px 0 #333;
-  font-size: 1rem;
-  opacity: 0.95;
-  pointer-events: none;
-  margin-bottom: 10px;
-}
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s;
 }

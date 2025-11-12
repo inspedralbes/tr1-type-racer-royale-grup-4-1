@@ -85,7 +85,7 @@ function handleBackToLobby() {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d0a0a 100%);
+  background: radial-gradient(circle at top, color-mix(in srgb, var(--color-secondary) 60%, var(--bg-body) 40%), var(--color-primary));
   position: relative;
   overflow: hidden;
   font-family: 'Poppins', sans-serif;
@@ -100,8 +100,8 @@ function handleBackToLobby() {
   height: 100%;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.15),
-    rgba(0, 0, 0, 0.15) 1px,
+    rgba(0, 0, 0, 0.08),
+    rgba(0, 0, 0, 0.08) 1px,
     transparent 1px,
     transparent 2px
   );
@@ -114,13 +114,13 @@ function handleBackToLobby() {
   z-index: 2;
   text-align: center;
   padding: 3rem;
-  background: rgba(0, 0, 0, 0.8);
-  border: 4px solid #ff0000;
+  background: color-mix(in srgb, var(--bg-card) 78%, var(--color-secondary) 22%);
+  border: 4px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-primary) 55%);
   border-radius: 20px;
   box-shadow: 
-    0 0 30px rgba(255, 0, 0, 0.5),
-    0 0 60px rgba(255, 0, 0, 0.3),
-    inset 0 0 20px rgba(255, 0, 0, 0.1);
+    0 0 30px rgba(91, 63, 27, 0.4),
+    0 0 60px rgba(139, 165, 155, 0.25),
+    inset 0 0 20px rgba(91, 63, 27, 0.15);
   max-width: 600px;
   animation: slideIn 0.5s ease-out, pulse 2s ease-in-out infinite;
 }
@@ -139,23 +139,23 @@ function handleBackToLobby() {
 @keyframes pulse {
   0%, 100% {
     box-shadow: 
-      0 0 30px rgba(255, 0, 0, 0.5),
-      0 0 60px rgba(255, 0, 0, 0.3),
-      inset 0 0 20px rgba(255, 0, 0, 0.1);
+      0 0 30px rgba(91, 63, 27, 0.4),
+      0 0 60px rgba(139, 165, 155, 0.25),
+      inset 0 0 20px rgba(91, 63, 27, 0.15);
   }
   50% {
     box-shadow: 
-      0 0 40px rgba(255, 0, 0, 0.7),
-      0 0 80px rgba(255, 0, 0, 0.5),
-      inset 0 0 30px rgba(255, 0, 0, 0.2);
+      0 0 40px rgba(91, 63, 27, 0.5),
+      0 0 80px rgba(139, 165, 155, 0.35),
+      inset 0 0 30px rgba(91, 63, 27, 0.2);
   }
 }
 
 .skull-icon {
   font-size: 5rem;
   margin-bottom: 1rem;
-  animation: shake 0.5s ease-in-out;
-  filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8));
+  animation: shake 0.6s ease-in-out;
+  filter: drop-shadow(0 0 18px rgba(91, 63, 27, 0.4));
 }
 
 @keyframes shake {
@@ -167,15 +167,13 @@ function handleBackToLobby() {
 .title {
   font-size: 4rem;
   font-weight: 900;
-  color: #ff0000;
+  color: color-mix(in srgb, var(--color-danger) 65%, var(--color-primary) 35%);
   margin: 0 0 2rem 0;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   text-shadow: 
-    0 0 10px rgba(255, 0, 0, 0.8),
-    0 0 20px rgba(255, 0, 0, 0.6),
-    0 0 30px rgba(255, 0, 0, 0.4),
-    3px 3px 0 rgba(0, 0, 0, 0.8);
+    0 0 16px rgba(91, 63, 27, 0.35),
+    3px 3px 0 rgba(0, 0, 0, 0.35);
   animation: flicker 3s infinite;
 }
 
@@ -187,8 +185,8 @@ function handleBackToLobby() {
 }
 
 .message-box {
-  background: rgba(255, 0, 0, 0.1);
-  border: 2px solid rgba(255, 0, 0, 0.3);
+  background: color-mix(in srgb, var(--color-secondary) 20%, transparent 80%);
+  border: 2px solid color-mix(in srgb, var(--color-secondary) 35%, transparent 65%);
   border-radius: 10px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -196,7 +194,7 @@ function handleBackToLobby() {
 
 .main-message {
   font-size: 1.3rem;
-  color: #ffffff;
+  color: var(--color-primary);
   margin: 0 0 0.5rem 0;
   font-weight: 400;
 }
@@ -204,16 +202,16 @@ function handleBackToLobby() {
 .mode-name {
   font-size: 2rem;
   font-weight: 900;
-  color: #ff0000;
+  color: color-mix(in srgb, var(--color-danger) 55%, var(--color-primary) 45%);
   margin: 0.5rem 0;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+  text-shadow: 0 0 12px rgba(91, 63, 27, 0.45);
 }
 
 .sub-message {
   font-size: 1rem;
-  color: #cccccc;
+  color: color-mix(in srgb, var(--text-muted) 70%, var(--text-white) 30%);
   margin: 0.5rem 0 0 0;
   font-style: italic;
 }
@@ -221,7 +219,7 @@ function handleBackToLobby() {
 .stats-container {
   margin-bottom: 2rem;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.4);
+  background: color-mix(in srgb, var(--bg-card) 60%, var(--bg-body) 40%);
   border-radius: 10px;
 }
 
@@ -238,7 +236,7 @@ function handleBackToLobby() {
 }
 
 .stat-label {
-  color: #ffffff;
+  color: var(--text-white);
   font-weight: 600;
 }
 
@@ -248,14 +246,14 @@ function handleBackToLobby() {
 }
 
 .error-count {
-  color: #ff0000;
-  text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+  color: color-mix(in srgb, var(--color-danger) 60%, var(--color-primary) 40%);
+  text-shadow: 0 0 12px rgba(91, 63, 27, 0.4);
 }
 
 .back-button {
-  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
-  color: white;
-  border: 3px solid #ffffff;
+  background: linear-gradient(135deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-secondary) 55%, var(--color-primary) 45%) 100%);
+  color: var(--text-white);
+  border: 3px solid color-mix(in srgb, var(--text-white) 80%, transparent 20%);
   border-radius: 12px;
   padding: 1rem 3rem;
   font-size: 1.3rem;
@@ -268,24 +266,23 @@ function handleBackToLobby() {
   align-items: center;
   gap: 1rem;
   box-shadow: 
-    0 4px 15px rgba(255, 0, 0, 0.4),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
-  font-family: 'Poppins', sans-serif;
+    0 4px 18px rgba(91, 63, 27, 0.35),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.18);
 }
 
 .back-button:hover {
-  background: linear-gradient(135deg, #ff3333 0%, #ff0000 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 80%, var(--color-secondary) 20%), var(--color-secondary));
   transform: translateY(-2px);
   box-shadow: 
-    0 6px 20px rgba(255, 0, 0, 0.6),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+    0 6px 24px rgba(91, 63, 27, 0.45),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.25);
 }
 
 .back-button:active {
   transform: translateY(0);
   box-shadow: 
-    0 2px 10px rgba(255, 0, 0, 0.4),
-    inset 0 2px 5px rgba(0, 0, 0, 0.5);
+    0 2px 10px rgba(91, 63, 27, 0.3),
+    inset 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 
 .back-button i {
