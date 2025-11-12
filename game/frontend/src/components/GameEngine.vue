@@ -156,7 +156,7 @@ const gameState = ref({
 });
 
 // Timer state
-const timeRemaining = ref(120); // 120 seconds (2 minutes)
+const timeRemaining = ref(180); // 120 seconds (2 minutes)
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {
@@ -186,7 +186,7 @@ function startCountdown() {
 
 function handleTimeout() {
   console.log("Time's up!");
-  
+
   // Send final results to server
   const finalResults = {
     username: gameStore.username,
@@ -194,7 +194,7 @@ function handleTimeout() {
     totalErrors: gameState.value.totalErrors,
     progress: Math.round(overallProgress.value),
   };
-  
+
   gameStore.manager.emit("gameEnded", finalResults);
 }
 const currentArticle = computed(() => {
@@ -470,8 +470,7 @@ function loadArticles() {
       gameState.value.isLoading = false;
     }
   });
-
-  gameStore.manager.emit("getArticles");
+  gameStore.manager.emit("getArticles", { roomName: gameStore.roomName });
 }
 
 gameStore.manager.on("leaderboardUpdateInRoom", handleUserScores);
