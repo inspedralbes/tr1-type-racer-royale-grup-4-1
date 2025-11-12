@@ -2,7 +2,7 @@
   <Config />
   <div class="salas-container">
     <!-- Home button -->
-    <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
+    <button class="btn-icon back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
       <i class="fa-solid fa-house"></i>
     </button>
 
@@ -47,7 +47,7 @@
     <!-- Join button -->
     <div class="unirse-container">
       <button
-        class="play-button"
+        class="btn btn-primary play-button"
         :disabled="!salaSeleccionada"
         @click="gameStore.playClickSound(); unirseASala()"
       >
@@ -119,14 +119,15 @@ onUnmounted(() => {
 
 .salas-container {
   position: relative;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: "Playfair Display", serif;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--spacing-xl) 0;
+  gap: var(--spacing-xl);
   overflow: hidden;
-  padding: 4rem 2rem;
-  color: var(--text-color, #111);
+  background-color: var(--color-secondary);
 }
 
 /* Decorative background image */
@@ -142,90 +143,94 @@ onUnmounted(() => {
 /* Title section */
 .title-container {
   text-align: center;
-  border-bottom: 4px solid #000;
+  border-bottom: 4px solid var(--color-primary);
   width: 100%;
   max-width: 1000px;
-  padding-bottom: 1rem;
-  margin-bottom: 2rem;
+  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
   z-index: 2;
 }
 
 .title {
-  font-size: 5rem;
-  font-weight: 700;
+  font-family: "Libertinus Keyboard", serif;
+  font-size: 4rem;
   text-transform: uppercase;
-  letter-spacing: 4px;
-  color: #000;
-  text-shadow: 1px 1px 0 #444;
+  letter-spacing: 8px;
+  position: relative;
+  margin: 0;
+  text-align: center;
+  color: var(--color-primary);
+  text-shadow: var(--shadow-sm);
 }
 
 /* Newspaper border */
 .newspaper {
-  border: 4px solid #000;
-  padding: 2rem;
+  border: 4px solid var(--color-primary);
+  padding: var(--spacing-xl);
   width: 100%;
   max-width: 1000px;
-  background: var(--paper-color, #fffef8);
-  box-shadow: 8px 8px 0 #000;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
   z-index: 2;
   column-count: 2;
-  column-gap: 2rem;
+  column-gap: var(--spacing-xl);
   display: flex;
   flex-direction: column;
 }
 
 /* Article when no rooms */
 .no-salas-article {
-  background: #fffef8;
-  border: 2px solid #000;
-  padding: 2rem;
-  box-shadow: 3px 3px 0 #000;
+  background: var(--bg-card);
+  border: 2px solid var(--color-primary);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
   break-inside: avoid;
   text-align: justify;
   font-size: 1.1rem;
-  color: #222;
+  color: var(--text-secondary);
 }
 .no-salas-article h2 {
   font-size: 1.8rem;
   text-transform: uppercase;
-  border-bottom: 2px solid #000;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  color: var(--color-primary);
 }
 
 /* Grid layout for rooms */
 .salas-grid {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--spacing-lg);
   width: 100%;
   break-inside: avoid;
 }
 
 /* Newspaper style buttons */
 .sala-btn {
-  background: #fffef8;
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0 #000;
-  color: #000;
-  padding: 1rem 1.5rem;
+  background: var(--bg-card);
+  border: 2px solid var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-primary);
+  padding: var(--spacing-md) var(--spacing-lg);
   text-align: left;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background var(--transition-base), transform var(--transition-base);
   font-family: "Playfair Display", serif;
   position: relative;
   break-inside: avoid;
 }
 
 .sala-btn:hover {
-  background: #f0ead6;
-  transform: scale(1.01);
+  background: var(--bg-hover);
+  transform: translateY(-2px);
 }
 
 .sala-btn.selected {
-  background: #ede2b1;
-  transform: scale(1.02);
-  border: 2px solid #333;
+  background: color-mix(in srgb, var(--bg-card) 70%, var(--color-secondary) 30%);
+  transform: translateY(-3px);
+  border: 2px solid var(--color-primary);
 }
 
 .sala-content {
@@ -248,74 +253,55 @@ onUnmounted(() => {
 
 .sala-capacidad {
   font-size: 1rem;
-  color: #333;
+  color: var(--text-muted);
 }
 
 .player-column {
-  border-left: 2px solid #000;
-  padding-left: 1.5rem;
+  border-left: 2px solid var(--color-primary);
+  padding-left: var(--spacing-lg);
 }
 
 .player-count {
-  font-weight: bolder;
+  font-weight: var(--font-weight-bold);
   font-size: 2em;
 }
 
 /* Full room styles */
 .sala-btn.full {
-  background: #d3d3d3;
-  opacity: 0.6;
+  background: color-mix(in srgb, var(--bg-card) 70%, var(--text-muted) 30%);
+  opacity: 0.7;
   cursor: not-allowed;
+  color: var(--text-muted);
 }
 
 .sala-btn.full:hover {
-  background: #d3d3d3;
+  background: color-mix(in srgb, var(--bg-card) 70%, var(--text-muted) 30%);
   transform: none;
 }
 
 .full-badge {
   display: inline-block;
-  background: #ff4444;
-  color: white;
+  background: var(--color-warning);
+  color: var(--text-white);
   padding: 0.2rem 0.6rem;
   font-size: 0.7rem;
   font-weight: 700;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   margin-left: 0.5rem;
   letter-spacing: 1px;
-  box-shadow: 2px 2px 0 #000;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Enter game button */
 .unirse-container {
-  margin-top: 2rem;
+  margin-top: var(--spacing-xl);
   z-index: 3;
 }
 
 .play-button {
-  background: #000;
-  color: #fff;
   font-family: "Playfair Display", serif;
-  border: 3px solid #000;
-  padding: 0.8rem 2.2rem;
   font-size: 1.3rem;
   letter-spacing: 1px;
-  text-transform: uppercase;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  box-shadow: 3px 3px 0 #000;
-}
-
-.play-button:hover {
-  background: #fff;
-  color: #000;
-  transform: scale(1.05);
-}
-
-.play-button:disabled {
-  background: #aaa;
-  color: #444;
-  cursor: not-allowed;
 }
 
 /* Back button */
@@ -323,34 +309,12 @@ onUnmounted(() => {
   position: fixed;
   left: 5vw;
   bottom: 6vh;
-  background: rgba(255, 255, 255, 0.9);
-  color: #333;
-  border: none;
-  border-radius: 50px;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   z-index: 9999;
 }
 
-.back-button:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.05);
-}
 .back-button i {
   font-size: 1.5rem;
-  color: #000;
-}
-
-.back-button:hover {
-  background: #fff;
-  color: #000;
-  transform: scale(1.1);
+  color: inherit;
 }
 
 /* Responsive */
