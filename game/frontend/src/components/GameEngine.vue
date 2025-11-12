@@ -627,8 +627,6 @@ onMounted(() => {
     }
   }, 500);
   
-onMounted(() => {
-  document.addEventListener("keydown", handleKeyDown);
   loadArticles();
 });
 
