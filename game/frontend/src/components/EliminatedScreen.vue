@@ -8,14 +8,15 @@
       <h1 class="title">¡ELIMINADO!</h1>
       
       <div class="message-box">
-        <p class="main-message">Has cometido un error en modo</p>
+        <p class="main-message">{{ mainMessage }}</p>
         <p class="mode-name">MUERTE SÚBITA</p>
-        <p class="sub-message">Un solo error significa eliminación instantánea.</p>
+        <p class="sub-message">{{ subMessage }}</p>
       </div>
       
       <div class="stats-container">
         <div class="stat-item">
-          <span class="stat-value error-count">1</span>
+          <span class="stat-icon">{{ eliminationIcon }}</span>
+          <span class="stat-value error-count">{{ eliminationReason === 'timeout' ? '⏰' : '1' }}</span>
         </div>
       </div>
       
@@ -28,13 +29,50 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { useGameStore } from '../stores/gameStore';
+
+const props = defineProps({
+  eliminationReason: {
+    type: String,
+    default: 'error' // 'error' or 'timeout'
+  }
+});
 
 const emit = defineEmits(['back']);
 const gameStore = useGameStore();
 
+// Mensajes dinámicos basados en el motivo de eliminación
+const mainMessage = computed(() => {
+  if (props.eliminationReason === 'timeout') {
+    return 'Se te ha agotado el tiempo en modo';
+  }
+  return 'Has cometido un error en modo';
+});
+
+const subMessage = computed(() => {
+  if (props.eliminationReason === 'timeout') {
+    return 'El tiempo límite significa eliminación instantánea.';
+  }
+  return 'Un solo error significa eliminación instantánea.';
+});
+
+const eliminationIcon = computed(() => {
+  if (props.eliminationReason === 'timeout') {
+    return '⏰';
+  }
+  return '❌';
+});
+
 function handleBackToLobby() {
   gameStore.playClickSound();
+  
+  // Salir de la sala actual si existe
+  if (gameStore.currentRoom) {
+    gameStore.manager.emit('leaveRoom', gameStore.currentRoom);
+    gameStore.setRoomName('');
+  }
+  
   emit('back');
 }
 </script>
@@ -193,6 +231,10 @@ function handleBackToLobby() {
   align-items: center;
   gap: 1rem;
   font-size: 1.2rem;
+}
+
+.stat-icon {
+  font-size: 1.5rem;
 }
 
 .stat-label {

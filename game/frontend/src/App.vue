@@ -86,13 +86,10 @@ onMounted(() => {
       const isWinner = data.winner === currentUser;
       
       if (!isWinner) {
-        console.log('🚫 Jugador no es el ganador en modo muerte súbita - no mostrar podio');
-        // Volver al lobby directamente para jugadores eliminados
-        startGame.value = false;
-        if (store.currentRoom) {
-          store.manager.emit('leaveRoom', store.currentRoom);
-          store.setRoomName('');
-        }
+        console.log('🚫 Jugador no es el ganador en modo muerte súbita - mantener pantalla de eliminación');
+        // No ocultar el juego inmediatamente para permitir que se muestre la pantalla de eliminación
+        // El GameEngine ya debería tener isEliminated = true y mostrar EliminatedScreen
+        // La redirección al lobby se manejará desde EliminatedScreen cuando el usuario haga clic en "VOLVER AL LOBBY"
         return;
       }
     }
@@ -177,8 +174,8 @@ function handleGameStart() {
 
 function handleBackFromGame() {
   startGame.value = false;
-  // Mostrar FirstPage
-  showLobby.value = false;
+  // Mostrar Lobby (usuario ya está logueado)
+  showLobby.value = true;
   showRoomsUserView.value = false;
   showHostCreateLobby.value = false;
   showUserLobby.value = false;
@@ -204,8 +201,8 @@ function handleBackFromPodio() {
     store.manager.emit('leaveRoom', store.currentRoom);
     store.setRoomName('');
   }
-  // Return to first page
-  showLobby.value = false;
+  // Return to lobby (usuario ya está logueado)
+  showLobby.value = true;
   showRoomsUserView.value = false;
   showHostCreateLobby.value = false;
   showUserLobby.value = false;
