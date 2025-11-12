@@ -33,7 +33,7 @@
         />
 
         <!-- Nombre -->
-        <h2 class="nombre">{{ username || 'Jugador' }}</h2>
+        <h2 class="nombre" :title="username || 'Jugador'">{{ username || 'Jugador' }}</h2>
 
         <div class="buttons">
           <button class="btn" @click="gameStore.playClickSound(); openFileSelector()">Cambiar foto</button>
@@ -330,6 +330,10 @@ const showMessage = (message, type) => {
   margin: 0.1rem 0 1.3rem 0;
   color: #eddfdf;
   font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
   font-size: 1.37rem;
   letter-spacing: .2px;
   font-family: 'Poppins', sans-serif;

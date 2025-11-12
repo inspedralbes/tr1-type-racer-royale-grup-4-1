@@ -2,12 +2,17 @@
   <div class="lobby">
     <Config />
 
-    <div class="actions">
-      <button class="lobby-button" @click="handleCreateRoom">Crear sala</button>
-      <button class="lobby-button" @click="handleJoinRoom">Unirse sala</button>
+    <div class="greeting">
+      <span>Hola, {{ gameStore.username || 'reporter' }}</span>
+      <span>Quants articles farem avui?</span>
     </div>
 
-    <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
+    <div class="actions">
+      <button class="btn btn-primary lobby-button" @click="handleCreateRoom">Crear sala</button>
+      <button class="btn btn-primary lobby-button" @click="handleJoinRoom">Unirse sala</button>
+    </div>
+
+    <button class="btn-icon back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
       <i class="fa-solid fa-house"></i>
     </button>
   </div>
@@ -51,6 +56,7 @@ function handleJoinRoom() {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;600&display=swap');
 
 .lobby {
   display: flex;
@@ -67,64 +73,60 @@ function handleJoinRoom() {
 }
 
 .actions {
+  position: absolute;
+  top: 40%;
+  right: 20%;
+  transform: translateY(-50%);
   display: flex;
-  gap: 2.5rem;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: flex-end;
 }
 
 .lobby-button {
-  padding: 1rem 2.5rem;
-  font-size: 1.3rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08rem;
-  color: #fff;
-  background: rgba(91, 63, 27, 0.92);
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+  width: clamp(240px, 22vw, 280px);
+  font-family: "Playfair Display", serif;
 }
 
-.lobby-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.32);
-}
-
-.lobby-button:active {
-  transform: translateY(1px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+.actions .lobby-button:first-child {
+  align-self: flex-start;
+  margin-left: -5rem;
 }
 
 .back-button {
   position: absolute;
   left: 5vw;
   bottom: 6vh;
-  width: 56px;
-  height: 48px;
-  border: none;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.92);
-  color: #2f2314;
-  cursor: pointer;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.back-button:hover {
-  transform: scale(1.08);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
-}
-
-.back-button:active {
-  transform: scale(0.95);
+  height: 56px;
 }
 
 .back-button i {
   font-size: 1.25rem;
+}
+
+.greeting {
+  position: absolute;
+  top: 30%;
+  left: 7%;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-family: 'Poppins', sans-serif;
+  color: var(--color-primary);
+  text-transform: capitalize;
+  text-shadow: var(--shadow-sm);
+}
+
+.greeting span:first-child {
+  font-size: 2.1rem;
+  font-weight: 700;
+}
+
+.greeting span:last-child {
+  font-size: 1.4rem;
+  font-weight: 400;
 }
 
 @media (max-width: 768px) {

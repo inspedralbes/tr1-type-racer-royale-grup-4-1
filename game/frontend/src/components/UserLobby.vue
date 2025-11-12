@@ -2,21 +2,16 @@
   <div class="user-lobby-container">
     <Config />
     
-    <div class="scanlines"></div>
-    
-    <div class="pixel-stars">
-      <div class="pixel-star" v-for="n in 20" :key="n"></div>
-    </div>
-
-    <button class="back-button" aria-label="Volver" @click="gameStore.playClickSound(); handleBack()">
+    <button class="btn-icon back-button" aria-label="Volver" @click="gameStore.playClickSound(); handleBack()">
       <i class="fa-solid fa-house"></i>
     </button>
 
-    <div class="title-container">
-      <h1 class="title">{{ nombreSala }}</h1>
-    </div>
+    <section class="hero">
+      <h1 class="hero-title">{{ nombreSala }}</h1>
+      <p class="hero-subtitle">{{ jugadores.length }} / {{ maxJugadores }} corresponsals preparats</p>
+    </section>
     
-    <div class="players-container">
+    <div class="players-container card-paper">
       <h2 class="subtitle">Jugadores en la sala ({{ jugadores.length }}/{{ maxJugadores }})</h2>
       
       <div class="players-grid">
@@ -25,7 +20,6 @@
           :key="jugador.id"
           :class="['player-card', { ready: jugador.status === 'ready' }]"
         >
-          <span class="pixel-border-card"></span>
           <div class="player-number">{{ index + 1 }}</div>
           <div class="player-avatar">
             <img 
@@ -37,7 +31,7 @@
             <i v-else class="fa-solid fa-user player-icon"></i>
           </div>
           <div class="player-info">
-            <span class="player-name">{{ jugador.username }}</span>
+            <span class="player-name" :title="jugador.username">{{ jugador.username }}</span>
             <span v-if="jugador.status === 'ready'" class="ready-badge">
               <i class="fa-solid fa-check"></i> LISTO
             </span>
@@ -59,16 +53,17 @@
       </div>
     </div>
 
-    <!-- Countdown overlay -->
+    <transition name="fade">
     <div v-if="showCountdown" class="countdown-overlay">
       <div class="countdown-number">{{ countdownValue }}</div>
       <div class="countdown-text">¡Preparados!</div>
     </div>
+    </transition>
 
     <!-- Actions Container with Pot, Betting and Ready Button -->
     <div class="actions-container">
       <!-- Total Pot Display -->
-      <div v-if="totalPot > 0" class="pot-display">
+      <div v-if="totalPot > 0" class="pot-display card-paper card-paper--compact">
         <div class="pot-icon">💰</div>
         <div class="pot-info">
           <span class="pot-label">Bote Total</span>
@@ -77,17 +72,17 @@
       </div>
 
       <!-- Betting Section -->
-      <div class="betting-section">
+      <div class="betting-section card-paper card-paper--compact">
         <div class="betting-title">Apuesta por ti mismo</div>
         <div class="betting-controls">
-          <button class="bet-btn" @click="gameStore.playClickSound(); decreaseBet()" :disabled="currentBet <= 0">-</button>
+          <button class="btn btn-ghost bet-btn" @click="gameStore.playClickSound(); decreaseBet()" :disabled="currentBet <= 0">-</button>
           <div class="bet-display">
             <span class="bet-amount">{{ currentBet }} $</span>
           </div>
-          <button class="bet-btn" @click="gameStore.playClickSound(); increaseBet()" :disabled="currentBet >= gameStore.money">+</button>
+          <button class="btn btn-ghost bet-btn" @click="gameStore.playClickSound(); increaseBet()" :disabled="currentBet >= gameStore.money">+</button>
         </div>
         <button 
-          class="confirm-bet-btn" 
+          class="btn btn-primary confirm-bet-btn" 
           @click="gameStore.playClickSound(); confirmBet()"
           :disabled="currentBet === 0 || currentBet === confirmedBet"
         >
@@ -99,29 +94,25 @@
       </div>
 
       <!-- Ready Button Section -->
-      <div class="actions">
+      <div class="actions card-paper card-paper--compact">
         <button 
           v-if="!isCurrentPlayerReady"
-          class="ready-button" 
+          class="btn btn-primary ready-button" 
           @click="gameStore.playClickSound(); toggleReady()"
           :disabled="jugadores.length < maxJugadores"
         >
-          <span class="pixel-border"></span>
-          <span class="button-text">
+          <span>
             <i class="fa-solid fa-check"></i> ESTOY LISTO
           </span>
-          <div class="button-pixels"></div>
         </button>
         <button 
           v-else
-          class="ready-button not-ready" 
+          class="btn btn-ghost ready-button not-ready" 
           @click="gameStore.playClickSound(); toggleReady()"
         >
-          <span class="pixel-border"></span>
-          <span class="button-text">
+          <span>
             <i class="fa-solid fa-xmark"></i> CANCELAR
           </span>
-          <div class="button-pixels"></div>
         </button>
         <div v-if="jugadores.length < maxJugadores" class="waiting-message">
           Esperando {{ maxJugadores - jugadores.length }} jugador(es) más...
@@ -354,658 +345,332 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 
 .user-lobby-container {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  height: 100vh; max-height: 100vh; gap: 2rem;
-  position: fixed; inset: 0;
-  overflow: hidden;
-  font-family: 'Poppins', sans-serif;
-  padding: 2rem;
-  background-size: cover;
-  box-sizing: border-box;
-  width: 100%;
-}
-
-/* Scanlines CRT effect */
-.scanlines {
-  position: fixed; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, transparent 1px, transparent 2px, rgba(0,0,0,0.04) 3px);
-  animation: scanlineMove 8s linear infinite;
-  z-index: 10;
-}
-@keyframes scanlineMove { 0% { transform: translateY(0); } 100% { transform: translateY(4px); } }
-
-/* Title with glitch & float */
-.title-container {
   position: relative; 
+  min-height: 100vh;
+  padding: var(--spacing-2xl) var(--spacing-xl);
   display: flex; 
   flex-direction: column; 
   align-items: center;
-  animation: glitchContainer 5s infinite; 
-  z-index: 5;
-  margin-bottom: 2rem;
+  gap: var(--spacing-xl);
+  background: var(--color-secondary);
+  font-family: 'Poppins', sans-serif;
 }
-.title {
-  font-size: 4rem; font-weight: 900; margin: 0; line-height: 1;
+
+.hero {
+  text-align: center;
+  color: var(--text-white);
+  text-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.hero-title {
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.4rem, 5vw, 3.2rem);
+  letter-spacing: 0.08rem;
   text-transform: uppercase;
-  color: #FFD700;
-  text-shadow:
-    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
-    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000,
-    0 0 8px rgba(0,0,0,0.5);
-  animation: titleGlitch 3s infinite, titleFloat 4s ease-in-out infinite;
-}
-@keyframes glitchContainer { 0%,90%,100% {transform:translate(0,0);} 91%{transform:translate(-2px,1px);} 92%{transform:translate(2px,-1px);} 93%{transform:translate(-1px,2px);} 94%{transform:translate(1px,-2px);} }
-@keyframes titleGlitch { 0%,85%,100% { transform: skew(0deg); } 86% { transform: skew(-1deg); } 88% { transform: skew(1deg); } 90% { transform: skew(0deg); } }
-@keyframes titleFloat { 0%,100% {transform:translateY(0);} 50% {transform:translateY(-10px);} }
-
-/* Pixel stars - Full screen particles */
-.pixel-stars {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-  overflow: hidden;
 }
 
-.pixel-star {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: #FFA500;
-  box-shadow: 0 0 10px #FFA500, inset 0 0 5px #fff;
-  animation: pixelStarBlink 3s ease-in-out infinite;
-  opacity: 0.7;
+.hero-subtitle {
+  margin: var(--spacing-sm) 0 0;
+  font-size: 1.1rem;
+  color: color-mix(in srgb, var(--text-white) 80%, rgba(0, 0, 0, 0) 20%);
 }
 
-/* Generate random positions for stars */
-.pixel-star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
-.pixel-star:nth-child(2) { top: 20%; left: 20%; animation-delay: 0.5s; }
-.pixel-star:nth-child(3) { top: 30%; left: 30%; animation-delay: 1s; }
-.pixel-star:nth-child(4) { top: 40%; left: 40%; animation-delay: 1.5s; }
-.pixel-star:nth-child(5) { top: 50%; left: 50%; animation-delay: 2s; }
-.pixel-star:nth-child(6) { top: 60%; left: 60%; animation-delay: 2.5s; }
-.pixel-star:nth-child(7) { top: 70%; left: 70%; animation-delay: 3s; }
-.pixel-star:nth-child(8) { top: 80%; left: 80%; animation-delay: 0.8s; }
-.pixel-star:nth-child(9) { top: 90%; left: 20%; animation-delay: 1.2s; }
-.pixel-star:nth-child(10) { top: 15%; left: 75%; animation-delay: 1.8s; }
-.pixel-star:nth-child(11) { top: 25%; left: 5%; animation-delay: 2.2s; }
-.pixel-star:nth-child(12) { top: 35%; left: 85%; animation-delay: 0.3s; }
-.pixel-star:nth-child(13) { top: 45%; left: 15%; animation-delay: 1.7s; }
-.pixel-star:nth-child(14) { top: 55%; left: 90%; animation-delay: 2.8s; }
-.pixel-star:nth-child(15) { top: 65%; left: 10%; animation-delay: 0.6s; }
-.pixel-star:nth-child(16) { top: 75%; left: 95%; animation-delay: 1.9s; }
-.pixel-star:nth-child(17) { top: 85%; left: 5%; animation-delay: 2.4s; }
-.pixel-star:nth-child(18) { top: 5%; left: 50%; animation-delay: 0.9s; }
-.pixel-star:nth-child(19) { top: 25%; left: 60%; animation-delay: 2.1s; }
-.pixel-star:nth-child(20) { top: 45%; left: 30%; animation-delay: 1.3s; }
-@keyframes pixelStarBlink {
-  0%, 100% { 
-    opacity: 0.3; 
-    transform: scale(0.8) rotate(0deg); 
-  }
-  50% { 
-    opacity: 0.9; 
-    transform: scale(1.2) rotate(180deg); 
-  }
-}
-
-/* Subtitle */
-.subtitle {
-  font-size: 1.8rem; color: #fff; margin: 0 0 1.5rem; font-weight: 700;
-  text-shadow:
-    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
-    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000,
-    0 0 10px rgba(0,0,0,0.5);
-  z-index: 5;
-}
-
-/* Players container and grid */
 .players-container {
-  width: 100%; max-width: 800px; display: flex; flex-direction: column; align-items: center; z-index: 5;
+  width: min(960px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  }
+
+.subtitle {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
 }
+
 .players-grid {
-  width: 100%; display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-lg);
 }
+
 .player-card {
-  display: flex; align-items: center; gap: 1rem;
-  background-color: rgba(255, 140, 0, 0.95);
-  padding: 1.5rem; border-radius: 25px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  animation: cardPulse 2s ease-in-out infinite;
-  position: relative; overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background: var(--bg-card);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 30%, var(--bg-body) 70%);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.player-card.ready {
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-lg);
+}
+
+.player-card:not(.empty):hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.player-card.empty {
+  opacity: 0.6;
 }
 
 .player-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-round);
+  background: color-mix(in srgb, var(--bg-card) 60%, var(--color-secondary) 40%);
+  border: 2px solid var(--color-primary);
   overflow: hidden;
-  background: rgba(255, 215, 0, 0.3);
-  border: 2px solid #FFD700;
-  z-index: 2;
+  flex-shrink: 0;
 }
 
 .avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
 }
 
-@keyframes cardPulse {
-  0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-  50% { box-shadow: 0 6px 20px rgba(255,140,0,0.4); }
-}
-.player-card:not(.empty):hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(255,140,0,0.6);
-}
-.player-card.empty {
-  background-color: rgba(208,208,208,0.6);
-  opacity: 0.7;
-  animation: none;
-}
-.pixel-border-card {
-  position: absolute; inset: 2px;
-  border-radius: 25px; border: 2px dashed #FFA500;
-  animation: borderDash 1s linear infinite;
-}
-.player-card.empty .pixel-border-card { display: none; }
-@keyframes borderDash {
-  0%,100% { border-color: #FFA500; }
-  50% { border-color: #fff; }
-}
-.player-number {
-  display: flex; align-items: center; justify-content: center;
-  width: 50px; height: 50px;
-  background-color: #FFD700; color: #000;
-  border-radius: 50%;
-  font-weight: 900; font-size: 1.5rem; z-index: 2;
-  box-shadow: 0 0 15px rgba(255,215,0,0.6);
-}
-.player-card.empty .player-number {
-  background-color: #999; color: #666; box-shadow: none;
-}
 .player-info {
-  display: flex; align-items: center; gap: 0.75rem; flex: 1; z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  color: var(--color-primary);
 }
+
 .player-icon {
-  font-size: 1.8rem; color: #fff;
+  font-size: 1.4rem;
+  color: var(--color-primary);
 }
+
 .player-card.empty .player-icon {
-  color: #666;
+  color: var(--text-muted);
 }
+
 .player-name {
-  font-size: 1.4rem; font-weight: 700; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-bold);
 }
+
 .player-card.empty .player-name {
-  color: #666; font-style: italic; text-shadow: none;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
-.player-card.ready {
-  background-color: rgba(50, 205, 50, 0.95);
-  box-shadow: 0 4px 15px rgba(50, 205, 50, 0.4);
-  animation: readyCardPulse 2s ease-in-out infinite;
+.player-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-round);
+  background: var(--color-primary);
+  color: var(--text-white);
+  font-weight: var(--font-weight-bold);
+  font-size: 1.1rem;
 }
 
-.player-card.ready:hover {
-  box-shadow: 0 8px 25px rgba(50, 205, 50, 0.6);
-}
-
-@keyframes readyCardPulse {
-  0%, 100% { 
-    box-shadow: 0 4px 15px rgba(50, 205, 50, 0.4);
-    transform: scale(1);
-  }
-  50% { 
-    box-shadow: 0 6px 25px rgba(50, 205, 50, 0.8);
-    transform: scale(1.02);
-  }
+.player-card.empty .player-number {
+  background: var(--bg-hover);
+  color: var(--text-muted);
 }
 
 .ready-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  background: rgba(255, 255, 255, 0.3);
-  padding: 0.3rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #fff;
-  margin-left: 0.5rem;
-  animation: readyPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes readyPulse {
-  0%, 100% { 
-    transform: scale(1);
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  gap: var(--spacing-xs);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-secondary) 70%, var(--bg-card) 30%);
+  color: var(--text-white);
+  font-size: 0.85rem;
   }
-  50% { 
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
-  }
-}
 
-/* Countdown overlay */
-.countdown-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.countdown-number {
-  font-size: 15rem;
-  font-weight: 900;
-  color: #FFD700;
-  text-shadow:
-    -3px -3px 0 #000, 0 -3px 0 #000, 3px -3px 0 #000, 3px 0 0 #000,
-    3px 3px 0 #000, 0 3px 0 #000, -3px 3px 0 #000, -3px 0 0 #000,
-    0 0 30px rgba(255, 215, 0, 0.8);
-  animation: countdownScale 1s ease-in-out;
-}
-
-@keyframes countdownScale {
-  0% { 
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% { 
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.countdown-text {
-  font-size: 3rem;
-  font-weight: 700;
-  color: #FFA500;
-  text-transform: uppercase;
-  margin-top: 2rem;
-  text-shadow:
-    -2px -2px 0 #000, 0 -2px 0 #000, 2px -2px 0 #000, 2px 0 0 #000,
-    2px 2px 0 #000, 0 2px 0 #000, -2px 2px 0 #000, -2px 0 0 #000;
-}
-
-/* Pot Display */
-.pot-display {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  padding: 1rem 1.5rem;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
-  border: 3px solid #FF8C00;
-  z-index: 5;
-  animation: potPulse 2s ease-in-out infinite;
-  flex: 0 0 auto;
-}
-
-@keyframes potPulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 6px 30px rgba(255, 215, 0, 0.6);
-  }
-}
-
-.pot-icon {
-  font-size: 2rem;
-  animation: bounce 1.5s infinite;
-}
-
-.pot-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.pot-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #333;
-  text-transform: uppercase;
-}
-
-.pot-amount {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: #000;
-  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
-}
-
-/* Actions Container - Side by Side Layout */
 .actions-container {
+  width: min(960px, 100%);
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 2rem;
-  width: 100%;
-  max-width: 900px;
-  z-index: 5;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
 }
 
-/* Betting Section */
+.pot-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.pot-icon {
+  font-size: 1.6rem;
+}
+
+.pot-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.pot-amount {
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
 .betting-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.8rem;
-  background: rgba(255, 140, 0, 0.2);
-  padding: 1.2rem 1.5rem;
-  border-radius: 20px;
-  border: 2px solid #FFA500;
-  z-index: 5;
-  min-width: 280px;
-  flex: 0 0 auto;
+  gap: var(--spacing-sm);
+  width: min(320px, 100%);
 }
 
 .betting-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #FFD700;
+  font-size: 0.95rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
   text-transform: uppercase;
-  text-shadow:
-    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
-    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000;
 }
 
 .betting-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-sm);
 }
 
 .bet-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: #FFD700;
-  color: #000;
-  font-size: 1.5rem;
-  font-weight: 900;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.bet-btn:hover:not(:disabled) {
-  background: #FFA500;
-  transform: scale(1.1);
-  box-shadow: 0 6px 15px rgba(255, 165, 0, 0.4);
-}
-
-.bet-btn:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-.bet-btn:disabled {
-  background: #999;
-  color: #666;
-  cursor: not-allowed;
-  opacity: 0.5;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-round);
+  padding: 0;
+  font-size: 1.4rem;
 }
 
 .bet-display {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 0.6rem 1.5rem;
-  border-radius: 15px;
-  min-width: 100px;
+  flex: 1;
   text-align: center;
-  border: 2px solid #FFD700;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-primary);
+  background: var(--bg-card);
 }
 
 .bet-amount {
-  font-size: 1.3rem;
-  font-weight: 900;
-  color: #000;
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
 }
 
 .confirm-bet-btn {
-  padding: 0.8rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #fff;
-  background: #32CD32;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  text-transform: uppercase;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.confirm-bet-btn:hover:not(:disabled) {
-  background: #3AE03A;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(50, 205, 50, 0.4);
-}
-
-.confirm-bet-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.confirm-bet-btn:disabled {
-  background: #999;
-  color: #666;
-  cursor: not-allowed;
-  opacity: 0.5;
+  width: 100%;
 }
 
 .bet-confirmed {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #32CD32;
-  text-shadow:
-    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
-    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000;
-  animation: confirmPulse 1.5s ease-in-out infinite;
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-secondary);
+  text-align: center;
 }
 
-@keyframes confirmPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-/* Actions & ready button */
 .actions {
+  width: min(320px, 100%);
   display: flex; 
   flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  z-index: 5;
-  flex: 0 0 auto;
+  align-items: stretch;
+  gap: var(--spacing-sm);
 }
 
 .ready-button {
-  padding: 1.2rem 4rem; font-size: 1.6rem; font-weight: 700;
-  color: #fff; background-color: #32CD32; border: none; border-radius: 50px;
-  cursor: pointer; position: relative; overflow: hidden;
-  text-transform: uppercase; letter-spacing: 1.5px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-  animation: buttonPulse 1.5s ease-in-out infinite;
+  justify-content: center;
 }
 
 .ready-button.not-ready {
-  background-color: #FF4444;
-  animation: none;
+  background: var(--bg-hover);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .waiting-message {
-  color: #FFD700;
-  font-size: 1.2rem;
-  font-weight: 700;
-  text-shadow:
-    -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000,
-    1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000;
-  animation: blink 2s ease-in-out infinite;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--color-primary);
 }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.play-button {
-  padding: 1.2rem 4rem; font-size: 1.6rem; font-weight: 700;
-  color: #fff; background-color: #FF8C00; border: none; border-radius: 50px;
-  cursor: pointer; position: relative; overflow: hidden;
-  text-transform: uppercase; letter-spacing: 1.5px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-  animation: buttonPulse 1.5s ease-in-out infinite;
-}
-@keyframes buttonPulse {
-  0%,100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-  50% { box-shadow: 0 6px 25px rgba(255,140,0,0.5); }
-}
-.play-button .pixel-border {
-  position: absolute; inset: 2px;
-  border-radius: 50px;
-  border: 2px dashed #FFA500;
-  animation: borderDash 1s linear infinite;
-}
-.button-text {
-  position: relative; z-index: 2;
-  animation: textGlow 1.5s ease-in-out infinite;
-}
-@keyframes textGlow {
-  0%,100% { text-shadow: 0 0 5px #fff; }
-  50% { text-shadow: 0 0 20px #fff; }
-}
-.button-pixels {
-  position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-  background: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.2) 3px, rgba(255,255,255,0.2) 6px);
-  animation: pixelScan 1.2s linear infinite;
-}
-@keyframes pixelScan {
-  0% { left: -100%; }
-  100% { left: 100%; }
-}
-.ready-button:hover {
-  background-color: #3AE03A;
-  transform: translateY(-5px) translateX(-2px);
-  box-shadow: 0 8px 30px rgba(50, 205, 50, 0.6);
-}
-
-.ready-button.not-ready:hover {
-  background-color: #FF5555;
-  box-shadow: 0 8px 30px rgba(255, 68, 68, 0.6);
-}
-
-.ready-button:hover .button-text {
-  animation: textFlicker 0.1s ease-in-out infinite;
-}
-
-.ready-button:active {
-  transform: translateY(2px) translateX(1px);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.ready-button:disabled {
-  background-color: #d0d0d0; 
-  color: #666; 
-  cursor: not-allowed;
-  transform: none; 
-  animation: none;
-  opacity: 0.5;
-}
-
-.ready-button:disabled .pixel-border,
-.ready-button:disabled .button-pixels {
-  display: none;
-}
-
-.play-button:hover {
-  background-color: #FFA500;
-  transform: translateY(-5px) translateX(-2px);
-  box-shadow: 0 8px 30px rgba(255,140,0,0.6);
-}
-.play-button:hover .button-text {
-  animation: textFlicker 0.1s ease-in-out infinite;
-}
-@keyframes textFlicker {
-  0%,100% { opacity: 1; }
-  50% { opacity: 0.9; }
-}
-.play-button:active {
-  transform: translateY(2px) translateX(1px);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-.play-button:disabled {
-  background-color: #d0d0d0; color: #666; cursor: not-allowed;
-  transform: none; animation: none;
-}
-.play-button:disabled .pixel-border,
-.play-button:disabled .button-pixels {
-  display: none;
-}
-
-/* Back button */
 .back-button {
-  position: absolute; left: 5vw; bottom: 6vh;
-  background: rgba(255,255,255,0.9); color: #333;
-  border: none; border-radius: 50px;
-  width: 56px; height: 56px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  z-index: 40;
-}
-.back-button:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.05);
-}
-.back-button i {
-  font-size: 1.5rem; color: #000;
+  position: absolute;
+  top: var(--spacing-xl);
+  left: var(--spacing-xl);
+  z-index: 10;
 }
 
-/* Responsive */
+.back-button i {
+  font-size: 1.5rem;
+}
+
+.countdown-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  z-index: 20;
+}
+
+.countdown-number {
+  font-size: clamp(6rem, 18vw, 12rem);
+  font-weight: 900;
+  color: var(--text-white);
+}
+
+.countdown-text {
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  color: var(--text-white);
+  text-transform: uppercase;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-slow);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 @media (max-width: 768px) {
-  .title { font-size: 3rem; }
-  .subtitle { font-size: 1.4rem; }
-  .players-grid { grid-template-columns: 1fr; }
-  .play-button { padding: 1rem 3rem; font-size: 1.3rem; }
-  .pixel-star { width: 8px; height: 8px; }
-  .back-button { left: 3vw; bottom: 3vh; }
-  .player-card { padding: 1.2rem; }
-  .player-number { width: 40px; height: 40px; font-size: 1.2rem; }
-  .player-name { font-size: 1.2rem; }
+  .user-lobby-container {
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
   
   .actions-container {
     flex-direction: column;
-    gap: 1rem;
-    align-items: center;
+    align-items: stretch;
   }
   
-  .betting-section {
-    min-width: 250px;
+  .betting-section,
+  .actions {
+    width: 100%;
+  }
+
+  .back-button {
+    top: var(--spacing-lg);
+    left: var(--spacing-lg);
   }
 }
 </style>
