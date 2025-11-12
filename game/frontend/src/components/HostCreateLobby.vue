@@ -1,61 +1,6 @@
 <template>
   <div class="host-create-lobby">
     <Config />
-    
-    <div class="input-container">
-      <input 
-        v-model="roomName" 
-        type="text"
-        placeholder="Nombre de la sala"
-        class="name-input"
-        @keypress.enter="createRoom"
-      />
-    </div>
-    
-    <div class="difficulty-container">
-      <label class="difficulty-label">Dificultad:</label>
-      <select 
-        v-model="selectedDifficulty" 
-        class="difficulty-select"
-        :disabled="selectedGameMode === 'muerte-subita'"
-      >
-        <option value="easy">Fácil</option>
-        <option value="medium">Medio</option>
-        <option value="hard">Difícil</option>
-      </select>
-      <p v-if="selectedGameMode === 'muerte-subita'" class="difficulty-note">
-        La dificultad se establece automáticamente en Difícil para Muerte Súbita
-      </p>
-    </div>
-    
-    <div class="gamemode-container">
-      <label class="gamemode-label">Modo de Juego:</label>
-      <select 
-        v-model="selectedGameMode" 
-        class="gamemode-select"
-      >
-        <option value="normal">Normal</option>
-        <option value="muerte-subita">Muerte Súbita (100)</option>
-      </select>
-      <p v-if="selectedGameMode === 'muerte-subita'" class="gamemode-warning">
-        Entrada: 100 | Un error = Eliminación | El ganador se lleva todo
-      </p>
-    </div>
-    <br><br>
-    <div class="button-container">
-      <button class="play-button btn" @click="gameStore.playClickSound(); goBack()">
-        <span class="button-text">ATRÁS</span>
-        <span class="pixel-border"></span>
-        <span class="button-pixels"></span>
-       
-      </button>
-     
-      <button class="play-button btn" @click="gameStore.playClickSound(); createRoom()">
-        <span class="button-text">CREAR</span>
-        <span class="pixel-border"></span>
-        <span class="button-pixels"></span>
-      </button>
-    </div>
 
     <button class="btn-icon back-button" aria-label="Volver" @click="gameStore.playClickSound(); goBack()">
       <i class="fa-solid fa-house"></i>
@@ -86,6 +31,7 @@
             id="difficulty"
             v-model="selectedDifficulty"
             class="select-field"
+            :disabled="selectedGameMode === 'muerte-subita'"
           >
             <option value="easy">Fàcil</option>
             <option value="medium">Mitjana</option>
@@ -93,6 +39,27 @@
           </select>
           <i class="fa-solid fa-chevron-down select-icon"></i>
         </div>
+        <p v-if="selectedGameMode === 'muerte-subita'" class="field-note">
+          La dificultat s'estableix automàticament en Difícil per a Mort Súbita
+        </p>
+      </div>
+
+      <div class="form-field">
+        <label for="gamemode">Mode de Joc</label>
+        <div class="select-wrapper">
+          <select
+            id="gamemode"
+            v-model="selectedGameMode"
+            class="select-field"
+          >
+            <option value="normal">Normal</option>
+            <option value="muerte-subita">Mort Súbita (100)</option>
+          </select>
+          <i class="fa-solid fa-chevron-down select-icon"></i>
+        </div>
+        <p v-if="selectedGameMode === 'muerte-subita'" class="field-warning">
+          Entrada: 100 | Un error = Eliminació | El guanyador s'ho emporta tot
+        </p>
       </div>
 
       <div class="form-actions">
@@ -248,40 +215,6 @@ function createRoom() {
   50% { transform: translateY(-10px); }
 }
 
-/* Input group */
-.input-container {
-  width: 100%;
-  max-width: 500px;
-  margin: 2rem 0 1rem 0;
-  position: relative;
-  z-index: 2;
-}
-
-.button-container {
-  display: flex;
-  justify-content: center;
-  gap: 6rem;  
-  width: 100%;
-  max-width: 500px;
-  margin-bottom: 2rem;
-  position: relative;
-  z-index: 2;
-}
-
-.name-input {
-  padding: 0.8rem 1.5rem;
-  font-size: 1.2rem;
-  border: 2px solid #333;
-  border-radius: 4px;
-  outline: none;
-  width: 100%;
-  max-width: 300px;
-  text-align: center;
-  font-family: 'Poppins', sans-serif;
-  box-sizing: border-box;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.9);
-}
 
 .hero-subtitle {
   margin: 0;
@@ -296,112 +229,34 @@ function createRoom() {
   text-align: left;
 }
 
-.difficulty-select {
-  padding: 0.8rem 1.5rem;
-  font-size: 1.2rem;
-  border: 2px solid #333;
-  border-radius: 4px;
-  outline: none;
-  width: 100%;
-  max-width: 300px;
-  text-align: center;
-  font-family: 'Poppins', sans-serif;
-  box-sizing: border-box;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
-  transition: all 0.3s ease;
+
+.field-note {
+  font-size: 0.85rem;
+  color: var(--color-warning);
+  font-weight: 500;
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(255, 165, 0, 0.1);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-warning);
 }
 
-.difficulty-select:focus {
-  border-color: #FFD700;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+.field-warning {
+  font-size: 0.85rem;
+  color: var(--color-danger);
+  font-weight: 600;
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(255, 68, 68, 0.1);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-danger);
 }
 
-.difficulty-select:hover {
-  border-color: #FFA500;
-}
-
-.difficulty-select:disabled {
+.select-field:disabled {
   background: rgba(200, 200, 200, 0.5);
   color: #666;
   cursor: not-allowed;
   border-color: #ccc;
-}
-
-.difficulty-note {
-  font-size: 0.85rem;
-  color: #FFA500;
-  font-weight: 500;
-  text-align: center;
-  margin-top: 0.5rem;
-  padding: 0.3rem 0.8rem;
-  background: rgba(255, 165, 0, 0.1);
-  border-radius: 4px;
-  border: 1px solid #FFA500;
-}
-
-.gamemode-container {
-  width: 100%;
-  max-width: 500px;
-  margin: 1.5rem 0;
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.gamemode-label {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-  font-family: 'Poppins', sans-serif;
-}
-
-.gamemode-select {
-  padding: 0.8rem 1.5rem;
-  font-size: 1.2rem;
-  border: 2px solid #333;
-  border-radius: 4px;
-  outline: none;
-  width: 100%;
-  max-width: 300px;
-  text-align: center;
-  font-family: 'Poppins', sans-serif;
-  box-sizing: border-box;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.gamemode-select:focus {
-  border-color: #FFD700;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-}
-
-.gamemode-select:hover {
-  border-color: #FFA500;
-}
-
-.gamemode-warning {
-  font-size: 0.9rem;
-  color: #ff4444;
-  font-weight: 600;
-  text-align: center;
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 68, 68, 0.1);
-  border-radius: 4px;
-  border: 1px solid #ff4444;
-}
-
-.button-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
 }
 
 .form-field label {
