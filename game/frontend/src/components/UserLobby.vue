@@ -31,7 +31,7 @@
             <i v-else class="fa-solid fa-user player-icon"></i>
           </div>
           <div class="player-info">
-            <span class="player-name">{{ jugador.username }}</span>
+            <span class="player-name" :title="jugador.username">{{ jugador.username }}</span>
             <span v-if="jugador.status === 'ready'" class="ready-badge">
               <i class="fa-solid fa-check"></i> LISTO
             </span>

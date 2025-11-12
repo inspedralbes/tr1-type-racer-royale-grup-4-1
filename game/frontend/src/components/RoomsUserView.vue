@@ -30,9 +30,14 @@
           :disabled="sala.isFull"
         >
           <div class="sala-content">
-            <div class="sala-nombre">
-              {{ sala.nombre }}
-              <span v-if="sala.isFull" class="full-badge">LLENA</span>
+            <div class="sala-info-left">
+              <div class="sala-nombre">
+                {{ sala.nombre }}
+                <span v-if="sala.isFull" class="full-badge">LLENA</span>
+              </div>
+              <div v-if="sala.gameMode === 'muerte-subita'" class="gamemode-badge">
+                ☠️ Muerte Súbita | Entrada: 100💰
+              </div>
             </div>
             <div class="sala-playercount player-column">
               <span class="player-count"
@@ -75,6 +80,7 @@ const salasFiltradas = computed(() =>
       nombre: sala.name,
       jugadores: sala.players.length,
       isFull: sala.players.length >= maxJugadoresPorSala.value,
+      gameMode: sala.gameMode || 'normal',
     })),
 );
 
@@ -84,12 +90,49 @@ const seleccionarSala = (salaId) => {
 
 const unirseASala = () => {
   if (!salaSeleccionada.value) return;
+  
+  // Verificar si la sala es modo Muerte Súbita
+  const sala = salasFiltradas.value.find(s => s.id === salaSeleccionada.value);
+  if (sala && sala.gameMode === 'muerte-subita') {
+    if (!gameStore.userId) {
+      alert('Debes iniciar sesión para jugar en modo Muerte Súbita.');
+      return;
+    }
+    
+    // Configurar listeners para respuestas del servidor
+    const handleJoinRoomFailed = (data) => {
+      alert(data.message || "Error al unirse a la sala");
+      gameStore.manager.off("joinRoomFailed", handleJoinRoomFailed);
+      gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
+    };
+
+    const handleMoneyUpdated = (data) => {
+      gameStore.setMoney(data.newMoney);
+      gameStore.manager.off("joinRoomFailed", handleJoinRoomFailed);
+      gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
+      // Continuar con la unión a la sala
+      proceedToJoinRoom();
+    };
+
+    // Configurar listeners temporales
+    gameStore.manager.on("joinRoomFailed", handleJoinRoomFailed);
+    gameStore.manager.on("moneyUpdated", handleMoneyUpdated);
+  }
+  
   gameStore.setRoomName(salaSeleccionada.value);
   gameStore.manager.emit("joinRoom", {
     roomName: salaSeleccionada.value,
     userId: gameStore.userId,
     username: gameStore.username
   });
+  
+  // Si no es modo muerte súbita, proceder inmediatamente
+  if (!sala || sala.gameMode !== 'muerte-subita') {
+    proceedToJoinRoom();
+  }
+};
+
+const proceedToJoinRoom = () => {
   emit("joinedRoom");
 };
 
@@ -245,10 +288,29 @@ onUnmounted(() => {
   gap: 0.3rem;
 }
 
+.sala-info-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
 .sala-nombre {
   font-weight: 700;
   font-size: 1.6rem;
   text-transform: uppercase;
+}
+
+.gamemode-badge {
+  display: inline-block;
+  background: #ff4444;
+  color: white;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  box-shadow: 2px 2px 0 #000;
+  width: fit-content;
 }
 
 .sala-capacidad {

@@ -1,6 +1,7 @@
 <template>
-  <div class="game-engine">
-    <button class="btn-icon back-button" aria-label="Volver" @click="handleBack">
+  <EliminatedScreen v-if="isEliminated" @back="handleBack" />
+  <div v-else class="game-engine">
+    <button class="back-button" aria-label="Volver" @click="handleBack">
       <i class="fa-solid fa-house"></i>
     </button>
 
@@ -30,7 +31,7 @@
             <div class="user-scoreboard-content">
               <div class="player-entry current-user">
                 <div class="player-header">
-                  <span class="player-name">{{ gameStore.username }}</span>
+                  <span class="player-name" :title="gameStore.username">{{ gameStore.username }}</span>
                   <span class="player-count"
                     >{{ Math.round(overallProgress) }}%</span
                   >
@@ -81,7 +82,7 @@
                 }"
               >
                 <div class="player-header">
-                  <span class="player-name">
+                  <span class="player-name" :title="score.username">
                     {{ score.username }}
                     <span
                       v-if="score.username === gameStore.username"
@@ -128,6 +129,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useGameStore } from "../stores/gameStore";
 import GameNotification from "./GameNotification.vue";
+import EliminatedScreen from "./EliminatedScreen.vue";
 
 const emit = defineEmits(["activeKey", "back"]);
 const gameStore = useGameStore();
@@ -154,6 +156,25 @@ const gameState = ref({
   isLoading: true,
   completedArticles: 0,
 });
+
+// Track if player is eliminated (for sudden death mode)
+const isEliminated = ref(false);
+
+// Store game mode locally
+const gameMode = ref('normal');
+
+// Get current room's game mode
+const currentRoomData = computed(() => {
+  return gameStore.rooms.find(r => r.name === gameStore.currentRoom);
+});
+
+// Watch for room data changes to update game mode
+watch(currentRoomData, (newRoom) => {
+  if (newRoom?.gameMode) {
+    gameMode.value = newRoom.gameMode;
+    console.log('🎮 Modo de juego detectado:', gameMode.value);
+  }
+}, { immediate: true });
 
 // Timer state
 const timeRemaining = ref(120); // 120 seconds (2 minutes)
@@ -382,6 +403,15 @@ watch(
       const targetChar = target[lastIndex];
       if (typedChar && typedChar !== targetChar) {
         gameState.value.totalErrors++;
+        console.log(`❌ Error detectado! Total errores: ${gameState.value.totalErrors}, Modo: ${gameMode.value}`);
+        
+        // Si es modo muerte súbita y es el primer error, eliminar al jugador
+        if (gameMode.value === 'muerte-subita' && gameState.value.totalErrors === 1) {
+          console.log('💀 Activando eliminación por modo Muerte Súbita');
+          handleSuddenDeathElimination();
+          return;
+        }
+        
         // Notificar a toda la sala cada 3 errores
         if (gameState.value.totalErrors % 3 === 0) {
           gameStore.manager.emit("playerError", {
@@ -421,9 +451,23 @@ watch(
   },
 );
 
+function handleSuddenDeathElimination() {
+  isEliminated.value = true;
+  
+  // Detener el temporizador
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+  }
+  
+  // Notificar al servidor sobre la eliminación
+  gameStore.manager.emit("playerError", {
+    errorCount: 1,
+  });
+}
+
 function handleKeyDown(event) {
   const article = currentArticle.value;
-  if (!article || article.completed) return;
+  if (!article || article.completed || isEliminated.value) return;
 
   if (event.key === "Backspace") {
     article.inputText = article.inputText.slice(0, -1);
@@ -464,6 +508,14 @@ function loadArticles() {
         completed: false,
       }));
       gameState.value.isLoading = false;
+      
+      // Obtener el modo de juego de la sala actual
+      const room = gameStore.rooms.find(r => r.name === gameStore.currentRoom);
+      if (room?.gameMode) {
+        gameMode.value = room.gameMode;
+        console.log('🎮 Modo de juego cargado:', gameMode.value);
+      }
+      
       //Upon loading the articles it will start the countdown
       startCountdown();
     } else {
@@ -503,8 +555,37 @@ gameStore.manager.on("playerError", (data) => {
   );
 });
 
+// Escuchar evento de eliminación del servidor
+gameStore.manager.on("eliminatedFromGame", (data) => {
+  console.log('💀 Servidor confirmó eliminación:', data);
+  isEliminated.value = true;
+  
+  // Detener el temporizador
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+  }
+});
+
+// Escuchar cuando otro jugador es eliminado
+gameStore.manager.on("playerEliminated", (data) => {
+  pushNotification(`💀 ${data.username} ha sido eliminado`, 4000);
+});
+
+
 onMounted(() => {
   document.addEventListener("keydown", handleKeyDown);
+  
+  // Debug: Verificar datos de la sala al montar
+  console.log('🔍 GameEngine montado');
+  console.log('🔍 Sala actual:', gameStore.currentRoom);
+  console.log('🔍 Todas las salas:', gameStore.rooms);
+  const currentRoom = gameStore.rooms.find(r => r.name === gameStore.currentRoom);
+  console.log('🔍 Datos de sala actual:', currentRoom);
+  if (currentRoom) {
+    gameMode.value = currentRoom.gameMode || 'normal';
+    console.log('🎮 Modo de juego inicial:', gameMode.value);
+  }
+  
   loadArticles();
 });
 
@@ -513,6 +594,8 @@ onBeforeUnmount(() => {
   gameStore.manager.off("articlesData");
   gameStore.manager.off("playerMilestone");
   gameStore.manager.off("playerError");
+  gameStore.manager.off("eliminatedFromGame");
+  gameStore.manager.off("playerEliminated");
   //Cleanup after timer is over
   if (timerInterval.value) {
     clearInterval(timerInterval.value);
@@ -730,7 +813,11 @@ onBeforeUnmount(() => {
 .player-name {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--color-primary);
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 .you-label {
@@ -830,7 +917,10 @@ onBeforeUnmount(() => {
 .user-scoreboard .player-name {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .user-scoreboard .player-count {

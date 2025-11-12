@@ -79,6 +79,24 @@ onMounted(() => {
   // Listen for podium navigation event from server
   manager.on('showPodium', (data) => {
     console.log('Navigating to podium with data:', data);
+    
+    // En modo muerte súbita, solo mostrar podio al ganador
+    if (data.gameMode === 'muerte-subita') {
+      const currentUser = store.username;
+      const isWinner = data.winner === currentUser;
+      
+      if (!isWinner) {
+        console.log('🚫 Jugador no es el ganador en modo muerte súbita - no mostrar podio');
+        // Volver al lobby directamente para jugadores eliminados
+        startGame.value = false;
+        if (store.currentRoom) {
+          store.manager.emit('leaveRoom', store.currentRoom);
+          store.setRoomName('');
+        }
+        return;
+      }
+    }
+    
     podiumData.value = data;
     startGame.value = false;
     showPodio.value = true;
