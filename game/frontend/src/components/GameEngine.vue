@@ -1,5 +1,5 @@
 <template>
-  <EliminatedScreen v-if="isEliminated" @back="handleBack" />
+  <EliminatedScreen v-if="isEliminated" :eliminationReason="eliminationReason" @back="handleBack" />
   <div v-else class="game-engine">
     <button class="back-button" aria-label="Volver" @click="handleBack">
       <i class="fa-solid fa-house"></i>
@@ -45,6 +45,11 @@
                   ></div>
                 </div>
               </div>
+            </div>
+            
+            <!-- Game Console -->
+            <div class="console-container">
+              <GameConsole ref="gameConsole" :maxMessages="30" />
             </div>
           </div>
           <!-- Text Display Section -->
@@ -113,15 +118,6 @@
         </div>
       </template>
     </div>
-    <!-- Notificaciones pop-up -->
-    <div class="notification-stack">
-      <GameNotification
-        v-for="(notif, i) in notifications"
-        :key="notif.id"
-        :message="notif.message"
-        :duration="notif.duration"
-      />
-    </div>
   </div>
 </template>
 
@@ -130,19 +126,19 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useGameStore } from "../stores/gameStore";
 import GameNotification from "./GameNotification.vue";
 import EliminatedScreen from "./EliminatedScreen.vue";
+import GameConsole from "./GameConsole.vue";
 
 const emit = defineEmits(["activeKey", "back"]);
 const gameStore = useGameStore();
 
-// Notificaciones pop-up
-const notifications = ref([]);
-let notifId = 0;
-function pushNotification(message, duration = 3500) {
-  const id = notifId++;
-  notifications.value.push({ id, message, duration });
-  setTimeout(() => {
-    notifications.value = notifications.value.filter((n) => n.id !== id);
-  }, duration + 500);
+// Console reference
+const gameConsole = ref(null);
+
+// Function to add messages to console
+function addConsoleMessage(message, type = 'info') {
+  if (gameConsole.value) {
+    gameConsole.value.addMessage(message, type);
+  }
 }
 
 // Tracking de milestones ya notificados para evitar spam
@@ -159,6 +155,7 @@ const gameState = ref({
 
 // Track if player is eliminated (for sudden death mode)
 const isEliminated = ref(false);
+const eliminationReason = ref('error'); // 'error' or 'timeout'
 
 // Store game mode locally
 const gameMode = ref('normal');
@@ -198,8 +195,18 @@ function startCountdown() {
   timerInterval.value = setInterval(() => {
     if (timeRemaining.value > 0) {
       timeRemaining.value--;
+      
+      // Avisos de tiempo restante
+      if (timeRemaining.value === 60) {
+        addConsoleMessage('⏰ ¡Queda 1 minuto!', 'warning');
+      } else if (timeRemaining.value === 30) {
+        addConsoleMessage('⚠️ ¡Solo quedan 30 segundos!', 'warning');
+      } else if (timeRemaining.value === 10) {
+        addConsoleMessage('🚨 ¡10 segundos restantes!', 'error');
+      }
     } else {
       clearInterval(timerInterval.value);
+      addConsoleMessage('⏰ ¡Tiempo agotado!', 'error');
       handleTimeout();
     }
   }, 1000);
@@ -208,7 +215,22 @@ function startCountdown() {
 function handleTimeout() {
   console.log("Time's up!");
   
-  // Send final results to server
+  // En modo muerte súbita, el tiempo agotado significa eliminación
+  if (gameMode.value === 'muerte-subita') {
+    console.log('💀 Tiempo agotado en modo Muerte Súbita - Eliminando jugador');
+    addConsoleMessage('💀 ¡ELIMINADO! Tiempo agotado en modo Muerte Súbita', 'error');
+    isEliminated.value = true;
+    eliminationReason.value = 'timeout';
+    
+    // Notificar al servidor sobre la eliminación por tiempo
+    gameStore.manager.emit("playerError", {
+      errorCount: 1,
+      reason: "timeout"
+    });
+    return;
+  }
+  
+  // Send final results to server (solo en modo normal)
   const finalResults = {
     username: gameStore.username,
     articlesCompleted: gameState.value.completedArticles,
@@ -405,9 +427,13 @@ watch(
         gameState.value.totalErrors++;
         console.log(`❌ Error detectado! Total errores: ${gameState.value.totalErrors}, Modo: ${gameMode.value}`);
         
+        // Agregar mensaje de error a la consola
+        addConsoleMessage(`❌ Error detectado! Total: ${gameState.value.totalErrors}`, 'error');
+        
         // Si es modo muerte súbita y es el primer error, eliminar al jugador
         if (gameMode.value === 'muerte-subita' && gameState.value.totalErrors === 1) {
           console.log('💀 Activando eliminación por modo Muerte Súbita');
+          addConsoleMessage('💀 ¡ELIMINADO! Error en modo Muerte Súbita', 'error');
           handleSuddenDeathElimination();
           return;
         }
@@ -441,6 +467,14 @@ watch(
         !notifiedMilestones.value.has(currentPercent)
       ) {
         notifiedMilestones.value.add(currentPercent);
+        
+        // Agregar mensaje de milestone a la consola
+        if (currentPercent === 100) {
+          addConsoleMessage(`🎉 ¡Artículo ${gameState.value.currentIndex + 1} completado!`, 'success');
+        } else {
+          addConsoleMessage(`🎯 ${currentPercent}% del artículo ${gameState.value.currentIndex + 1} completado`, 'milestone');
+        }
+        
         // Emitir evento al backend para que notifique a toda la sala
         gameStore.manager.emit("playerMilestone", {
           percent: currentPercent,
@@ -453,15 +487,20 @@ watch(
 
 function handleSuddenDeathElimination() {
   isEliminated.value = true;
+  eliminationReason.value = 'error';
   
   // Detener el temporizador
   if (timerInterval.value) {
     clearInterval(timerInterval.value);
   }
   
+  // Agregar mensaje a la consola
+  addConsoleMessage('💀 Has sido eliminado del juego', 'error');
+  
   // Notificar al servidor sobre la eliminación
   gameStore.manager.emit("playerError", {
     errorCount: 1,
+    reason: "error"
   });
 }
 
@@ -536,22 +575,22 @@ function handleUserScores(data) {
 // Listeners para notificaciones de otros jugadores
 gameStore.manager.on("playerMilestone", (data) => {
   if (data.percent === 100) {
-    pushNotification(
-      `� ${data.username} ha completado el artículo ${data.articleNumber}`,
-      4500,
+    addConsoleMessage(
+      `📄 ${data.username} ha completado el artículo ${data.articleNumber}`,
+      'success'
     );
   } else {
-    pushNotification(
-      `�🎯 ${data.username} ha alcanzado el ${data.percent}% del artículo ${data.articleNumber}`,
-      4000,
+    addConsoleMessage(
+      `🎯 ${data.username} ha alcanzado el ${data.percent}% del artículo ${data.articleNumber}`,
+      'milestone'
     );
   }
 });
 
 gameStore.manager.on("playerError", (data) => {
-  pushNotification(
+  addConsoleMessage(
     `⚠️ ${data.username} lleva ${data.errorCount} errores`,
-    3000,
+    'warning'
   );
 });
 
@@ -559,6 +598,9 @@ gameStore.manager.on("playerError", (data) => {
 gameStore.manager.on("eliminatedFromGame", (data) => {
   console.log('💀 Servidor confirmó eliminación:', data);
   isEliminated.value = true;
+  
+  // Agregar mensaje a la consola
+  addConsoleMessage('💀 Eliminación confirmada por el servidor', 'error');
   
   // Detener el temporizador
   if (timerInterval.value) {
@@ -568,7 +610,7 @@ gameStore.manager.on("eliminatedFromGame", (data) => {
 
 // Escuchar cuando otro jugador es eliminado
 gameStore.manager.on("playerEliminated", (data) => {
-  pushNotification(`💀 ${data.username} ha sido eliminado`, 4000);
+  addConsoleMessage(`💀 ${data.username} ha sido eliminado`, 'error');
 });
 
 
@@ -585,6 +627,14 @@ onMounted(() => {
     gameMode.value = currentRoom.gameMode || 'normal';
     console.log('🎮 Modo de juego inicial:', gameMode.value);
   }
+  
+  // Mensaje inicial en la consola
+  setTimeout(() => {
+    addConsoleMessage('🎮 Juego iniciado. ¡Buena suerte!', 'info');
+    if (gameMode.value === 'muerte-subita') {
+      addConsoleMessage('💀 Modo Muerte Súbita activado - ¡Cuidado con los errores!', 'warning');
+    }
+  }, 500);
   
   loadArticles();
 });
@@ -936,15 +986,8 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Notification stack */
-.notification-stack {
-  position: fixed;
-  top: 32px;
-  right: 32px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  pointer-events: none;
+/* Console container */
+.console-container {
+  margin-top: var(--spacing-lg);
 }
 </style>
