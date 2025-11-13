@@ -1,6 +1,10 @@
 <template>
   <div class="game-engine-wrapper">
-    <EliminatedScreen v-if="isEliminated" :eliminationReason="eliminationReason" @back="handleBack" />
+    <EliminatedScreen
+      v-if="isEliminated"
+      :eliminationReason="eliminationReason"
+      @back="handleBack"
+    />
 
     <div v-else class="game-engine">
       <div v-if="gameState.isLoading" class="loading">
@@ -43,7 +47,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Game Console -->
             <div class="console-container">
               <GameConsole ref="gameConsole" :maxMessages="30" />
@@ -114,7 +118,6 @@
                 <p>Waiting for players...</p>
               </div>
             </div>
-
           </div>
         </div>
       </template>
@@ -142,7 +145,7 @@ const gameStore = useGameStore();
 const gameConsole = ref(null);
 
 // Function to add messages to console
-function addConsoleMessage(message, type = 'info') {
+function addConsoleMessage(message, type = "info") {
   if (gameConsole.value) {
     gameConsole.value.addMessage(message, type);
   }
@@ -165,26 +168,30 @@ const formattedMoney = computed(() => gameStore.money.toLocaleString());
 
 // Track if player is eliminated (for sudden death mode)
 const isEliminated = ref(false);
-const eliminationReason = ref('error'); // 'error' or 'timeout'
+const eliminationReason = ref("error"); // 'error' or 'timeout'
 
 // Store game mode locally
-const gameMode = ref('normal');
+const gameMode = ref("normal");
 
 // Get current room's game mode
 const currentRoomData = computed(() => {
-  return gameStore.rooms.find(r => r.name === gameStore.currentRoom);
+  return gameStore.rooms.find((r) => r.name === gameStore.currentRoom);
 });
 
 // Watch for room data changes to update game mode
-watch(currentRoomData, (newRoom) => {
-  if (newRoom?.gameMode) {
-    gameMode.value = newRoom.gameMode;
-    console.log('🎮 Modo de juego detectado:', gameMode.value);
-  }
-}, { immediate: true });
+watch(
+  currentRoomData,
+  (newRoom) => {
+    if (newRoom?.gameMode) {
+      gameMode.value = newRoom.gameMode;
+      console.log("🎮 Modo de juego detectado:", gameMode.value);
+    }
+  },
+  { immediate: true },
+);
 
 // Timer state
-const timeRemaining = ref(3); // 3 seconds (test duration)
+const timeRemaining = ref(180);
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {
@@ -205,18 +212,18 @@ function startCountdown() {
   timerInterval.value = setInterval(() => {
     if (timeRemaining.value > 0) {
       timeRemaining.value--;
-      
+
       // Avisos de tiempo restante
       if (timeRemaining.value === 60) {
-        addConsoleMessage('⏰ ¡Queda 1 minuto!', 'warning');
+        addConsoleMessage("⏰ ¡Queda 1 minuto!", "warning");
       } else if (timeRemaining.value === 30) {
-        addConsoleMessage('⚠️ ¡Solo quedan 30 segundos!', 'warning');
+        addConsoleMessage("⚠️ ¡Solo quedan 30 segundos!", "warning");
       } else if (timeRemaining.value === 10) {
-        addConsoleMessage('🚨 ¡10 segundos restantes!', 'error');
+        addConsoleMessage("🚨 ¡10 segundos restantes!", "error");
       }
     } else {
       clearInterval(timerInterval.value);
-      addConsoleMessage('⏰ ¡Tiempo agotado!', 'error');
+      addConsoleMessage("⏰ ¡Tiempo agotado!", "error");
       handleTimeout();
     }
   }, 1000);
@@ -224,22 +231,25 @@ function startCountdown() {
 
 function handleTimeout() {
   console.log("Time's up!");
-  
+
   // En modo muerte súbita, el tiempo agotado significa eliminación
-  if (gameMode.value === 'muerte-subita') {
-    console.log('💀 Tiempo agotado en modo Muerte Súbita - Eliminando jugador');
-    addConsoleMessage('💀 ¡ELIMINADO! Tiempo agotado en modo Muerte Súbita', 'error');
+  if (gameMode.value === "muerte-subita") {
+    console.log("💀 Tiempo agotado en modo Muerte Súbita - Eliminando jugador");
+    addConsoleMessage(
+      "💀 ¡ELIMINADO! Tiempo agotado en modo Muerte Súbita",
+      "error",
+    );
     isEliminated.value = true;
-    eliminationReason.value = 'timeout';
-    
+    eliminationReason.value = "timeout";
+
     // Notificar al servidor sobre la eliminación por tiempo
     gameStore.manager.emit("playerError", {
       errorCount: 1,
-      reason: "timeout"
+      reason: "timeout",
     });
     return;
   }
-  
+
   // Send final results to server (solo en modo normal)
   const finalResults = {
     username: gameStore.username,
@@ -340,7 +350,9 @@ function handleTextInput() {
   const newValue = article.inputText;
 
   // Calcular porcentaje del artículo actual basado en caracteres escritos
-  const currentPercent = Math.round((newValue.length / article.text.length) * 100);
+  const currentPercent = Math.round(
+    (newValue.length / article.text.length) * 100,
+  );
 
   if (currentPercent < 100) {
     gameStore.manager.emit("updateProgress", {
@@ -419,19 +431,30 @@ watch(
       const targetChar = target[lastIndex];
       if (typedChar && typedChar !== targetChar) {
         gameState.value.totalErrors++;
-        console.log(`❌ Error detectado! Total errores: ${gameState.value.totalErrors}, Modo: ${gameMode.value}`);
-        
+        console.log(
+          `❌ Error detectado! Total errores: ${gameState.value.totalErrors}, Modo: ${gameMode.value}`,
+        );
+
         // Agregar mensaje de error a la consola
-        addConsoleMessage(`❌ Error detectado! Total: ${gameState.value.totalErrors}`, 'error');
-        
+        addConsoleMessage(
+          `❌ Error detectado! Total: ${gameState.value.totalErrors}`,
+          "error",
+        );
+
         // Si es modo muerte súbita y es el primer error, eliminar al jugador
-        if (gameMode.value === 'muerte-subita' && gameState.value.totalErrors === 1) {
-          console.log('💀 Activando eliminación por modo Muerte Súbita');
-          addConsoleMessage('💀 ¡ELIMINADO! Error en modo Muerte Súbita', 'error');
+        if (
+          gameMode.value === "muerte-subita" &&
+          gameState.value.totalErrors === 1
+        ) {
+          console.log("💀 Activando eliminación por modo Muerte Súbita");
+          addConsoleMessage(
+            "💀 ¡ELIMINADO! Error en modo Muerte Súbita",
+            "error",
+          );
           handleSuddenDeathElimination();
           return;
         }
-        
+
         // Notificar a toda la sala cada 3 errores
         if (gameState.value.totalErrors % 3 === 0) {
           // Agregar mensaje de error a la consola solo cada 3 errores
@@ -463,14 +486,20 @@ watch(
         !notifiedMilestones.value.has(currentPercent)
       ) {
         notifiedMilestones.value.add(currentPercent);
-        
+
         // Agregar mensaje de milestone a la consola
         if (currentPercent === 100) {
-          addConsoleMessage(`🎉 ¡Artículo ${gameState.value.currentIndex + 1} completado!`, 'success');
+          addConsoleMessage(
+            `🎉 ¡Artículo ${gameState.value.currentIndex + 1} completado!`,
+            "success",
+          );
         } else {
-          addConsoleMessage(`🎯 ${currentPercent}% del artículo ${gameState.value.currentIndex + 1} completado`, 'milestone');
+          addConsoleMessage(
+            `🎯 ${currentPercent}% del artículo ${gameState.value.currentIndex + 1} completado`,
+            "milestone",
+          );
         }
-        
+
         // Emitir evento al backend para que notifique a toda la sala
         gameStore.manager.emit("playerMilestone", {
           percent: currentPercent,
@@ -483,20 +512,20 @@ watch(
 
 function handleSuddenDeathElimination() {
   isEliminated.value = true;
-  eliminationReason.value = 'error';
-  
+  eliminationReason.value = "error";
+
   // Detener el temporizador
   if (timerInterval.value) {
     clearInterval(timerInterval.value);
   }
-  
+
   // Agregar mensaje a la consola
-  addConsoleMessage('💀 Has sido eliminado del juego', 'error');
-  
+  addConsoleMessage("💀 Has sido eliminado del juego", "error");
+
   // Notificar al servidor sobre la eliminación
   gameStore.manager.emit("playerError", {
     errorCount: 1,
-    reason: "error"
+    reason: "error",
   });
 }
 
@@ -564,12 +593,12 @@ gameStore.manager.on("playerMilestone", (data) => {
   if (data.percent === 100) {
     addConsoleMessage(
       `📄 ${data.username} ha completado el artículo ${data.articleNumber}`,
-      'success'
+      "success",
     );
   } else {
     addConsoleMessage(
       `🎯 ${data.username} ha alcanzado el ${data.percent}% del artículo ${data.articleNumber}`,
-      'milestone'
+      "milestone",
     );
   }
 });
@@ -577,18 +606,18 @@ gameStore.manager.on("playerMilestone", (data) => {
 gameStore.manager.on("playerError", (data) => {
   addConsoleMessage(
     `⚠️ ${data.username} lleva ${data.errorCount} errores`,
-    'warning'
+    "warning",
   );
 });
 
 // Escuchar evento de eliminación del servidor
 gameStore.manager.on("eliminatedFromGame", (data) => {
-  console.log('💀 Servidor confirmó eliminación:', data);
+  console.log("💀 Servidor confirmó eliminación:", data);
   isEliminated.value = true;
-  
+
   // Agregar mensaje a la consola
-  addConsoleMessage('💀 Eliminación confirmada por el servidor', 'error');
-  
+  addConsoleMessage("💀 Eliminación confirmada por el servidor", "error");
+
   // Detener el temporizador
   if (timerInterval.value) {
     clearInterval(timerInterval.value);
@@ -597,32 +626,36 @@ gameStore.manager.on("eliminatedFromGame", (data) => {
 
 // Escuchar cuando otro jugador es eliminado
 gameStore.manager.on("playerEliminated", (data) => {
-  addConsoleMessage(`💀 ${data.username} ha sido eliminado`, 'error');
+  addConsoleMessage(`💀 ${data.username} ha sido eliminado`, "error");
 });
-
 
 onMounted(() => {
   document.addEventListener("keydown", handleKeyDown);
-  
+
   // Debug: Verificar datos de la sala al montar
-  console.log('🔍 GameEngine montado');
-  console.log('🔍 Sala actual:', gameStore.currentRoom);
-  console.log('🔍 Todas las salas:', gameStore.rooms);
-  const currentRoom = gameStore.rooms.find(r => r.name === gameStore.currentRoom);
-  console.log('🔍 Datos de sala actual:', currentRoom);
+  console.log("🔍 GameEngine montado");
+  console.log("🔍 Sala actual:", gameStore.currentRoom);
+  console.log("🔍 Todas las salas:", gameStore.rooms);
+  const currentRoom = gameStore.rooms.find(
+    (r) => r.name === gameStore.currentRoom,
+  );
+  console.log("🔍 Datos de sala actual:", currentRoom);
   if (currentRoom) {
-    gameMode.value = currentRoom.gameMode || 'normal';
-    console.log('🎮 Modo de juego inicial:', gameMode.value);
+    gameMode.value = currentRoom.gameMode || "normal";
+    console.log("🎮 Modo de juego inicial:", gameMode.value);
   }
-  
+
   // Mensaje inicial en la consola
   setTimeout(() => {
-    addConsoleMessage('🎮 Juego iniciado. ¡Buena suerte!', 'info');
-    if (gameMode.value === 'muerte-subita') {
-      addConsoleMessage('💀 Modo Muerte Súbita activado - ¡Cuidado con los errores!', 'warning');
+    addConsoleMessage("🎮 Juego iniciado. ¡Buena suerte!", "info");
+    if (gameMode.value === "muerte-subita") {
+      addConsoleMessage(
+        "💀 Modo Muerte Súbita activado - ¡Cuidado con los errores!",
+        "warning",
+      );
     }
   }, 500);
-  
+
   document.addEventListener("keydown", handleKeyDown);
   loadArticles();
 });
@@ -637,7 +670,6 @@ onBeforeUnmount(() => {
     clearInterval(timerInterval.value);
   }
 });
-
 </script>
 
 <style scoped>
@@ -756,7 +788,9 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
 .timer-container.timer-warning {
@@ -846,13 +880,22 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  border: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent 75%);
+  border: 2px solid
+    color-mix(in srgb, var(--color-primary) 25%, transparent 75%);
   padding: var(--spacing-sm) var(--spacing-md);
 }
 
 .player-entry.is-leader {
-  background: color-mix(in srgb, var(--color-secondary) 65%, var(--bg-card) 35%);
-  border-color: color-mix(in srgb, var(--color-secondary) 55%, var(--color-primary) 45%);
+  background: color-mix(
+    in srgb,
+    var(--color-secondary) 65%,
+    var(--bg-card) 35%
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--color-secondary) 55%,
+    var(--color-primary) 45%
+  );
   box-shadow: var(--shadow-md);
 }
 
@@ -900,7 +943,8 @@ onBeforeUnmount(() => {
   height: 24px;
   overflow: hidden;
   position: relative;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent 80%);
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 20%, transparent 80%);
 }
 
 .progress-bar-fill {
