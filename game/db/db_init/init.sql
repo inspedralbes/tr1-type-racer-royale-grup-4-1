@@ -29,7 +29,7 @@ CREATE TABLE users (
     username VARCHAR(100) NOT NULL,
     password VARCHAR(100) NOT NULL,
     img VARCHAR(255) DEFAULT NULL,
-    money INT DEFAULT 100000
+    money INT DEFAULT 1000
 );
 
 ALTER TABLE users ADD UNIQUE KEY uk_users_username (username);

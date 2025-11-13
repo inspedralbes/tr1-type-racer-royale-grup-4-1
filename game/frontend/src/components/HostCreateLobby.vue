@@ -2,7 +2,9 @@
   <BaseScreen class="host-create-lobby" @home="goBack">
     <section class="hero">
       <h1 class="hero-title">Crea una nova sala</h1>
-      <p class="hero-subtitle">Configura el nom i la dificultat abans de començar.</p>
+      <p class="hero-subtitle">
+        Configura el nom i la dificultat abans de començar.
+      </p>
     </section>
 
     <div class="card-paper form-card">
@@ -32,10 +34,12 @@
           <i class="fa-solid fa-chevron-down select-icon"></i>
         </div>
         <p v-if="selectedGameMode === 'normal'" class="difficulty-note">
-          Mode estàndard sense aposta extra. Perfecte per reportatges equilibrats.
+          Mode estàndard sense aposta extra. Perfecte per reportatges
+          equilibrats.
         </p>
         <p v-else class="gamemode-warning">
-          ☠️ Muerte Súbita: requereix 100💰 per jugador i força la dificultat "Difícil".
+          ☠️ Muerte Súbita: requereix 100💰 per jugador i força la dificultat
+          "Difícil".
         </p>
       </div>
 
@@ -60,8 +64,26 @@
       </div>
 
       <div class="form-actions">
-        <button class="btn btn-ghost" type="button" @click="gameStore.playClickSound(); goBack()">Cancel·lar</button>
-        <button class="btn btn-primary" type="button" @click="gameStore.playClickSound(); createRoom()">Crear sala</button>
+        <button
+          class="btn btn-ghost"
+          type="button"
+          @click="
+            gameStore.playClickSound();
+            goBack();
+          "
+        >
+          Cancel·lar
+        </button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          @click="
+            gameStore.playClickSound();
+            createRoom();
+          "
+        >
+          Crear sala
+        </button>
       </div>
     </div>
   </BaseScreen>
@@ -70,7 +92,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import BaseScreen from "./layout/BaseScreen.vue";
-import { useGameStore } from '../stores/gameStore';
+import { useGameStore } from "../stores/gameStore";
 
 const emit = defineEmits(["backToLobby", "roomCreated"]);
 const gameStore = useGameStore();
@@ -81,14 +103,14 @@ const selectedGameMode = ref("normal");
 
 // Watch for game mode changes to auto-set difficulty
 watch(selectedGameMode, (newMode, oldMode) => {
-  if (newMode === 'muerte-subita') {
-    selectedDifficulty.value = 'hard';
+  if (newMode === "muerte-subita") {
+    selectedDifficulty.value = "hard";
     return;
   }
 
   // Restore a default difficulty when leaving Muerte Súbita
-  if (oldMode === 'muerte-subita' && selectedDifficulty.value === 'hard') {
-    selectedDifficulty.value = 'medium';
+  if (oldMode === "muerte-subita" && selectedDifficulty.value === "hard") {
+    selectedDifficulty.value = "medium";
   }
 });
 
@@ -107,7 +129,7 @@ function createRoom() {
   }
 
   // Verificar si tiene suficiente dinero para modo Muerte Súbita
-  if (selectedGameMode.value === 'muerte-subita') {
+  if (selectedGameMode.value === "muerte-subita") {
     if (!gameStore.userId) {
       alert("Debes iniciar sesión para jugar en modo Muerte Súbita.");
       return;
@@ -119,6 +141,8 @@ function createRoom() {
   const handleRoomCreationFailed = (data) => {
     alert(data.message || "Error al crear la sala");
     gameStore.manager.off("roomCreationFailed", handleRoomCreationFailed);
+    //Upon failure go back to the lobby
+    goBack();
   };
 
   const handleMoneyUpdated = (data) => {
@@ -142,11 +166,11 @@ function createRoom() {
     difficulty: selectedDifficulty.value,
     gameMode: selectedGameMode.value,
     userId: gameStore.userId,
-    username: gameStore.username
+    username: gameStore.username,
   });
 
   // Si no es modo muerte súbita, emitir inmediatamente
-  if (selectedGameMode.value !== 'muerte-subita') {
+  if (selectedGameMode.value !== "muerte-subita") {
     handleRoomCreated();
   } else {
     // Para muerte súbita, esperar confirmación del servidor
@@ -168,7 +192,7 @@ function createRoom() {
   justify-content: center;
   gap: var(--spacing-xl);
   padding: var(--spacing-2xl) var(--spacing-xl);
-  background: url('@/img/bgimage.png') center/cover no-repeat;
+  background: url("@/img/bgimage.png") center/cover no-repeat;
   text-align: center;
 }
 
@@ -180,7 +204,7 @@ function createRoom() {
 
 .hero-title {
   margin: 0 0 var(--spacing-sm);
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: clamp(2.4rem, 5vw, 3.2rem);
   text-transform: uppercase;
   color: var(--text-white);
@@ -252,3 +276,4 @@ function createRoom() {
   }
 }
 </style>
+
