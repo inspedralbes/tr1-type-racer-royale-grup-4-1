@@ -5,12 +5,18 @@
       :class="['newspaper-layer', { 'hidden-content': !isNewspaperVisible }]"
     >
       <img
-        src="@/img/jhorunalismpaper.png"
+        src="@/img/newpaper.png"
         alt="Portada de Journalism Race"
         class="newspaper-image"
       />
-      <button class="contract-overlay" @click="gameStore.playClickSound(); fillContract()">Omplir contracte</button>
-      <button class="btn btn-primary login-overlay" @click="gameStore.playClickSound(); openBadge()">Entrar a l'oficina</button>
+      <div class="newspaper-actions">
+        <button class="btn btn-primary newspaper-btn" @click="fillContract">
+          Omplir contracte
+        </button>
+        <button class="btn btn-primary newspaper-btn" @click="openBadge">
+          Entrar a l'oficina
+        </button>
+      </div>
     </div>
 
     <Transition name="badge-slide">
@@ -60,15 +66,15 @@
       <div v-if="isRegisterVisible" class="badge-wrapper">
         <div class="badge-content">
           <img
-            src="@/img/carnetid.png"
+            src="@/img/contracte.png"
             alt="Contracte de registre"
-            class="badge-image"
+            class="contract-image"
           />
 
-          <form class="badge-form" @submit.prevent="submitRegister">
+          <form class="contract-form card-paper" @submit.prevent="submitRegister">
             <input
               id="register-username"
-              class="badge-input"
+              class="input-field"
               type="text"
               v-model="registerUsername"
               autocomplete="username"
@@ -78,7 +84,7 @@
 
             <input
               id="register-password"
-              class="badge-input"
+              class="input-field"
               type="password"
               v-model="registerPassword"
               autocomplete="new-password"
@@ -293,9 +299,19 @@ function submitRegister() {
 }
 
 .newspaper-layer {
-  position: relative;
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-xl);
+  text-align: center;
+  background: url('@/img/initialbg.png') no-repeat center center/cover;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  position: relative;
 }
 
 .hidden-content {
@@ -303,100 +319,35 @@ function submitRegister() {
 }
 
 .newspaper-image {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 90vw;
-  max-height: 90vh;
+  width: min(780px, 90vw);
+  max-width: 100%;
+  height: auto;
   object-fit: contain;
-  z-index: 5;
-  opacity: 0;
-  animation: riseUpCentered 0.8s ease-out forwards;
-}
-
-.login-overlay {
-  position: absolute;
-  width: clamp(220px, 30vw, 360px);
-  height: 4.5rem;
-  top: 83%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: "Playfair Display", serif;
-  z-index: 6;
-  opacity: 0;
-  animation: riseUpCentered 0.8s ease-out forwards;
-}
-
-.login-overlay:hover {
-  transform: translate(-50%, -50%) translateY(-4px);
-}
-
-.login-overlay:active {
-  transform: translate(-50%, -50%) translateY(1px);
-}
-
-.login-overlay:disabled {
-  background: var(--bg-hover);
-  color: var(--text-muted);
-  cursor: not-allowed;
-}
-
-.contract-overlay {
-  position: absolute;
-  width: clamp(180px, 24vw, 240px);
-  height: 3.6rem;
-  top: 40%;
-  left: 34%;
-  transform: translate(-50%, -50%) rotate(-7deg);
-  background: color-mix(in srgb, var(--bg-card) 75%, var(--color-secondary) 25%);
-  color: color-mix(in srgb, var(--color-primary) 85%, var(--text-white) 15%);
-  font-family: "Playfair Display", serif;
-  border: 3px solid var(--color-primary);
   border-radius: var(--radius-xl);
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: var(--shadow-lg);
-  text-transform: uppercase;
-  letter-spacing: 0.05rem;
-  z-index: 6;
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
   opacity: 0;
-  animation: riseUpStick 0.8s ease-out forwards;
-  animation-delay: 0.1s;
+  animation: fadeUp 0.8s ease-out forwards;
 }
 
-.contract-overlay:hover {
-  transform: translate(-50%, -50%) rotate(-7deg) translateY(-4px);
-  box-shadow: var(--shadow-xl);
+.newspaper-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  justify-content: center;
 }
 
-.contract-overlay:disabled {
-  background: var(--bg-hover);
-  color: var(--text-muted);
-  cursor: not-allowed;
+.newspaper-btn {
+  min-width: clamp(240px, 30vw, 360px);
+  font-family: "Playfair Display", serif;
 }
 
-@keyframes riseUpCentered {
+@keyframes fadeUp {
   0% {
     opacity: 0;
-    transform: translate(-50%, 20%);
+    transform: translateY(24px);
   }
   100% {
     opacity: 1;
-    transform: translate(-50%, -50%);
-  }
-}
-
-@keyframes riseUpStick {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -30%) rotate(-7deg);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, -50%) rotate(-7deg);
+    transform: translateY(0);
   }
 }
 
@@ -436,6 +387,29 @@ function submitRegister() {
   gap: clamp(0.35rem, 1.2vw, 0.75rem);
   width: clamp(80px, 28vw, 200px);
 }
+
+.contract-image {
+  width: clamp(280px, 40vw, 500px);
+  object-fit: contain;
+  transform: translateY(5%);
+}
+
+.contract-form {
+  position: absolute;
+  bottom: clamp(2.5rem, 16vh, 6.3rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(240px, 32vw, 360px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-md);
+  background: var(--bg-card);
+  border: 3px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
 
 .badge-input {
   width: 100%;
