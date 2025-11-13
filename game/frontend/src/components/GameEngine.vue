@@ -327,43 +327,27 @@ function handleTextInput() {
   const article = currentArticle.value;
   if (!article) return;
 
-  // Track errors as before
-  const target = article.text;
   const newValue = article.inputText;
-  const oldValue = newValue.slice(0, -1);
 
-  if (newValue.length > oldValue.length) {
-    const lastIndex = newValue.length - 1;
-    const typedChar = newValue[lastIndex];
-    const targetChar = target[lastIndex];
-    if (typedChar && typedChar !== targetChar) {
-      gameState.value.totalErrors++;
-      if (gameState.value.totalErrors % 3 === 0) {
-        gameStore.manager.emit("playerError", {
-          errorCount: gameState.value.totalErrors,
-        });
-      }
-    }
+  // Calcular porcentaje del artículo actual basado en caracteres escritos
+  const currentPercent = Math.round((newValue.length / article.text.length) * 100);
 
-    const currentPercent = Math.round((newValue.length / target.length) * 100);
+  if (currentPercent < 100) {
+    gameStore.manager.emit("updateProgress", {
+      progress: currentPercent,
+    });
+  }
 
-    if (currentPercent < 100) {
-      gameStore.manager.emit("updateProgress", {
-        progress: currentPercent,
-      });
-    }
-
-    const milestones = [25, 50, 75, 100];
-    if (
-      milestones.includes(currentPercent) &&
-      !notifiedMilestones.value.has(currentPercent)
-    ) {
-      notifiedMilestones.value.add(currentPercent);
-      gameStore.manager.emit("playerMilestone", {
-        percent: currentPercent,
-        articleNumber: gameState.value.currentIndex + 1,
-      });
-    }
+  const milestones = [25, 50, 75, 100];
+  if (
+    milestones.includes(currentPercent) &&
+    !notifiedMilestones.value.has(currentPercent)
+  ) {
+    notifiedMilestones.value.add(currentPercent);
+    gameStore.manager.emit("playerMilestone", {
+      percent: currentPercent,
+      articleNumber: gameState.value.currentIndex + 1,
+    });
   }
 
   // ✅ Complete article when typed length reaches target length, ignoring mistakes
@@ -440,6 +424,8 @@ watch(
         
         // Notificar a toda la sala cada 3 errores
         if (gameState.value.totalErrors % 3 === 0) {
+          // Agregar mensaje de error a la consola solo cada 3 errores
+          //addConsoleMessage(`❌ Error detectado! Total: ${gameState.value.totalErrors}`, 'error');
           gameStore.manager.emit("playerError", {
             errorCount: gameState.value.totalErrors,
           });

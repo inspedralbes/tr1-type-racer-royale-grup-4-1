@@ -713,8 +713,8 @@ io.on("connection", (socket) => {
       }
     }
 
-    // Emitir a toda la sala (incluyendo al emisor)
-    io.to(player.room).emit("playerError", {
+    // Emitir a toda la sala EXCEPTO al emisor (usando broadcast)
+    socket.broadcast.to(player.room).emit("playerError", {
       username: player.username,
       errorCount: data.errorCount,
     });
