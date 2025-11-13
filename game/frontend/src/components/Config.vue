@@ -50,18 +50,7 @@
             {{ uploadMessage }}
           </div>
         </Transition>
-
-        <div class="stats-grid">
-          <div class="stats-card surface-floating">
-            <span class="stats-label">Partides guanyades</span>
-            <span class="stats-value">0</span>
-          </div>
-          <div class="stats-card surface-floating">
-            <span class="stats-label">Millor marca</span>
-            <span class="stats-value">0</span>
-          </div>
-        </div>
-
+      
         <hr class="modal-divider" />
 
         <div class="settings-group">
@@ -110,8 +99,8 @@ const uploadMessageClass = computed(() => {
 // Obtener username del Pinia store
 const username = computed(() => gameStore.username || 'Jugador');
 
-// Imagen por defecto
-const defaultImage = "data:image/png;base64,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";
+// Imagen por defecto - apunta a la imagen default.png del backend
+const defaultImage = "http://localhost:3000/img/default.png";
 
 const profileImage = ref(defaultImage);
 
