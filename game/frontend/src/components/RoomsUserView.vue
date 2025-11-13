@@ -35,8 +35,7 @@
             </div>
             <div class="sala-playercount player-column">
               <span class="player-count"
-                >{{ sala.jugadores }}/{{ maxJugadoresPorSala }}</span
-              >
+                >{{ sala.jugadores }}/{{ sala.maxPlayers }}</span>  <!-- ← MODIFICADO -->
             </div>
           </div>
         </button>
@@ -73,7 +72,8 @@ const salasFiltradas = computed(() =>
       id: sala.name,
       nombre: sala.name,
       jugadores: sala.players.length,
-      isFull: sala.players.length >= maxJugadoresPorSala.value,
+      maxPlayers: sala.maxPlayers || 4,
+      isFull: sala.players.length >= (sala.maxPlayers || 4),
       gameMode: sala.gameMode || 'normal',
     })),
 );
