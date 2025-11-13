@@ -1,11 +1,10 @@
 <template>
-  <MoneyContainer v-if="store.userId" />
+  <MoneyContainer v-if="store.userId && !startGame" />
   <template v-if="showPodio">
     <Podio :podiumData="podiumData" @back="handleBackFromPodio" />
   </template>
   <template v-else-if="startGame">
-    <GameEngine @activeKey="handleActiveKey" @back="handleBackFromGame" />
-    <Keyboard :activeKey="currActiveKey" />
+    <GameEngine @back="handleBackFromGame" />
   </template>
   <template v-else>
     <FirstPage v-if="!showMainMenu && !showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
@@ -21,7 +20,6 @@
 import { ref, nextTick, onMounted, onUnmounted, computed } from "vue";
 import GameEngine from "./components/GameEngine.vue";
 import MainMenu from "./components/MainMenu.vue";
-import Keyboard from "./components/Keyboard.vue";
 import { useGameStore } from "@/stores/gameStore.js";
 import FirstPage from "./components/FirstPage.vue";
 import Lobby from "./components/Lobby.vue";
@@ -42,7 +40,6 @@ const showHostCreateLobby = ref(false);
 const showUserLobby = ref(false);
 const showPodio = ref(false);
 const podiumData = ref(null);
-const currActiveKey = ref("");
 const store = useGameStore();
 const manager = store.manager;
 const isFirstPageVisible = computed(
@@ -180,13 +177,6 @@ function handleBackFromGame() {
   showHostCreateLobby.value = false;
   showUserLobby.value = false;
   showMainMenu.value = false;
-}
-
-function handleActiveKey(key) {
-  currActiveKey.value = "";
-  requestAnimationFrame(() => {
-    currActiveKey.value = key;
-  });
 }
 
 function handleBackFromPodio() {

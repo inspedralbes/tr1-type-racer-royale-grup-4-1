@@ -16,12 +16,10 @@
           <div class="player-number">{{ index + 1 }}</div>
           <div class="player-avatar">
             <img 
-              v-if="jugador.profileImage" 
               :src="getProfileImageUrl(jugador.profileImage)" 
               :alt="jugador.username"
               class="avatar-img"
             />
-            <i v-else class="fa-solid fa-user player-icon"></i>
           </div>
           <div class="player-info">
             <span class="player-name" :title="jugador.username">{{ jugador.username }}</span>
@@ -61,7 +59,17 @@
         <div class="betting-controls">
           <button class="btn btn-ghost bet-btn" @click="gameStore.playClickSound(); decreaseBet()" :disabled="currentBet <= 0">-</button>
           <div class="bet-display">
-            <span class="bet-amount">{{ currentBet }} $</span>
+            <input 
+              type="number" 
+              v-model.number="currentBet" 
+              @input="validateBet"
+              @focus="$event.target.select()"
+              class="bet-input"
+              min="0"
+              :max="gameStore.money"
+              placeholder="0"
+            />
+            <span class="bet-currency">$</span>
           </div>
           <button class="btn btn-ghost bet-btn" @click="gameStore.playClickSound(); increaseBet()" :disabled="currentBet >= gameStore.money">+</button>
         </div>
@@ -219,7 +227,31 @@ const decreaseBet = () => {
   }
 };
 
+const validateBet = () => {
+  // Asegurar que el valor sea un número válido
+  if (isNaN(currentBet.value) || currentBet.value === null || currentBet.value === '') {
+    currentBet.value = 0;
+    return;
+  }
+  
+  // Convertir a entero y eliminar decimales
+  currentBet.value = Math.floor(currentBet.value);
+  
+  // Limitar al dinero disponible
+  if (currentBet.value > gameStore.money) {
+    currentBet.value = gameStore.money;
+  }
+  
+  // No permitir valores negativos
+  if (currentBet.value < 0) {
+    currentBet.value = 0;
+  }
+};
+
 const confirmBet = () => {
+  // Validar antes de confirmar
+  validateBet();
+  
   if (currentBet.value > 0 && currentBet.value <= gameStore.money) {
     const previousBet = confirmedBet.value;
     const difference = currentBet.value - previousBet;
@@ -242,7 +274,8 @@ const confirmBet = () => {
 
 // Helper function to get profile image URL
 const getProfileImageUrl = (imagePath) => {
-  if (!imagePath) return '';
+  // Si no hay imagen, devolver la imagen por defecto
+  if (!imagePath) return 'http://localhost:3000/img/default.png';
   // Si ya es una URL completa, devolverla tal cual
   if (imagePath.startsWith('http')) return imagePath;
   // Si es una ruta relativa, construir la URL completa
@@ -556,11 +589,46 @@ onUnmounted(() => {
 
 .bet-display {
   flex: 1;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-lg);
   border: 2px solid var(--color-primary);
   background: var(--bg-card);
+  position: relative;
+}
+
+.bet-input {
+  flex: 1;
+  width: 100%;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'Poppins', sans-serif;
+}
+
+.bet-input::-webkit-inner-spin-button,
+.bet-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.bet-input[type=number] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.bet-currency {
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .bet-amount {

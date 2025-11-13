@@ -1,11 +1,8 @@
 <template>
-  <EliminatedScreen v-if="isEliminated" :eliminationReason="eliminationReason" @back="handleBack" />
-  <div v-else class="game-engine">
-    <button class="back-button" aria-label="Volver" @click="handleBack">
-      <i class="fa-solid fa-house"></i>
-    </button>
+  <div class="game-engine-wrapper">
+    <EliminatedScreen v-if="isEliminated" :eliminationReason="eliminationReason" @back="handleBack" />
 
-    <div class="container">
+    <div v-else class="game-engine">
       <div v-if="gameState.isLoading" class="loading">
         <p>Cargando artículos...</p>
       </div>
@@ -52,9 +49,10 @@
               <GameConsole ref="gameConsole" :maxMessages="30" />
             </div>
           </div>
-          <!-- Text Display Section -->
-          <div v-if="!allCompleted" class="full-text-container">
-            <div class="text-display card-paper">
+
+          <!-- Typing Section -->
+          <div class="typing-area">
+            <div v-if="!allCompleted" class="text-display card-paper">
               <span
                 v-for="(letter, i) in currentArticle.inputText"
                 :key="'input-' + i"
@@ -64,17 +62,19 @@
               </span>
               <span class="remaining-text">{{ remainingText }}</span>
             </div>
-          </div>
 
-          <div v-else class="game-completed card-paper">
-            <h2>¡Todos los artículos completados!</h2>
-            <p>
-              Excelente trabajo, periodista. Has terminado todas las sesiones.
-            </p>
+            <div v-else class="game-completed card-paper">
+              <h2>¡Todos los artículos completados!</h2>
+              <p>
+                Excelente trabajo, periodista. Has terminado todas las sesiones.
+              </p>
+            </div>
+
+            <Keyboard class="typing-keyboard" :activeKey="activeKeyHighlight" />
           </div>
 
           <!-- Scoreboard Section -->
-          <div class="scoreboard card-paper">
+          <div class="scoreboard card-paper scoreboard--right">
             <h3 class="scoreboard-title">Room progress</h3>
             <div class="scoreboard-content">
               <div
@@ -114,9 +114,15 @@
                 <p>Waiting for players...</p>
               </div>
             </div>
+
           </div>
         </div>
       </template>
+    </div>
+
+    <div v-if="gameStore.userId" class="game-money">
+      <div class="money-icon">💰</div>
+      <div class="money-value">{{ formattedMoney }} $</div>
     </div>
   </div>
 </template>
@@ -127,8 +133,9 @@ import { useGameStore } from "../stores/gameStore";
 import GameNotification from "./GameNotification.vue";
 import EliminatedScreen from "./EliminatedScreen.vue";
 import GameConsole from "./GameConsole.vue";
+import Keyboard from "./Keyboard.vue";
 
-const emit = defineEmits(["activeKey", "back"]);
+const emit = defineEmits(["back"]);
 const gameStore = useGameStore();
 
 // Console reference
@@ -153,6 +160,9 @@ const gameState = ref({
   completedArticles: 0,
 });
 
+const activeKeyHighlight = ref("");
+const formattedMoney = computed(() => gameStore.money.toLocaleString());
+
 // Track if player is eliminated (for sudden death mode)
 const isEliminated = ref(false);
 const eliminationReason = ref('error'); // 'error' or 'timeout'
@@ -174,7 +184,7 @@ watch(currentRoomData, (newRoom) => {
 }, { immediate: true });
 
 // Timer state
-const timeRemaining = ref(180); // 120 seconds (2 minutes)
+const timeRemaining = ref(1800); // 1800 seconds (30 minutes)
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {
@@ -512,7 +522,7 @@ function handleKeyDown(event) {
     article.inputText += event.key;
     startTimer();
     handleTextInput();
-    emit("activeKey", event.key);
+    activeKeyHighlight.value = event.key.toLowerCase();
   }
 }
 
@@ -631,21 +641,23 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.game-engine {
+.game-engine-wrapper {
   position: relative;
   min-height: 100vh;
   background: var(--color-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-2xl) var(--spacing-xl);
 }
 
-.back-button {
-  position: absolute;
-  top: var(--spacing-xl);
-  left: var(--spacing-xl);
-  z-index: 20;
+.game-engine {
+  background: var(--color-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  box-sizing: border-box;
 }
 
 .container {
@@ -659,9 +671,32 @@ onBeforeUnmount(() => {
 .game-layout {
   display: flex;
   gap: var(--spacing-xl);
-  width: min(1400px, 94vw);
+  width: min(1200px, 92vw);
   align-items: flex-start;
   justify-content: center;
+  padding: var(--spacing-md);
+  box-sizing: border-box;
+}
+
+.typing-area {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+}
+
+.typing-area .card-paper {
+  width: 100%;
+  padding: var(--spacing-lg);
+}
+
+.typing-keyboard {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  margin-left: calc(var(--spacing-md) * 0.5);
+  margin-right: auto;
 }
 
 .full-text-container {
@@ -669,16 +704,16 @@ onBeforeUnmount(() => {
 }
 
 .text-display {
-  font-size: clamp(1.2rem, 2vw, 2rem);
-  line-height: 1.6;
+  font-size: clamp(1rem, 1.8vw, 1.6rem);
+  line-height: 1.5;
   word-wrap: break-word;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg);
   border-radius: var(--radius-xl);
   border: 2px solid var(--color-primary);
   background: var(--bg-card);
   box-shadow: var(--shadow-md);
-  min-height: 120px;
-  max-height: 500px;
+  min-height: 110px;
+  max-height: 420px;
   overflow-y: auto;
   color: var(--color-primary);
 }
@@ -777,14 +812,23 @@ onBeforeUnmount(() => {
   }
 }
 
+.scoreboard.card-paper,
+.user-scoreboard.card-paper {
+  padding: var(--spacing-lg);
+}
+
+.scoreboard--right {
+  margin-left: var(--spacing-xl);
+}
+
 .scoreboard {
-  width: clamp(240px, 22vw, 280px);
+  width: clamp(220px, 20vw, 250px);
   flex-shrink: 0;
 }
 
 .scoreboard-title {
   margin: 0 0 var(--spacing-md) 0;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: var(--font-weight-bold);
   text-align: center;
   color: var(--color-primary);
@@ -801,8 +845,9 @@ onBeforeUnmount(() => {
 .player-entry {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   border: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent 75%);
+  padding: var(--spacing-sm) var(--spacing-md);
 }
 
 .player-entry.is-leader {
@@ -876,15 +921,39 @@ onBeforeUnmount(() => {
   font-size: 1rem;
 }
 
+.game-money {
+  position: absolute;
+  right: 7.5vw;
+  bottom: 15vh;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--color-primary);
+  color: var(--text-white);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 3px solid var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.game-money .money-icon {
+  font-size: 1.6rem;
+}
+
+.game-money .money-value {
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-bold);
+}
+
 .user-scoreboard {
-  width: clamp(240px, 22vw, 280px);
+  width: clamp(220px, 20vw, 250px);
   flex-shrink: 0;
   align-self: flex-start;
 }
 
 .user-scoreboard-title {
   margin: 0 0 var(--spacing-md) 0;
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   font-weight: var(--font-weight-bold);
   text-align: center;
   color: var(--color-primary);
