@@ -44,7 +44,6 @@
         <option :value="2">2 jugadores</option>
         <option :value="3">3 jugadores</option>
         <option :value="4">4 jugadores</option>
-        <option :value="5">5 jugadores</option>
       </select>
     </div>
     <br><br>
