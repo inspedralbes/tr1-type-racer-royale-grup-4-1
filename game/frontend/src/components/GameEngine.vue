@@ -627,6 +627,7 @@ onMounted(() => {
     }
   }, 500);
   
+  document.addEventListener("keydown", handleKeyDown);
   loadArticles();
 });
 
@@ -640,6 +641,7 @@ onBeforeUnmount(() => {
     clearInterval(timerInterval.value);
   }
 });
+
 </script>
 
 <style scoped>
