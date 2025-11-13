@@ -63,17 +63,6 @@
         </p>
       </div>
 
-<<<<<<< HEAD
-      <div class="difficulty-container">
-        <label class="difficulty-label">Jugadores:</label>
-        <select 
-          v-model="maxPlayers" 
-          class="difficulty-select"
-        >
-          <option :value="2">2 jugadores</option>
-          <option :value="4">4 jugadores</option>
-        </select>
-=======
       <div class="form-field form-field--inline">
         <label for="max-players">Jugadors</label>
         <div class="select-wrapper">
@@ -88,7 +77,6 @@
           </select>
           <i class="fa-solid fa-chevron-down select-icon"></i>
         </div>
->>>>>>> 362b471 (Refinaments UI en pantalles)
       </div>
 
       <div class="form-actions">
