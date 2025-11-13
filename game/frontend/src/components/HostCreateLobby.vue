@@ -212,22 +212,14 @@ function createRoom() {
 
 .hero {
   max-width: min(520px, 90vw);
-  color: var(--text-white);
-  text-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-}
-
-.hero-title {
-  margin: 0 0 var(--spacing-sm);
-  font-family: "Playfair Display", serif;
-  font-size: clamp(2.4rem, 5vw, 3.2rem);
-  text-transform: uppercase;
-  color: var(--text-white);
-  letter-spacing: 0.08rem;
+  color: var(--color-primary);
+  text-shadow: var(--shadow-sm);
 }
 
 .hero-subtitle {
   margin: 0;
   font-size: 1.1rem;
+  color: var(--color-primary);
 }
 
 .form-card {
