@@ -1,14 +1,7 @@
 <template>
-  <div class="user-lobby-container">
-    <Config />
-    
-    <button class="btn-icon back-button" aria-label="Volver" @click="gameStore.playClickSound(); handleBack()">
-      <i class="fa-solid fa-house"></i>
-    </button>
-
+  <BaseScreen class="user-lobby-container" @home="handleBack">
     <section class="hero">
       <h1 class="hero-title">{{ nombreSala }}</h1>
-      <p class="hero-subtitle">{{ jugadores.length }} / {{ maxJugadores }} corresponsals preparats</p>
     </section>
     
     <div class="players-container card-paper">
@@ -60,17 +53,8 @@
     </div>
     </transition>
 
-    <!-- Actions Container with Pot, Betting and Ready Button -->
+    <!-- Actions Container with Betting and Ready Button -->
     <div class="actions-container">
-      <!-- Total Pot Display -->
-      <div v-if="totalPot > 0" class="pot-display card-paper card-paper--compact">
-        <div class="pot-icon">💰</div>
-        <div class="pot-info">
-          <span class="pot-label">Bote Total</span>
-          <span class="pot-amount">{{ totalPot }} $</span>
-        </div>
-      </div>
-
       <!-- Betting Section -->
       <div class="betting-section card-paper card-paper--compact">
         <div class="betting-title">Apuesta por ti mismo</div>
@@ -117,14 +101,21 @@
         <div v-if="jugadores.length < maxJugadores" class="waiting-message">
           Esperando {{ maxJugadores - jugadores.length }} jugador(es) más...
         </div>
+        <div v-if="totalPot > 0" class="pot-display">
+          <div class="pot-icon">💰</div>
+          <div class="pot-info">
+            <span class="pot-label">Bote Total</span>
+            <span class="pot-amount">{{ totalPot }} $</span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+  </BaseScreen>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import Config from './Config.vue';
+import BaseScreen from './layout/BaseScreen.vue';
 import { useGameStore } from '../stores/gameStore';
 
 const emit = defineEmits(['back', 'startGame']);
@@ -350,11 +341,11 @@ onUnmounted(() => {
 .user-lobby-container {
   position: relative; 
   min-height: 100vh;
-  padding: var(--spacing-2xl) var(--spacing-xl);
+  padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-2xl);
   display: flex; 
   flex-direction: column; 
   align-items: center;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
   background: var(--color-secondary);
   font-family: 'Poppins', sans-serif;
 }
@@ -363,20 +354,15 @@ onUnmounted(() => {
   text-align: center;
   color: var(--text-white);
   text-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  margin-top: var(--spacing-sm);
 }
 
 .hero-title {
   margin: 0;
-  font-family: 'Playfair Display', serif;
   font-size: clamp(2.4rem, 5vw, 3.2rem);
   letter-spacing: 0.08rem;
   text-transform: uppercase;
-}
-
-.hero-subtitle {
-  margin: var(--spacing-sm) 0 0;
-  font-size: 1.1rem;
-  color: color-mix(in srgb, var(--text-white) 80%, rgba(0, 0, 0, 0) 20%);
+  color: var(--color-primary);
 }
 
 .players-container {
@@ -512,6 +498,12 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-card);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 30%, var(--bg-body) 70%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .pot-icon {
@@ -606,17 +598,6 @@ onUnmounted(() => {
   text-align: center;
   font-size: 0.95rem;
   color: var(--color-primary);
-}
-
-.back-button {
-  position: absolute;
-  top: var(--spacing-xl);
-  left: var(--spacing-xl);
-  z-index: 10;
-}
-
-.back-button i {
-  font-size: 1.5rem;
 }
 
 .countdown-overlay {

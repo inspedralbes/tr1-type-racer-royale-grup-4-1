@@ -1,11 +1,5 @@
 <template>
-  <div class="host-create-lobby">
-    <Config />
-    
-    <button class="btn-icon back-button" aria-label="Volver" @click="gameStore.playClickSound(); goBack()">
-      <i class="fa-solid fa-house"></i>
-    </button>
-
+  <BaseScreen class="host-create-lobby" @home="goBack">
     <section class="hero">
       <h1 class="hero-title">Crea una nova sala</h1>
       <p class="hero-subtitle">Configura el nom i la dificultat abans de començar.</p>
@@ -25,12 +19,34 @@
       </div>
 
       <div class="form-field">
+        <label for="game-mode">Mode de joc</label>
+        <div class="select-wrapper">
+          <select
+            id="game-mode"
+            v-model="selectedGameMode"
+            class="select-field"
+          >
+            <option value="normal">Normal</option>
+            <option value="muerte-subita">Muerte Súbita</option>
+          </select>
+          <i class="fa-solid fa-chevron-down select-icon"></i>
+        </div>
+        <p v-if="selectedGameMode === 'normal'" class="difficulty-note">
+          Mode estàndard sense aposta extra. Perfecte per reportatges equilibrats.
+        </p>
+        <p v-else class="gamemode-warning">
+          ☠️ Muerte Súbita: requereix 100💰 per jugador i força la dificultat "Difícil".
+        </p>
+      </div>
+
+      <div class="form-field">
         <label for="difficulty">Dificultat</label>
         <div class="select-wrapper">
           <select
             id="difficulty"
             v-model="selectedDifficulty"
             class="select-field"
+            :disabled="selectedGameMode === 'muerte-subita'"
           >
             <option value="easy">Fàcil</option>
             <option value="medium">Mitjana</option>
@@ -38,6 +54,9 @@
           </select>
           <i class="fa-solid fa-chevron-down select-icon"></i>
         </div>
+        <p v-if="selectedGameMode === 'muerte-subita'" class="difficulty-note">
+          La dificultat queda bloquejada en "Difícil" per la Muerte Súbita.
+        </p>
       </div>
 
       <div class="form-actions">
@@ -45,13 +64,12 @@
         <button class="btn btn-primary" type="button" @click="gameStore.playClickSound(); createRoom()">Crear sala</button>
       </div>
     </div>
-  </div>
+  </BaseScreen>
 </template>
 
 <script setup>
-import Config from "./Config.vue";
-
 import { ref, watch } from "vue";
+import BaseScreen from "./layout/BaseScreen.vue";
 import { useGameStore } from '../stores/gameStore';
 
 const emit = defineEmits(["backToLobby", "roomCreated"]);
@@ -62,9 +80,15 @@ const selectedDifficulty = ref("easy");
 const selectedGameMode = ref("normal");
 
 // Watch for game mode changes to auto-set difficulty
-watch(selectedGameMode, (newMode) => {
+watch(selectedGameMode, (newMode, oldMode) => {
   if (newMode === 'muerte-subita') {
     selectedDifficulty.value = 'hard';
+    return;
+  }
+
+  // Restore a default difficulty when leaving Muerte Súbita
+  if (oldMode === 'muerte-subita' && selectedDifficulty.value === 'hard') {
+    selectedDifficulty.value = 'medium';
   }
 });
 
@@ -222,20 +246,9 @@ function createRoom() {
   flex: 1;
 }
 
-.back-button {
-  position: absolute;
-  top: var(--spacing-xl);
-  left: var(--spacing-xl);
-}
-
 @media (max-width: 768px) {
   .form-actions {
     flex-direction: column;
-  }
-
-  .back-button {
-    top: var(--spacing-lg);
-    left: var(--spacing-lg);
   }
 }
 </style>

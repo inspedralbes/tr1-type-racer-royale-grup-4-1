@@ -1,11 +1,5 @@
 <template>
-  <Config />
-  <div class="salas-container">
-    <!-- Home button -->
-    <button class="btn-icon back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
-      <i class="fa-solid fa-house"></i>
-    </button>
-
+  <BaseScreen class="salas-container" @home="emit('back')">
     <!-- Rooms -->
     <div class="newspaper">
       <!-- Title -->
@@ -59,12 +53,12 @@
         <span class="button-text">ENTER</span>
       </button>
     </div>
-  </div>
+  </BaseScreen>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import Config from "./Config.vue";
+import BaseScreen from "./layout/BaseScreen.vue";
 import { useGameStore } from "../stores/gameStore";
 
 const emit = defineEmits(["back", "joinedRoom"]);
@@ -364,19 +358,6 @@ onUnmounted(() => {
   font-family: "Playfair Display", serif;
   font-size: 1.3rem;
   letter-spacing: 1px;
-}
-
-/* Back button */
-.back-button {
-  position: fixed;
-  left: 5vw;
-  bottom: 6vh;
-  z-index: 9999;
-}
-
-.back-button i {
-  font-size: 1.5rem;
-  color: inherit;
 }
 
 /* Responsive */

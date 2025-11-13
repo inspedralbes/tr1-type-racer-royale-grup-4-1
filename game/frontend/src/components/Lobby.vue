@@ -1,7 +1,5 @@
 <template>
-  <div class="lobby">
-    <Config />
-
+  <BaseScreen class="lobby" @home="emit('back')">
     <div class="greeting">
       <span>Hola, {{ gameStore.username || 'reporter' }}</span>
       <span>Quants articles farem avui?</span>
@@ -11,15 +9,11 @@
       <button class="btn btn-primary lobby-button" @click="handleCreateRoom">Crear sala</button>
       <button class="btn btn-primary lobby-button" @click="handleJoinRoom">Unirse sala</button>
     </div>
-
-    <button class="btn-icon back-button" aria-label="Volver" @click="gameStore.playClickSound(); emit('back')">
-      <i class="fa-solid fa-house"></i>
-    </button>
-  </div>
+  </BaseScreen>
 </template>
 
 <script setup>
-import Config from './Config.vue';
+import BaseScreen from './layout/BaseScreen.vue';
 import { useGameStore } from '../stores/gameStore';
 
 const gameStore = useGameStore();
@@ -91,17 +85,6 @@ function handleJoinRoom() {
 .actions .lobby-button:first-child {
   align-self: flex-start;
   margin-left: -5rem;
-}
-
-.back-button {
-  position: absolute;
-  left: 5vw;
-  bottom: 6vh;
-  height: 56px;
-}
-
-.back-button i {
-  font-size: 1.25rem;
 }
 
 .greeting {

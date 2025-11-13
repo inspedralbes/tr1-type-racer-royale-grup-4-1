@@ -42,8 +42,6 @@
               placeholder="Escriu la contrasenya"
               :disabled="isSubmitting"
             />
-
-            <p v-if="errorMessage" class="badge-error">{{ errorMessage }}</p>
           </form>
         </div>
 
@@ -87,8 +85,6 @@
               placeholder="Escriu la contrasenya"
               :disabled="isSubmitting"
             />
-
-            <p v-if="errorMessage" class="badge-error">{{ errorMessage }}</p>
           </form>
         </div>
 
@@ -123,7 +119,6 @@ const password = ref('');
 const registerUsername = ref('');
 const registerPassword = ref('');
 const isSubmitting = ref(false);
-const errorMessage = ref('');
 
 const loginResultHandler = (res) => {
   isSubmitting.value = false;
@@ -140,16 +135,10 @@ const loginResultHandler = (res) => {
     isNewspaperVisible.value = true;
     username.value = '';
     password.value = '';
-    errorMessage.value = '';
 
     console.log('✅ Login exitoso:', cleanUsername);
     emit('lobby');
   } else {
-    errorMessage.value = res?.code === 'INVALID_CREDENTIALS' 
-      ? 'Usuario o contraseña incorrectos'
-      : res?.code === 'USER_NOT_FOUND'
-      ? 'Usuario no encontrado'
-      : 'Error al iniciar sesión. Intenta de nuevo.';
     console.warn('❌ Error de login:', res?.code || 'desconocido');
   }
 };
@@ -169,18 +158,10 @@ const registerResultHandler = (res) => {
     isNewspaperVisible.value = true;
     registerUsername.value = '';
     registerPassword.value = '';
-    errorMessage.value = '';
 
     console.log('✅ Registro exitoso:', cleanUsername);
     emit('lobby');
   } else {
-    errorMessage.value = res?.code === 'USER_ALREADY_EXISTS'
-      ? 'Este usuario ya existe'
-      : res?.code === 'INVALID_USERNAME'
-      ? 'Nombre de usuario inválido'
-      : res?.code === 'INVALID_PASSWORD'
-      ? 'Contraseña inválida (mínimo 4 caracteres)'
-      : 'Error al registrarse. Intenta de nuevo.';
     console.warn('❌ Error de registro:', res?.code || 'desconocido');
   }
 };
@@ -246,7 +227,6 @@ function openBadge() {
   isNewspaperVisible.value = false;
   isBadgeVisible.value = true;
   isSubmitting.value = false;
-  errorMessage.value = '';
   username.value = gameStore.username || '';
   password.value = '';
 }
@@ -256,12 +236,10 @@ function submitLogin() {
   const pass = password.value.trim();
 
   if (!user || !pass) {
-    errorMessage.value = 'Por favor, completa todos los campos';
     console.warn('⚠️ Campos incompletos en el formulario de acceso');
     return;
   }
 
-  errorMessage.value = '';
   isSubmitting.value = true;
   console.log('🔄 Intentando login con usuario:', user);
   sm.emit('login', { username: user, password: pass });
@@ -271,7 +249,6 @@ function fillContract() {
   isNewspaperVisible.value = false;
   isRegisterVisible.value = true;
   isSubmitting.value = false;
-  errorMessage.value = '';
   registerUsername.value = '';
   registerPassword.value = '';
 }
@@ -281,17 +258,15 @@ function submitRegister() {
   const pass = registerPassword.value.trim();
 
   if (!user || !pass) {
-    errorMessage.value = 'Por favor, completa todos los campos';
     console.warn('⚠️ Campos incompletos en el formulario de registro');
     return;
   }
 
   if (pass.length < 4) {
-    errorMessage.value = 'La contraseña debe tener al menos 4 caracteres';
+    console.warn('⚠️ Contraseña demasiado corta en el formulario de registro');
     return;
   }
 
-  errorMessage.value = '';
   isSubmitting.value = true;
   console.log('🔄 Intentando registrar usuario:', user);
   sm.emit('register', { username: user, password: pass });
@@ -454,12 +429,12 @@ function submitRegister() {
 .badge-form {
   position: absolute;
   top: 80%;
-  left: 49%;
+  left: 46%;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   gap: clamp(0.35rem, 1.2vw, 0.75rem);
-  width: clamp(80px, 28vw, 220px);
+  width: clamp(80px, 28vw, 200px);
 }
 
 .badge-input {
@@ -468,7 +443,7 @@ function submitRegister() {
   border-radius: var(--radius-lg);
   border: 2px solid color-mix(in srgb, var(--color-primary) 65%, var(--bg-body) 35%);
   background: var(--bg-input);
-  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  font-size: 1rem;
   font-family: 'Poppins', sans-serif;
   color: var(--color-primary);
   outline: none;

@@ -1,18 +1,12 @@
 SET NAMES utf8mb4;
 
-DROP DATABASE IF EXISTS journalismRacer;
-CREATE DATABASE journalismRacer;
-
--- Select the database
--- Give privileges on the created DB to the admin user
-GRANT ALL PRIVILEGES ON journalismRacer.* TO 'admin'@'%';
-FLUSH PRIVILEGES;
-
 USE journalismRacer;
 
--- Give privileges on the created DB to the admin user
-GRANT ALL PRIVILEGES ON journalismRacer.* TO 'admin'@'%';
-FLUSH PRIVILEGES;
+DROP TABLE IF EXISTS results;
+DROP TABLE IF EXISTS articles_hard;
+DROP TABLE IF EXISTS articles_medium;
+DROP TABLE IF EXISTS articles_easy;
+DROP TABLE IF EXISTS users;
 
 -- Create tables
 CREATE TABLE articles_easy (

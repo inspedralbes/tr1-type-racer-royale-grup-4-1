@@ -259,10 +259,15 @@ const showMessage = (message, type) => {
 
 <style scoped>
 .config-trigger {
-  position: absolute;
-  bottom: 6vh;
-  right: 5vw;
+  position: fixed;
+  bottom: var(--layout-fab-bottom);
+  right: var(--layout-fab-horizontal);
+  z-index: 100;
   box-shadow: var(--shadow-md);
+}
+
+.config-trigger i {
+  font-size: 1.5rem;
 }
 
 .config-modal {
