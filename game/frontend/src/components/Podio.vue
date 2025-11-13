@@ -1,7 +1,7 @@
 <template>
   <div class="podio-page">
-    <div class="panel">
-      <h1 class="title">🏆 PODIO 🏆</h1>
+    <div class="card-paper podio-panel">
+      <h1 class="podio-title">🏆 Podio 🏆</h1>
 
       <div class="podio-grid">
         <!-- LEFT: podium positions -->
@@ -24,46 +24,55 @@
 
         <!-- RIGHT: statistics / results -->
         <div class="podium-right">
-          <div class="stat-block winner-block">
-            <div class="stat-title">🎉 Ganador</div>
-            <div class="stat-content">
-              <div class="winner-info">
-                <div class="winner-name" :title="podiumData.winner">{{ podiumData.winner }}</div>
-                <div class="prize-money">Premio: {{ podiumData.totalPot }} 💰</div>
-              </div>
+          <div class="winner-card surface-floating">
+            <div class="winner-header">
+              <span class="tag tag--warning">🎉 Guanyador</span>
+              <p class="winner-subtitle">La redacció celebra el millor reporter de la ronda.</p>
+            </div>
+            <div class="winner-body">
+              <span class="winner-name" :title="podiumData.winner">{{ podiumData.winner }}</span>
+              <span class="winner-money">Premi total: {{ podiumData.totalPot }} 💰</span>
             </div>
           </div>
 
-          <div class="stat-block">
-            <div class="stat-title">Clasificación Completa</div>
-            <div class="stat-content">
-              <div v-for="player in podiumData.rankings" :key="player.username" class="player-detail">
-                <div class="player-detail-header">
+          <div class="ranking-card pane pane--muted">
+            <div class="ranking-header">
+              <h2>Classificació completa</h2>
+              <span class="tag">🗞️ Articles corregits</span>
+            </div>
+
+            <div class="ranking-list">
+              <article
+                v-for="player in podiumData.rankings"
+                :key="player.username"
+                class="ranking-row surface-floating"
+              >
+                <header class="ranking-row-header">
                   <span class="rank-badge">{{ player.position }}º</span>
-                  <span class="player-detail-name" :title="player.username">{{ player.username }}</span>
-                </div>
-                <div class="player-detail-stats">
-                  <div class="stat-item">
-                    <span class="stat-label">Artículos:</span>
-                    <span class="stat-value">{{ player.articlesCompleted }}/4</span>
+                  <span class="ranking-name" :title="player.username">{{ player.username }}</span>
+                </header>
+                <dl class="ranking-stats">
+                  <div class="stat">
+                    <dt>Articles</dt>
+                    <dd>{{ player.articlesCompleted }}/4</dd>
                   </div>
-                  <div class="stat-item">
-                    <span class="stat-label">Errores:</span>
-                    <span class="stat-value">{{ player.errors }}</span>
+                  <div class="stat">
+                    <dt>Errors</dt>
+                    <dd>{{ player.errors }}</dd>
                   </div>
-                  <div class="stat-item">
-                    <span class="stat-label">Progreso:</span>
-                    <span class="stat-value">{{ player.progress }}%</span>
+                  <div class="stat">
+                    <dt>Progrés</dt>
+                    <dd>{{ player.progress }}%</dd>
                   </div>
-                </div>
-              </div>
+                </dl>
+              </article>
             </div>
           </div>
         </div>
       </div>
 
       <div class="actions">
-        <button class="btn" @click="$emit('back')">Volver al Inicio</button>
+        <button class="btn btn-primary" @click="$emit('back')">Tornar a l'inici</button>
       </div>
     </div>
   </div>
@@ -100,228 +109,241 @@ function getRankClass(index) {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #e6e6e6; /* coincide con App.vue */
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  background: color-mix(in srgb, var(--color-secondary) 30%, var(--bg-body) 70%);
 }
 
-.panel {
-  width: 92%;
-  max-width: 1100px;
-  background: rgba(255,255,255,0.85);
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+.podio-panel {
+  width: min(1100px, 96vw);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  text-align: left;
 }
 
-.title {
-  font-size: 2rem;
+.podio-title {
+  margin: 0;
   text-align: center;
-  color: #222020;
-  margin-bottom: 1.5rem;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  letter-spacing: 0.12rem;
+  text-transform: uppercase;
+  color: var(--color-primary);
 }
 
 .podio-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  align-items: center;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-xl);
 }
 
 .podium-left {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--spacing-md);
 }
 
 .podium-row {
-  width: 60%;
+  width: min(320px, 85%);
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 1rem;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--bg-card) 88%, var(--color-secondary) 12%);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent 75%);
+  box-shadow: var(--shadow-sm);
 }
 
-.podium-row.first { transform: translateY(-12px); }
-.podium-row.second { transform: translateY(0); }
-.podium-row.third { transform: translateY(0); opacity: 0.95; }
-.podium-row.fourth { transform: translateY(0); opacity: 0.9; }
-
-.position.large { width: 96px; height: 96px; font-size: 1.5rem; }
-.player-info.large .player-name { font-size: 1.4rem; }
-.player-info.large .player-stats-mini { font-size: 0.9rem; }
+.podium-row.first {
+  transform: translateY(-6px);
+  background: color-mix(in srgb, var(--bg-card) 80%, var(--color-secondary) 20%);
+  border-color: color-mix(in srgb, var(--color-primary) 45%, transparent 55%);
+  box-shadow: var(--shadow-md);
+}
 
 .position {
   width: 72px;
   height: 72px;
-  background: #6b5bff; 
-  color: white;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.25rem;
-  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  background: var(--color-secondary);
+  color: var(--text-white);
+  font-weight: var(--font-weight-bold);
+  font-size: 1.4rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.position.large {
+  width: 96px;
+  height: 96px;
+  font-size: 1.75rem;
 }
 
 .player-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--spacing-xs);
+  color: var(--color-primary);
+}
+
+.player-info.large .player-name {
+  font-size: 1.3rem;
 }
 
 .player-name {
-  font-weight: 700;
-  color: #222020;
+  font-weight: var(--font-weight-bold);
   font-size: 1.1rem;
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
 }
 
 .player-stats-mini {
   display: flex;
-  gap: 1rem;
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.player-stats-mini span {
-  white-space: nowrap;
+  gap: var(--spacing-md);
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 .podium-right {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
-.stat-block {
-  background: #c9d0f1; /* suave para bloques */
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
+.winner-card {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
-.winner-block {
-  background: linear-gradient(135deg, #ffd93d 0%, #ffbe0b 100%);
-  border: 2px solid #f59e0b;
+.winner-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  color: var(--text-muted);
 }
 
-.stat-title {
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-}
-
-.winner-info {
-  text-align: center;
-  padding: 0.5rem 0;
+.winner-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
 }
 
 .winner-name {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 800;
-  color: #222020;
-  margin-bottom: 0.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 250px;
-  margin-left: auto;
-  margin-right: auto;
+  color: var(--color-primary);
 }
 
-.prize-money {
-  font-size: 1.2rem;
+.winner-money {
   font-weight: 700;
-  color: #16a34a;
+  color: color-mix(in srgb, var(--color-success) 70%, var(--color-primary) 30%);
 }
 
-.player-detail {
-  background: rgba(255, 255, 255, 0.5);
-  padding: 0.75rem;
-  border-radius: 6px;
-  margin-bottom: 0.5rem;
+.ranking-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
-.player-detail-header {
+.ranking-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.ranking-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--color-primary);
+}
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.ranking-row {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.ranking-row-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .rank-badge {
-  background: #6b5bff;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-weight: 700;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-round);
+  background: color-mix(in srgb, var(--color-secondary) 45%, var(--bg-card) 55%);
+  color: var(--text-white);
+  font-weight: var(--font-weight-bold);
 }
 
-.player-detail-name {
-  font-weight: 700;
-  font-size: 1rem;
-  color: #222020;
+.ranking-name {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
 }
 
-.player-detail-stats {
+.ranking-stats {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
+  margin: 0;
 }
 
-.stat-item {
+.stat {
   display: flex;
-  gap: 0.25rem;
-  font-size: 0.85rem;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 90px;
 }
 
-.stat-label {
-  color: #666;
+.stat dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08rem;
+  color: var(--text-muted);
 }
 
-.stat-value {
-  font-weight: 600;
-  color: #222020;
+.stat dd {
+  margin: 0;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
 }
 
 .actions {
-  margin-top: 1.5rem;
   display: flex;
   justify-content: center;
-  gap: 1rem;
-}
-
-.btn {
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
-  background-color: #ffffff;
-  color: #000000;
-  border: 2px solid #000;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 700;
-  box-shadow: 3px 3px 0 #000;
-}
-
-.btn:hover { 
-  background-color: #f0f0f0; 
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 #000;
 }
 
 @media (max-width: 800px) {
-  .podio-grid { grid-template-columns: 1fr; }
-  .podium-row { width: 80%; }
-  .panel { padding: 1rem; }
-}
+  .podium-row {
+    width: 100%;
+  }
 
+  .winner-card,
+  .ranking-card {
+    padding: var(--spacing-md);
+  }
+}
 </style>

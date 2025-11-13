@@ -441,29 +441,30 @@ function submitRegister() {
   display: flex;
   justify-content: center;
   align-items: center;
+  transform: translateY(-6vh);
 }
 
 .badge-image {
-  width: clamp(360px, 52vw, 560px);
-  max-height: 80vh;
+  width: clamp(420px, 58vw, 640px);
+  max-height: 100vh;
   object-fit: contain;
   filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.28));
 }
 
 .badge-form {
   position: absolute;
-  top: 63%;
+  top: 80%;
   left: 49%;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
-  gap: clamp(0.6rem, 2vw, 1.2rem);
-  width: clamp(220px, 40vw, 280px);
+  gap: clamp(0.35rem, 1.2vw, 0.75rem);
+  width: clamp(80px, 28vw, 220px);
 }
 
 .badge-input {
   width: 100%;
-  padding: clamp(0.8rem, 2vw, 1.1rem);
+  padding: clamp(0.6rem, 1.3vw, 0.85rem);
   border-radius: var(--radius-lg);
   border: 2px solid color-mix(in srgb, var(--color-primary) 65%, var(--bg-body) 35%);
   background: var(--bg-input);
@@ -485,11 +486,11 @@ function submitRegister() {
 
 .badge-submit {
   position: absolute;
-  right: clamp(40px, 10vw, 120px);
-  top: 55%;
-  transform: translateX(-300%);
-  width: clamp(60px, 8vw, 90px);
-  height: clamp(60px, 8vw, 90px);
+  right: clamp(28px, 7vw, 84px);
+  top: 48%;
+  transform: translateX(-260%);
+  width: clamp(46px, 5.5vw, 70px);
+  height: clamp(46px, 5.5vw, 70px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -503,7 +504,7 @@ function submitRegister() {
 }
 
 .badge-submit:hover {
-  transform: translateX(-300%) translateY(-4px);
+  transform: translateX(-260%) translateY(-4px);
   background: color-mix(in srgb, var(--color-secondary) 70%, var(--text-white) 30%);
 }
 
@@ -520,16 +521,16 @@ function submitRegister() {
 }
 
 .badge-submit:hover:not(:disabled) {
-  transform: translateX(-300%) scale(1.05);
+  transform: translateX(-260%) scale(1.05);
   box-shadow: 0 16px 28px rgba(93, 60, 28, 0.4);
 }
 
 .badge-submit:active:not(:disabled) {
-  transform: translateX(-300%) scale(0.95);
+  transform: translateX(-260%) scale(0.95);
 }
 
 .badge-submit i {
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-size: clamp(1.4rem, 3vw, 2rem);
   font-weight: 900;
   line-height: 1;
 }

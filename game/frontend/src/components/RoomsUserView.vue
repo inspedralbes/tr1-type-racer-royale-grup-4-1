@@ -302,14 +302,14 @@ onUnmounted(() => {
 
 .gamemode-badge {
   display: inline-block;
-  background: #ff4444;
-  color: white;
+  background: color-mix(in srgb, var(--color-danger) 55%, var(--color-primary) 45%);
+  color: var(--text-white);
   padding: 0.3rem 0.8rem;
   font-size: 0.75rem;
   font-weight: 700;
   border-radius: 4px;
   letter-spacing: 0.5px;
-  box-shadow: 2px 2px 0 #000;
+  box-shadow: var(--shadow-sm);
   width: fit-content;
 }
 

@@ -9,6 +9,8 @@
   --color-danger: #c9533f;
   --color-warning: #e3a857;
   --color-info: #4d7c7c;
+  --color-night: #181422;
+  --color-night-card: #2b2233;
 
   /* Fondos */
   --bg-body: #f5eedb;
@@ -215,5 +217,145 @@ a {
   border: 3px solid var(--color-primary);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-lg);
+}
+
+/* Overlays y modales */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(45, 32, 16, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+}
+
+.modal-card {
+  background: color-mix(in srgb, var(--bg-card) 88%, var(--bg-body) 12%);
+  border: 3px solid var(--color-primary);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 18px 38px rgba(91, 63, 27, 0.28);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  width: min(480px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-heading {
+  margin: 0 0 var(--spacing-md);
+  color: var(--color-primary);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08rem;
+}
+
+.modal-divider {
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent 70%);
+  margin: var(--spacing-lg) 0;
+}
+
+/* Badges y etiquetas */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--radius-round);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--color-secondary) 15%, var(--bg-card) 85%);
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent 75%);
+}
+
+.tag--warning {
+  background: color-mix(in srgb, var(--color-warning) 18%, var(--bg-card) 82%);
+  color: color-mix(in srgb, var(--color-primary) 75%, var(--text-white) 25%);
+  border-color: color-mix(in srgb, var(--color-warning) 40%, transparent 60%);
+}
+
+.tag--danger {
+  background: color-mix(in srgb, var(--color-danger) 22%, var(--bg-card) 78%);
+  color: var(--text-white);
+  border-color: color-mix(in srgb, var(--color-danger) 45%, transparent 55%);
+}
+
+/* Toasts y mensajes */
+.toast {
+  background: color-mix(in srgb, var(--bg-card) 92%, var(--color-secondary) 8%);
+  color: var(--color-primary);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent 75%);
+  border-radius: var(--radius-xl);
+  padding: 0.75rem 1.2rem;
+  box-shadow: var(--shadow-md);
+  font-weight: 600;
+}
+
+.toast--success {
+  border-color: color-mix(in srgb, var(--color-success) 45%, transparent 55%);
+  color: color-mix(in srgb, var(--color-success) 70%, var(--color-primary) 30%);
+}
+
+.toast--error {
+  border-color: color-mix(in srgb, var(--color-danger) 45%, transparent 55%);
+  color: color-mix(in srgb, var(--color-danger) 70%, var(--color-primary) 30%);
+}
+
+/* Tarjetas / paneles flexibles */
+.pane {
+  background: var(--bg-card);
+  border: 3px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-xl);
+}
+
+.pane--muted {
+  background: color-mix(in srgb, var(--bg-card) 80%, var(--bg-body) 20%);
+}
+
+/* Teclado virtual */
+.keyboard-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.keyboard-row {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.keyboard-key {
+  min-width: 52px;
+  padding: 0.65rem;
+  border-radius: var(--radius-lg);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 35%, transparent 65%);
+  background: color-mix(in srgb, var(--bg-card) 85%, var(--color-secondary) 15%);
+  color: var(--color-primary);
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  transition: transform var(--transition-base), box-shadow var(--transition-base), background var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.keyboard-key.is-active {
+  background: var(--color-secondary);
+  color: var(--text-white);
+  border-color: var(--color-primary);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.keyboard-key:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
