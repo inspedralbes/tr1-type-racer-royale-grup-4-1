@@ -627,7 +627,6 @@ onMounted(() => {
     }
   }, 500);
   
-onMounted(() => {
   document.addEventListener("keydown", handleKeyDown);
   loadArticles();
 });
@@ -642,7 +641,8 @@ onBeforeUnmount(() => {
     clearInterval(timerInterval.value);
   }
 });
-</script>
+
+</Script>
 
 <style scoped>
 .game-engine {
