@@ -535,12 +535,21 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  justify-content: flex-start;
   margin-top: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--bg-card);
   border: 2px solid color-mix(in srgb, var(--color-primary) 30%, var(--bg-body) 70%);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+}
+
+.pot-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: auto;
+  text-align: right;
 }
 
 .pot-icon {

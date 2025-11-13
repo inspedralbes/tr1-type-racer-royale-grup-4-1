@@ -184,7 +184,7 @@ watch(currentRoomData, (newRoom) => {
 }, { immediate: true });
 
 // Timer state
-const timeRemaining = ref(1800); // 1800 seconds (30 minutes)
+const timeRemaining = ref(3); // 3 seconds (test duration)
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {

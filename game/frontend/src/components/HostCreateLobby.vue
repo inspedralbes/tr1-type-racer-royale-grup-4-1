@@ -63,6 +63,7 @@
         </p>
       </div>
 
+<<<<<<< HEAD
       <div class="difficulty-container">
         <label class="difficulty-label">Jugadores:</label>
         <select 
@@ -72,6 +73,22 @@
           <option :value="2">2 jugadores</option>
           <option :value="4">4 jugadores</option>
         </select>
+=======
+      <div class="form-field form-field--inline">
+        <label for="max-players">Jugadors</label>
+        <div class="select-wrapper">
+          <select
+            id="max-players"
+            v-model="maxPlayers"
+            class="select-field"
+          >
+            <option :value="2">2 jugadors</option>
+            <option :value="3">3 jugadors</option>
+            <option :value="4">4 jugadors</option>
+          </select>
+          <i class="fa-solid fa-chevron-down select-icon"></i>
+        </div>
+>>>>>>> 362b471 (Refinaments UI en pantalles)
       </div>
 
       <div class="form-actions">
@@ -205,7 +222,7 @@ function createRoom() {
   justify-content: center;
   gap: var(--spacing-xl);
   padding: var(--spacing-2xl) var(--spacing-xl);
-  background: url("@/img/bgimage.png") center/cover no-repeat;
+  background: var(--color-secondary);
   text-align: center;
 }
 
@@ -229,6 +246,12 @@ function createRoom() {
   text-align: left;
 }
 
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
 .difficulty-note,
 .gamemode-warning {
   margin: var(--spacing-xs) 0 0 0;
@@ -249,6 +272,10 @@ function createRoom() {
 
 .select-wrapper {
   position: relative;
+}
+
+.form-field--inline .select-wrapper {
+  width: 100%;
 }
 
 .select-wrapper .select-field {

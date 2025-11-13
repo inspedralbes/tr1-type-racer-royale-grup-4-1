@@ -208,6 +208,7 @@ a {
   font-size: var(--font-size-base);
   color: var(--color-primary);
   transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  box-sizing: border-box;
 }
 
 .input-field:focus {
@@ -226,6 +227,7 @@ a {
   font-family: inherit;
   font-size: var(--font-size-base);
   transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  box-sizing: border-box;
 }
 
 .select-field:focus {
