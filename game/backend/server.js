@@ -329,7 +329,9 @@ io.on("connection", (socket) => {
         player.status = "waiting";
         room.players.push(player);
 
-        if (room.players.length === ROOM_CAPACITY) {
+        // CÓDIGO ANTERIOR: if (room.players.length === ROOM_CAPACITY) {
+        // MODIFICADO: Usar room.maxPlayers para validación dinámica de capacidad
+        if (room.players.length === (room.maxPlayers || 4)) {
           room.isFull = true;
           io.to(roomName).emit("roomFull", true);
           io.to(roomName).emit("requestReady");
@@ -397,13 +399,16 @@ io.on("connection", (socket) => {
 
   socket.on("isRoomFull", (roomName) => {
     let room = rooms.find((r) => r.name === roomName);
-    let roomFull = room ? room.players.length >= ROOM_CAPACITY : false;
+    // CÓDIGO ANTERIOR: let roomFull = room ? room.players.length >= ROOM_CAPACITY : false;
+    // MODIFICADO: Usar room.maxPlayers para verificar si está llena
+    let roomFull = room ? room.players.length >= (room.maxPlayers || 4) : false;
     socket.emit("roomFull", roomFull);
   });
 
   socket.on("createRoom", (data) => {
     const roomName = data.name;
     const difficulty = data.difficulty;
+    const maxPlayers = data.maxPlayers || 4; // ← AÑADIDO: Capacidad configurable (2-4, por defecto 4)
     console.log(`Creating room ${roomName} with difficulty ${difficulty}`);
     const gameMode = data.gameMode || "normal";
     const userId = data.userId;
@@ -414,6 +419,7 @@ io.on("connection", (socket) => {
       const newRoom = {
         name: roomName,
         difficulty: difficulty,
+        maxPlayers: maxPlayers, // ← AÑADIDO: Guardar capacidad máxima
         gameMode: gameMode,
         players: [],
         status: "waiting",

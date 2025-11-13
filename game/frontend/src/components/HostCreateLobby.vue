@@ -63,6 +63,18 @@
         </p>
       </div>
 
+      <div class="difficulty-container">
+        <label class="difficulty-label">Jugadores:</label>
+        <select 
+          v-model="maxPlayers" 
+          class="difficulty-select"
+        >
+          <option :value="2">2 jugadores</option>
+          <option :value="3">3 jugadores</option>
+          <option :value="4">4 jugadores</option>
+        </select>
+      </div>
+
       <div class="form-actions">
         <button
           class="btn btn-ghost"
@@ -100,6 +112,7 @@ const gameStore = useGameStore();
 const roomName = ref("");
 const selectedDifficulty = ref("easy");
 const selectedGameMode = ref("normal");
+const maxPlayers = ref(4);
 
 // Watch for game mode changes to auto-set difficulty
 watch(selectedGameMode, (newMode, oldMode) => {
@@ -160,10 +173,11 @@ function createRoom() {
   gameStore.manager.on("roomCreationFailed", handleRoomCreationFailed);
   gameStore.manager.on("moneyUpdated", handleMoneyUpdated);
 
-  // Emitir al servidor para crear la sala con nombre, dificultad y modo de juego
+  // Emitir al servidor para crear la sala con nombre, dificultad, maxPlayers, userId y username
   gameStore.manager.emit("createRoom", {
     name: name,
     difficulty: selectedDifficulty.value,
+    maxPlayers: maxPlayers.value,
     gameMode: selectedGameMode.value,
     userId: gameStore.userId,
     username: gameStore.username,
