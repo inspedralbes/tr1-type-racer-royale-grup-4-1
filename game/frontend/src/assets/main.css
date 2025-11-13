@@ -66,6 +66,17 @@
   --layout-fab-size: 56px;
   --layout-fab-bottom: 6vh;
   --layout-fab-horizontal: 5vw;
+
+  /* Consola */
+  --console-bg: #ede2c7;
+  --console-body-bg: #d6c9b0;
+  --console-text: #3c2b17;
+  --console-muted: rgba(60, 43, 23, 0.6);
+  --console-info: #3f6a62;
+  --console-warning: #9c6c1f;
+  --console-error: #8b3021;
+  --console-success: #3f6d4c;
+  --console-milestone: #3b4f70;
 }
 
 body {
@@ -334,6 +345,14 @@ a {
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: color-mix(in srgb, var(--bg-card) 90%, var(--bg-body) 10%);
+  border: 3px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 640px;
+  margin: 0;
 }
 
 .keyboard-row {
