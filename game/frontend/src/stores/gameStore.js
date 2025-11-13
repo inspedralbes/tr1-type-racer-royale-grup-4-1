@@ -6,11 +6,17 @@ export const useGameStore = defineStore("rooms", () => {
   const currentRoom = ref("");
   const username = ref(localStorage.getItem('username') || "");
   const userId = ref(localStorage.getItem('userId') || null);
+  const money = ref(parseInt(localStorage.getItem('money')) || 0);
   const manager = new SocketManager();
   manager.connect();
   const roomFull = ref(false);
   const rooms = ref([]);
   const roomScore = ref([]);
+  
+  // Control de audio global
+  const backgroundMusic = ref(null);
+  const musicVolume = ref(parseInt(localStorage.getItem('musicVolume')) || 30);
+  const clickSound = ref(null);
 
   // Configurar listeners para eventos de socket
   const setupSocketListeners = () => {
@@ -89,6 +95,44 @@ export const useGameStore = defineStore("rooms", () => {
     console.log('✅ UserId guardado en Pinia y localStorage:', id);
   }
 
+  function setMoney(amount) {
+    money.value = amount;
+    localStorage.setItem('money', amount);
+    console.log('✅ Money guardado en Pinia y localStorage:', amount);
+  }
+
+  async function fetchUserMoney() {
+    if (!userId.value) return;
+    try {
+      const response = await fetch(`http://localhost:3000/api/get-user-money/${userId.value}`);
+      const data = await response.json();
+      if (data.ok) {
+        setMoney(data.money);
+      }
+    } catch (error) {
+      console.error('Error fetching user money:', error);
+    }
+  }
+
+  async function updateMoney(amount) {
+    if (!userId.value) return;
+    try {
+      const response = await fetch('http://localhost:3000/api/update-user-money', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: userId.value, amount }),
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setMoney(data.money);
+      }
+    } catch (error) {
+      console.error('Error updating user money:', error);
+    }
+  }
+
   function setRoomName(roomName) {
     currentRoom.value = roomName;
   }
@@ -98,20 +142,53 @@ export const useGameStore = defineStore("rooms", () => {
     console.log("Rooms actualizadas en store:", newRooms);
   }
 
+  function setBackgroundMusic(musicControl) {
+    backgroundMusic.value = musicControl;
+  }
+
+  function setMusicVolume(volume) {
+    musicVolume.value = volume;
+    localStorage.setItem('musicVolume', volume);
+    if (backgroundMusic.value) {
+      backgroundMusic.value.setVolume(volume / 100);
+    }
+  }
+
+  function setClickSound(soundControl) {
+    clickSound.value = soundControl;
+  }
+
+  function playClickSound() {
+    if (clickSound.value) {
+      clickSound.value.play();
+    }
+  }
+
   const isRoomFull = computed(() => roomFull.value);
 
   return {
     currentRoom,
     username,
     userId,
+    money,
     rooms,
     setUsername,
     setUserId,
+    setMoney,
+    fetchUserMoney,
+    updateMoney,
     setRoomName,
     setRooms,
     isRoomFull,
     manager,
     roomFull,
     roomScore,
+    backgroundMusic,
+    musicVolume,
+    setBackgroundMusic,
+    setMusicVolume,
+    clickSound,
+    setClickSound,
+    playClickSound,
   };
 });

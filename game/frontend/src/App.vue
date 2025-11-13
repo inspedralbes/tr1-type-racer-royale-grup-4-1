@@ -1,5 +1,13 @@
 <template>
-  <template v-if="!startGame">
+  <MoneyContainer v-if="store.userId" />
+  <template v-if="showPodio">
+    <Podio :podiumData="podiumData" @back="handleBackFromPodio" />
+  </template>
+  <template v-else-if="startGame">
+    <GameEngine @activeKey="handleActiveKey" @back="handleBackFromGame" />
+    <Keyboard :activeKey="currActiveKey" />
+  </template>
+  <template v-else>
     <FirstPage v-if="!showMainMenu && !showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
     <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
     <HostCreateLobby v-else-if="showHostCreateLobby" @backToLobby="handleBackFromCreateLobby" @roomCreated="handleRoomCreated" />
@@ -7,14 +15,10 @@
     <UserLobby v-else-if="showUserLobby" @back="handleBackFromUserLobby" @startGame="handleGameStart" />
     <MainMenu v-else-if="showMainMenu" />
   </template>
-  <template v-else>
-    <GameEngine @activeKey="handleActiveKey" @back="handleBackFromGame" />
-    <Keyboard :activeKey="currActiveKey" />
-  </template>
 </template>
 
 <script setup>
-import { ref, nextTick } from "vue";
+import { ref, nextTick, onMounted, onUnmounted, computed } from "vue";
 import GameEngine from "./components/GameEngine.vue";
 import MainMenu from "./components/MainMenu.vue";
 import Keyboard from "./components/Keyboard.vue";
@@ -25,6 +29,10 @@ import Config from "./components/Config.vue";
 import RoomsUserView from "./components/RoomsUserView.vue";
 import HostCreateLobby from "./components/HostCreateLobby.vue";
 import UserLobby from "./components/UserLobby.vue";
+import MoneyContainer from "./components/MoneyContainer.vue";
+import Podio from "./components/Podio.vue";
+import { useBackgroundMusicAutoplay } from "@/composables/useBackgroundMusicAutoplay.js";
+import { useSoundEffect } from "@/composables/useSoundEffect.js";
   
 const startGame = ref(false);
 const showMainMenu = ref(false);
@@ -32,11 +40,81 @@ const showLobby = ref(false);
 const showConfig = ref(false);
 const showHostCreateLobby = ref(false); 
 const showUserLobby = ref(false);
+const showPodio = ref(false);
+const podiumData = ref(null);
 const currActiveKey = ref("");
 const store = useGameStore();
 const manager = store.manager;
+const isFirstPageVisible = computed(
+  () =>
+    !startGame.value &&
+    !showMainMenu.value &&
+    !showLobby.value &&
+    !showRoomsUserView.value &&
+    !showHostCreateLobby.value &&
+    !showUserLobby.value
+);
 const showRoomsUserView = ref(false);
 manager.on("gameStart", handleGameStart);
+
+// Inicializar música de fondo con autoplay agresivo
+const musicControl = useBackgroundMusicAutoplay('/music/mainTheme.wav', {
+  volume: store.musicVolume / 100,
+  loop: true,
+  autoplay: true
+});
+
+// Inicializar sonido de clic de botones
+const clickSoundControl = useSoundEffect('/music/clickButton.mp3', {
+  volume: 0.5
+});
+
+onMounted(() => {
+  musicControl.init();
+  clickSoundControl.init();
+  // Registrar controles de audio en el store para acceso global
+  store.setBackgroundMusic(musicControl);
+  store.setClickSound(clickSoundControl);
+  
+  // Listen for podium navigation event from server
+  manager.on('showPodium', (data) => {
+    console.log('Navigating to podium with data:', data);
+    
+    // En modo muerte súbita, solo mostrar podio al ganador
+    if (data.gameMode === 'muerte-subita') {
+      const currentUser = store.username;
+      const isWinner = data.winner === currentUser;
+      
+      if (!isWinner) {
+        console.log('🚫 Jugador no es el ganador en modo muerte súbita - mantener pantalla de eliminación');
+        // No ocultar el juego inmediatamente para permitir que se muestre la pantalla de eliminación
+        // El GameEngine ya debería tener isEliminated = true y mostrar EliminatedScreen
+        // La redirección al lobby se manejará desde EliminatedScreen cuando el usuario haga clic en "VOLVER AL LOBBY"
+        return;
+      }
+    }
+    
+    podiumData.value = data;
+    startGame.value = false;
+    showPodio.value = true;
+    
+    // Update user money after game ends
+    if (store.userId) {
+      fetch(`http://localhost:3000/api/get-user-money/${store.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            store.setMoney(data.money);
+          }
+        })
+        .catch(err => console.error('Error fetching updated money:', err));
+    }
+  });
+});
+
+onUnmounted(() => {
+  musicControl.cleanup();
+});
 function handleJoinRoom() {
   showLobby.value = false;
   showRoomsUserView.value = true;
@@ -96,8 +174,8 @@ function handleGameStart() {
 
 function handleBackFromGame() {
   startGame.value = false;
-  // Mostrar FirstPage
-  showLobby.value = false;
+  // Mostrar Lobby (usuario ya está logueado)
+  showLobby.value = true;
   showRoomsUserView.value = false;
   showHostCreateLobby.value = false;
   showUserLobby.value = false;
@@ -110,60 +188,33 @@ function handleActiveKey(key) {
     currActiveKey.value = key;
   });
 }
+
+function handleBackFromPodio() {
+  showPodio.value = false;
+  podiumData.value = {
+    rankings: [],
+    totalPot: 0,
+    winner: ''
+  };
+  // Leave the room
+  if (store.currentRoom) {
+    store.manager.emit('leaveRoom', store.currentRoom);
+    store.setRoomName('');
+  }
+  // Return to lobby (usuario ya está logueado)
+  showLobby.value = true;
+  showRoomsUserView.value = false;
+  showHostCreateLobby.value = false;
+  showUserLobby.value = false;
+  showMainMenu.value = false;
+}
 </script>
 
 <style>
 body {
-  background-color: #e6e6e6;
-  font-family: sans-serif;
   margin: 0;
-  padding: 0;
-}
-
-/* Estilos compartidos entre pantallas */
-.title {
-  font-size: 4rem;
-  color: #222020;
-  margin: 0;
-  font-weight: bold;
-}
-
-.btn {
-  padding: 1rem 3rem;
-  font-size: 1.5rem;
-  background-color: #ffffff;
-  color: #000000;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 600;
-}
-
-.btn:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.05);
-}
-
-.btn:active {
-  transform: scale(0.98);
-}
-
-.name-input {
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
-  background-color: #ffffff;
-  color: #000000;
-  border: 2px solid #d0d0d0;
-  border-radius: 8px;
-  text-align: center;
-  width: 300px;
-  transition: all 0.3s ease;
-}
-
-.name-input:focus {
-  outline: none;
-  border-color: #4CAF50;
-  transform: scale(1.02);
+  font-family: 'Poppins', sans-serif;
+  background: var(--bg-body);
+  color: var(--text-primary);
 }
 </style>

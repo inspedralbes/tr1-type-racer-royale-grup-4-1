@@ -182,14 +182,25 @@ io.on("connection", (socket) => {
         if (player) {
           player.userId = payload.userId;
           player.username = userData.username;
+          console.log(
+            `✅ Usuario registrado: ${userData.username} con userId: ${payload.userId} asignado al socket: ${socket.id}`,
+          );
 
           getUserImage(payload.userId, (imgOk, imgPayload) => {
             if (imgOk && imgPayload.img) {
               player.profileImage = imgPayload.img;
             }
           });
+        } else {
+          console.log(
+            `❌ No se encontró el jugador con socket.id: ${socket.id} para asignar userId`,
+          );
         }
-        socket.emit("registerResult", { ok: true, userId: payload.userId });
+        socket.emit("registerResult", {
+          ok: true,
+          userId: payload.userId,
+          username: userData.username,
+        });
       } else {
         socket.emit("registerResult", { ok: false, code: payload });
       }
@@ -208,15 +219,26 @@ io.on("connection", (socket) => {
         if (player) {
           player.userId = payload.userId;
           player.username = userData.username;
+          console.log(
+            `✅ Usuario logueado: ${userData.username} con userId: ${payload.userId} asignado al socket: ${socket.id}`,
+          );
 
           getUserImage(payload.userId, (imgOk, imgPayload) => {
             if (imgOk && imgPayload.img) {
               player.profileImage = imgPayload.img;
             }
           });
+        } else {
+          console.log(
+            `❌ No se encontró el jugador con socket.id: ${socket.id} para asignar userId`,
+          );
         }
 
-        socket.emit("loginResult", { ok: true, userId: payload.userId });
+        socket.emit("loginResult", {
+          ok: true,
+          userId: payload.userId,
+          username: userData.username,
+        });
       } else {
         socket.emit("loginResult", { ok: false, code: payload });
       }
@@ -250,8 +272,17 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("joinRoom", (roomName) => {
-    socket.join(roomName);
+  socket.on("joinRoom", (data) => {
+    // Support both old format (string) and new format (object)
+    let roomName, userId, username;
+    if (typeof data === "string") {
+      roomName = data;
+    } else {
+      roomName = data.roomName;
+      userId = data.userId;
+      username = data.username;
+    }
+
     let room = rooms.find((r) => r.name === roomName);
     if (!room) {
       console.log("Room not found:", roomName);
@@ -262,28 +293,87 @@ io.on("connection", (socket) => {
       console.log("Player not found:", socket.id);
       return;
     }
-    if (!room.scores.find((s) => s.id === socket.id)) {
-      room.scores.push({
-        id: socket.id,
-        username: player.username,
-        articlesDone: 0,
-      });
-      //Try to update the roomScore to this
-      io.to(roomName).emit("leaderboardUpdateInRoom", room.scores);
-    }
-    if (!room.players.find((p) => p.id === socket.id)) {
-      player.room = roomName;
-      player.status = "waiting";
-      room.players.push(player);
 
-      if (room.players.length === ROOM_CAPACITY) {
-        room.isFull = true;
-        io.to(roomName).emit("roomFull", true);
-        io.to(roomName).emit("requestReady");
+    // Update player with userId and username if provided
+    if (userId) {
+      player.userId = userId;
+      console.log(
+        `✅ UserId ${userId} asignado al jugador ${socket.id} al unirse a la sala`,
+      );
+    }
+    if (username) {
+      player.username = username;
+    }
+
+    // Verificar y deducir entrada para modo Muerte Súbita
+    if (room.gameMode === "muerte-subita") {
+      if (!userId) {
+        socket.emit("joinRoomFailed", {
+          message:
+            "Debes iniciar sesión para unirte a una sala de Muerte Súbita",
+        });
+        return;
+      }
+
+      // Deducir la entrada de 100
+      updateUserMoney(userId, -100, (ok, payload) => {
+        if (!ok) {
+          socket.emit("joinRoomFailed", {
+            message: "No tienes suficiente dinero (necesitas 100)",
+          });
+          return;
+        }
+
+        console.log(
+          `Entrada de 100 deducida al unirse a sala Muerte Súbita. Nuevo balance: ${payload.money}`,
+        );
+        socket.emit("moneyUpdated", { newMoney: payload.money });
+
+        // Añadir la entrada al bote
+        room.bets[socket.id] = 100;
+        room.totalPot += 100;
+
+        // Continuar con la unión a la sala
+        joinRoomAfterPayment();
+      });
+    } else {
+      socket.join(roomName);
+      joinRoomAfterPayment();
+    }
+
+    function joinRoomAfterPayment() {
+      socket.join(roomName);
+
+      if (!room.scores.find((s) => s.id === socket.id)) {
+        room.scores.push({
+          id: socket.id,
+          username: player.username,
+          articlesDone: 0,
+          progress: 0,
+          errors: 0,
+        });
+        io.to(roomName).emit("leaderboardUpdateInRoom", room.scores);
+      }
+      if (!room.players.find((p) => p.id === socket.id)) {
+        player.room = roomName;
+        player.status = "waiting";
+        room.players.push(player);
+
+        if (room.players.length === ROOM_CAPACITY) {
+          room.isFull = true;
+          io.to(roomName).emit("roomFull", true);
+          io.to(roomName).emit("requestReady");
+        }
+      }
+      io.to(roomName).emit("updateRooms", rooms);
+      io.to(roomName).emit("updateRoomPlayers", room.players);
+
+      // Enviar el bote total actual al jugador que se une
+      if (room.totalPot > 0) {
+        socket.emit("updateTotalPot", room.totalPot);
+        io.to(roomName).emit("updateTotalPot", room.totalPot);
       }
     }
-    io.to(roomName).emit("updateRooms", rooms);
-    io.to(roomName).emit("updateRoomPlayers", room.players);
   });
 
   socket.on("gameStart", () => {
@@ -344,46 +434,122 @@ io.on("connection", (socket) => {
   socket.on("createRoom", (data) => {
     const roomName = data.name;
     const difficulty = data.difficulty;
+    console.log(`Creating room ${roomName} with difficulty ${difficulty}`);
+    const gameMode = data.gameMode || "normal";
+    const userId = data.userId;
+    const username = data.username;
 
     let roomExists = rooms.find((r) => r.name === roomName);
     if (!roomExists) {
       const newRoom = {
         name: roomName,
         difficulty: difficulty,
+        gameMode: gameMode,
         players: [],
         status: "waiting",
         scores: [],
+        bets: {},
+        totalPot: 0,
+        entryFee: gameMode === "muerte-subita" ? 100 : 0,
+        eliminatedPlayers: [],
       };
       rooms.push(newRoom);
 
       let player = players.find((p) => p.id === socket.id);
       if (player) {
-        socket.join(roomName);
-        //Since we're insta joining into the room make it so that we also update the score based on this
-        player.room = roomName;
-        player.status = "waiting";
-        newRoom.players.push(player);
-        newRoom.scores.push({
-          id: socket.id,
-          username: player.username,
-          articlesDone: 0,
-        });
-        console.log(
-          `Player ${player.username || socket.id} created and joined room ${roomName}`,
-        );
-        io.to(roomName).emit("updateRoomPlayers", newRoom.players);
+        // Update player with userId and username if provided
+        if (userId) {
+          player.userId = userId;
+          console.log(
+            `✅ UserId ${userId} asignado al jugador ${socket.id} al crear la sala`,
+          );
+        }
+        if (username) {
+          player.username = username;
+        }
+
+        // Verificar y deducir entrada para modo Muerte Súbita
+        if (gameMode === "muerte-subita") {
+          if (!userId) {
+            socket.emit("roomCreationFailed", {
+              message:
+                "Debes iniciar sesión para crear una sala de Muerte Súbita",
+            });
+            rooms = rooms.filter((r) => r.name !== roomName);
+            return;
+          }
+
+          // Deducir la entrada de 100
+          updateUserMoney(userId, -100, (ok, payload) => {
+            if (!ok) {
+              socket.emit("roomCreationFailed", {
+                message:
+                  "No tienes suficiente dinero para crear una sala de Muerte Súbita (necesitas 100)",
+              });
+              rooms = rooms.filter((r) => r.name !== roomName);
+              return;
+            }
+
+            console.log(
+              `Entrada de 100 deducida al crear sala Muerte Súbita. Nuevo balance: ${payload.money}`,
+            );
+            socket.emit("moneyUpdated", { newMoney: payload.money });
+
+            // Añadir la entrada al bote
+            newRoom.totalPot = 100;
+            newRoom.bets[socket.id] = 100;
+
+            // Continuar con la creación de la sala
+            joinRoomAfterPayment();
+          });
+        } else {
+          joinRoomAfterPayment();
+        }
+
+        function joinRoomAfterPayment() {
+          socket.join(roomName);
+          player.room = roomName;
+          player.status = "waiting";
+          newRoom.players.push(player);
+          newRoom.scores.push({
+            id: socket.id,
+            username: player.username,
+            articlesDone: 0,
+            progress: 0,
+            errors: 0,
+          });
+          console.log(
+            `Player ${player.username || socket.id} created and joined room ${roomName}`,
+          );
+          io.to(roomName).emit("updateRoomPlayers", newRoom.players);
+          io.emit("updateRooms", rooms);
+
+          if (newRoom.totalPot > 0) {
+            io.to(roomName).emit("updateTotalPot", newRoom.totalPot);
+          }
+        }
+      } else {
+        io.emit("updateRooms", rooms);
       }
-      io.emit("updateRooms", rooms);
     } else {
       console.log("Room already exists!");
     }
   });
 
-  socket.on("getArticles", (data) => {
-    const difficulty =
-      rooms.find((r) => r.name === data?.roomName)?.difficulty || "easy";
-    getArticlesFromDB(difficulty, (articles) => {
-      socket.emit("articlesData", articles);
+  socket.on("getArticles", () => {
+    const player = players.find((p) => p.id === socket.id);
+    const room = player.room;
+    const roomDificulty = rooms.find((r) => r.name === room).difficulty;
+    console.log(
+      `Getting articles for room ${player.room} with difficulty ${roomDificulty}`,
+    );
+    console.log(
+      `Current rooms: ${JSON.stringify(rooms.map((r) => ({ name: r.name, difficulty: r.difficulty })))}`,
+    );
+    getArticlesFromDB(roomDificulty, (articles) => {
+      // Limitar a 4 artículos: cada artículo representa el 25% del progreso total
+      const limitedArticles = articles.slice(0, 4);
+      socket.emit("articlesData", limitedArticles);
     });
   });
 
@@ -399,8 +565,45 @@ io.on("connection", (socket) => {
     console.log(`Jugador ${socket.id} está abandonando la sala: ${roomName}`);
     const room = rooms.find((r) => r.name === roomName);
     if (room) {
+      const player = players.find((p) => p.id === socket.id);
       room.players = room.players.filter((p) => p.id !== socket.id);
       console.log(`Jugador ${socket.id} eliminado de la sala ${roomName}`);
+
+      // Devolver la apuesta del jugador a la base de datos y recalcular el bote
+      // EXCEPTO en modo Muerte Súbita donde la entrada no se devuelve
+      if (room.bets && room.bets[socket.id] && player && player.userId) {
+        const refundAmount = room.bets[socket.id];
+
+        // Solo devolver si NO es modo Muerte Súbita
+        if (room.gameMode !== "muerte-subita") {
+          // Devolver el dinero a la base de datos
+          updateUserMoney(player.userId, refundAmount, (ok, payload) => {
+            if (ok) {
+              console.log(
+                `Apuesta de ${refundAmount} devuelta al jugador ${socket.id}. Nuevo dinero: ${payload.money}`,
+              );
+              // Notificar al jugador su nuevo balance
+              socket.emit("betRefunded", { newMoney: payload.money });
+            } else {
+              console.error(
+                `Error al devolver apuesta al jugador ${socket.id}`,
+              );
+            }
+          });
+        } else {
+          console.log(`Entrada de ${refundAmount} NO devuelta (Muerte Súbita)`);
+        }
+
+        delete room.bets[socket.id];
+        room.totalPot = Object.values(room.bets).reduce(
+          (sum, bet) => sum + bet,
+          0,
+        );
+
+        // Notificar a los demás del nuevo bote total
+        io.to(roomName).emit("updateTotalPot", room.totalPot);
+        console.log(`Nuevo bote total: ${room.totalPot}`);
+      }
 
       if (room.players.length === 0) {
         rooms = rooms.filter((r) => r.name !== roomName);
@@ -425,8 +628,199 @@ io.on("connection", (socket) => {
     let userScore = room.scores.find((s) => s.id === socket.id);
     if (userScore) {
       userScore.articlesDone = articlesCompleted;
+      // Al completar un artículo, el progreso del artículo actual vuelve a 0
+      userScore.progress = 0;
       io.to(player.room).emit("leaderboardUpdateInRoom", room.scores);
     }
+  });
+
+  // Actualizar progreso de caracteres en tiempo real
+  socket.on("updateProgress", (data) => {
+    const player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+    const room = rooms.find((r) => r.name === player.room);
+    if (!room) return;
+
+    let userScore = room.scores.find((s) => s.id === socket.id);
+    if (userScore) {
+      userScore.progress = data.progress; // Porcentaje de 0-100
+      io.to(player.room).emit("leaderboardUpdateInRoom", room.scores);
+    }
+  });
+
+  // Notificación de milestone a toda la sala
+  socket.on("playerMilestone", (data) => {
+    const player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+
+    // Emitir a toda la sala (incluyendo al emisor)
+    io.to(player.room).emit("playerMilestone", {
+      username: player.username,
+      percent: data.percent,
+      articleNumber: data.articleNumber,
+    });
+  });
+
+  // Notificación de error a toda la sala
+  socket.on("playerError", (data) => {
+    const player = players.find((p) => p.id === socket.id);
+    if (!player || !player.room) return;
+
+    const room = rooms.find((r) => r.name === player.room);
+    if (!room) return;
+
+    // Si es modo Muerte Súbita y el jugador comete un error, eliminarlo
+    if (room.gameMode === "muerte-subita" && data.errorCount > 0) {
+      // Marcar al jugador como eliminado
+      if (!room.eliminatedPlayers) {
+        room.eliminatedPlayers = [];
+      }
+
+      if (!room.eliminatedPlayers.includes(socket.id)) {
+        room.eliminatedPlayers.push(socket.id);
+
+        // Notificar al jugador que fue eliminado
+        socket.emit("eliminatedFromGame", {
+          message:
+            "Has sido eliminado por cometer un error en modo Muerte Súbita",
+        });
+
+        // Notificar a toda la sala
+        io.to(player.room).emit("playerEliminated", {
+          username: player.username,
+          playerId: socket.id,
+        });
+
+        console.log(
+          `Jugador ${player.username} eliminado de sala ${player.room} por error en Muerte Súbita`,
+        );
+
+        // Verificar si solo queda un jugador activo
+        const activePlayers = room.players.filter(
+          (p) => !room.eliminatedPlayers.includes(p.id),
+        );
+        if (activePlayers.length === 1) {
+          // Hay un ganador
+          const winner = activePlayers[0];
+          const totalPot = room.totalPot || 0;
+
+          if (winner.userId && totalPot > 0) {
+            updateUserMoney(winner.userId, totalPot, (ok, payload) => {
+              if (ok) {
+                console.log(
+                  `Ganador ${winner.username} recibió ${totalPot}. Nuevo balance: ${payload.money}`,
+                );
+              }
+            });
+          }
+
+          // Preparar datos del podio
+          const podiumData = {
+            rankings: [
+              {
+                position: 1,
+                username: winner.username,
+                articlesCompleted: 0,
+                errors: 0,
+                progress: 0,
+              },
+            ],
+            totalPot: totalPot,
+            winner: winner.username,
+            gameMode: "muerte-subita",
+          };
+
+          // Mostrar podio
+          io.to(player.room).emit("showPodium", podiumData);
+          room.status = "finished";
+        }
+      }
+    }
+
+    // Emitir a toda la sala (incluyendo al emisor)
+    io.to(player.room).emit("playerError", {
+      username: player.username,
+      errorCount: data.errorCount,
+    });
+  });
+  socket.on("placeBet", (data) => {
+    const { roomName, amount, previousBet } = data;
+    if (!roomName || amount == null || amount <= 0) {
+      socket.emit("betConfirmed", {
+        success: false,
+        message: "Datos de apuesta inválidos",
+      });
+      return;
+    }
+
+    const room = rooms.find((r) => r.name === roomName);
+    if (!room) {
+      socket.emit("betConfirmed", {
+        success: false,
+        message: "Sala no encontrada",
+      });
+      return;
+    }
+
+    const player = players.find((p) => p.id === socket.id);
+    if (!player) {
+      console.log(`❌ Jugador no encontrado con socket.id: ${socket.id}`);
+      socket.emit("betConfirmed", {
+        success: false,
+        message: "Usuario no encontrado",
+      });
+      return;
+    }
+
+    if (!player.userId) {
+      console.log(
+        `❌ Jugador ${player.username} no tiene userId asignado. Player:`,
+        player,
+      );
+      socket.emit("betConfirmed", {
+        success: false,
+        message: "Usuario no encontrado - sin userId",
+      });
+      return;
+    }
+
+    console.log(
+      `✅ Player ${player.username} (userId: ${player.userId}) intentando apostar ${amount}`,
+    );
+
+    // Calcular la diferencia entre la nueva apuesta y la anterior
+    const currentBet = room.bets[socket.id] || 0;
+    const difference = amount - currentBet;
+
+    // Actualizar el dinero en la base de datos (descontar la diferencia)
+    updateUserMoney(player.userId, -difference, (ok, payload) => {
+      if (!ok) {
+        socket.emit("betConfirmed", {
+          success: false,
+          message: "Error al actualizar dinero en la base de datos",
+        });
+        return;
+      }
+
+      // Guardar la apuesta del jugador
+      room.bets[socket.id] = amount;
+
+      // Actualizar el bote total
+      room.totalPot = Object.values(room.bets).reduce(
+        (sum, bet) => sum + bet,
+        0,
+      );
+
+      console.log(
+        `Apuesta colocada: ${player.username} apostó ${amount} en ${roomName}. Diferencia: ${difference}. Bote total: ${room.totalPot}. Nuevo dinero: ${payload.money}`,
+      );
+
+      // Confirmar al jugador que apostó, enviando el nuevo balance
+      socket.emit("betConfirmed", { success: true, newMoney: payload.money });
+
+      // Notificar a todos en la sala del nuevo bote total
+      io.to(roomName).emit("updateTotalPot", room.totalPot);
+    });
   });
 
   socket.on("userResults", (userResults) => {
@@ -473,19 +867,93 @@ io.on("connection", (socket) => {
     });
   });
 
-  //Timeout logic
-  socket.on("timeOut", () => {
+  //Game ended logic - when timer runs out
+  socket.on("gameEnded", (finalData) => {
     const player = players.find((p) => p.id === socket.id);
-    //TODO: Make it global instead, each user has the same time that starts
-    //when they first start typing, when they reach the time limit
-    //they emit "timeOut" to this, then emit to the room
-    //that the time has ran out and do something with that event
-    if (player && player.room) {
-      io.to(player.room).emit("timeRanOut");
-      //TODO: Maybe add a current score showcase so that the user's can see who did more
-      //and thus obtain the money this way by who typed more articles in that time
+    if (!player || !player.room) return;
+
+    const room = rooms.find((r) => r.name === player.room);
+    if (!room) return;
+
+    // Update final score for this player
+    let userScore = room.scores.find((s) => s.id === socket.id);
+    if (userScore) {
+      userScore.articlesDone = finalData.articlesCompleted;
+      userScore.errors = finalData.totalErrors;
+      userScore.progress = finalData.progress;
+      userScore.finished = true;
+    }
+
+    console.log(`Player ${player.username} finished game with:`, finalData);
+
+    // Check if all players have finished
+    const allFinished = room.players.every((p) => {
+      const score = room.scores.find((s) => s.id === p.id);
+      return score && score.finished;
+    });
+
+    if (allFinished) {
+      // Calculate final rankings
+      const rankings = room.scores.sort((a, b) => {
+        // Sort by articles completed first
+        if (b.articlesDone !== a.articlesDone) {
+          return b.articlesDone - a.articlesDone;
+        }
+        // Then by errors (fewer is better)
+        if (a.errors !== b.errors) {
+          return a.errors - b.errors;
+        }
+        // Then by progress
+        return b.progress - a.progress;
+      });
+
+      // Award prize money to winner
+      const winner = rankings[0];
+      const winnerPlayer = players.find((p) => p.id === winner.id);
+      const totalPot = room.totalPot || 0;
+
+      if (winnerPlayer && winnerPlayer.userId && totalPot > 0) {
+        updateUserMoney(winnerPlayer.userId, totalPot, (ok, payload) => {
+          if (ok) {
+            console.log(
+              `Winner ${winnerPlayer.username} received ${totalPot}. New balance: ${payload.money}`,
+            );
+          }
+        });
+      }
+
+      // Prepare podium data
+      const podiumData = {
+        rankings: rankings.map((score, index) => ({
+          position: index + 1,
+          username: score.username,
+          articlesCompleted: score.articlesDone,
+          errors: score.errors || 0,
+          progress: score.progress || 0,
+        })),
+        totalPot: totalPot,
+        winner: winner.username,
+      };
+
+      // Send podium data to all players in the room
+      io.to(player.room).emit("showPodium", podiumData);
+
+      console.log(
+        `Game ended in room ${player.room}. Winner: ${winner.username}`,
+      );
+
+      // Reset room state
+      room.status = "finished";
     }
   });
+
+  socket.on("timeOut", () => {
+    const player = players.find((p) => p.id === socket.id);
+    if (player && player.room) {
+      io.to(player.room).emit("timeRanOut");
+    }
+  });
+
   socket.on("disconnect", () => {
     const player = players.find((p) => p.id === socket.id);
     console.log(
@@ -499,6 +967,21 @@ io.on("connection", (socket) => {
     rooms.forEach((room) => {
       const before = room.players.length;
       room.players = room.players.filter((p) => p.id !== socket.id);
+
+      // Eliminar la apuesta del jugador y recalcular el bote
+      // En Muerte Súbita, la entrada se queda en el bote
+      if (room.bets && room.bets[socket.id]) {
+        const betAmount = room.bets[socket.id];
+        delete room.bets[socket.id];
+        room.totalPot = Object.values(room.bets).reduce(
+          (sum, bet) => sum + bet,
+          0,
+        );
+        io.to(room.name).emit("updateTotalPot", room.totalPot);
+        console.log(
+          `Apuesta de ${betAmount} eliminada por desconexión. Nuevo bote total: ${room.totalPot}`,
+        );
+      }
 
       if (room.players.length === 0) {
         rooms = rooms.filter((r) => r.name !== room.name);
@@ -586,7 +1069,43 @@ app.get("/api/get-user-info/:userId", (req, res) => {
         .status(404)
         .json({ ok: false, message: "Usuario no encontrado", code: payload });
     }
-    res.json({ ok: true, username: payload.username, imagePath: payload.img });
+    res.json({
+      ok: true,
+      username: payload.username,
+      imagePath: payload.img,
+      money: payload.money,
+    });
+  });
+});
+
+app.get("/api/get-user-money/:userId", (req, res) => {
+  const userId = req.params.userId;
+  getUserMoney(userId, (ok, payload) => {
+    if (!ok) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Usuario no encontrado", code: payload });
+    }
+    res.json({ ok: true, money: payload.money });
+  });
+});
+
+app.post("/api/update-user-money", (req, res) => {
+  const { userId, amount } = req.body;
+  if (!userId || amount == null) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "userId y amount son requeridos" });
+  }
+  updateUserMoney(userId, amount, (ok, payload) => {
+    if (!ok) {
+      return res.status(500).json({
+        ok: false,
+        message: "Error al actualizar dinero",
+        code: payload,
+      });
+    }
+    res.json({ ok: true, money: payload.money });
   });
 });
 
@@ -636,7 +1155,7 @@ function getUserImage(userId, done) {
 
 function getUserInfo(userId, done) {
   connectToDB((connection) => {
-    const q = "SELECT username, img FROM users WHERE id = ?";
+    const q = "SELECT username, img, money FROM users WHERE id = ?";
     connection.execute(q, [userId], (err, rows) => {
       if (err) {
         done(false, "DB_ERROR");
@@ -646,7 +1165,11 @@ function getUserInfo(userId, done) {
         done(false, "USER_NOT_FOUND");
         return;
       }
-      done(true, { username: rows[0].username, img: rows[0].img });
+      done(true, {
+        username: rows[0].username,
+        img: rows[0].img,
+        money: rows[0].money || 0,
+      });
     });
   });
 }
@@ -739,6 +1262,77 @@ function loginUser(username, password, done) {
         done(true, { userId: user.id, username: user.username });
       });
     });
+  });
+}
+
+function getUserMoney(userId, done) {
+  connectToDB((connection) => {
+    const q = "SELECT money FROM users WHERE id = ?";
+    connection.execute(q, [userId], (err, rows) => {
+      if (err) {
+        done(false, "DB_ERROR");
+        return;
+      }
+      if (!rows || rows.length === 0) {
+        done(false, "USER_NOT_FOUND");
+        return;
+      }
+      done(true, { money: rows[0].money || 0 });
+    });
+  });
+}
+
+function updateUserMoney(userId, amount, done) {
+  connectToDB((connection) => {
+    // First check current money if we're deducting
+    if (amount < 0) {
+      const checkQuery = "SELECT money FROM users WHERE id = ?";
+      connection.execute(checkQuery, [userId], (err, rows) => {
+        if (err) {
+          done(false, "DB_ERROR");
+          return;
+        }
+        if (!rows || rows.length === 0) {
+          done(false, "USER_NOT_FOUND");
+          return;
+        }
+
+        const currentMoney = rows[0].money || 0;
+        if (currentMoney + amount < 0) {
+          done(false, "INSUFFICIENT_FUNDS");
+          return;
+        }
+
+        // Proceed with the update
+        performUpdate();
+      });
+    } else {
+      // For positive amounts, proceed directly
+      performUpdate();
+    }
+
+    function performUpdate() {
+      const q = "UPDATE users SET money = money + ? WHERE id = ?";
+      connection.execute(q, [amount, userId], (err, results) => {
+        if (err) {
+          done(false, "DB_ERROR");
+          return;
+        }
+        // Get the updated money value
+        const q2 = "SELECT money FROM users WHERE id = ?";
+        connection.execute(q2, [userId], (err, rows) => {
+          if (err) {
+            done(false, "DB_ERROR");
+            return;
+          }
+          if (!rows || rows.length === 0) {
+            done(false, "USER_NOT_FOUND");
+            return;
+          }
+          done(true, { money: rows[0].money || 0 });
+        });
+      });
+    }
   });
 }
 

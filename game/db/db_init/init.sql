@@ -1,18 +1,12 @@
 SET NAMES utf8mb4;
 
-DROP DATABASE IF EXISTS journalismRacer;
-CREATE DATABASE journalismRacer;
-
--- Select the database
--- Give privileges on the created DB to the admin user
-GRANT ALL PRIVILEGES ON journalismRacer.* TO 'admin'@'%';
-FLUSH PRIVILEGES;
-
 USE journalismRacer;
 
--- Give privileges on the created DB to the admin user
-GRANT ALL PRIVILEGES ON journalismRacer.* TO 'admin'@'%';
-FLUSH PRIVILEGES;
+DROP TABLE IF EXISTS results;
+DROP TABLE IF EXISTS articles_hard;
+DROP TABLE IF EXISTS articles_medium;
+DROP TABLE IF EXISTS articles_easy;
+DROP TABLE IF EXISTS users;
 
 -- Create tables
 CREATE TABLE articles_easy (
@@ -34,7 +28,8 @@ CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
     password VARCHAR(100) NOT NULL,
-    img VARCHAR(255) DEFAULT NULL
+    img VARCHAR(255) DEFAULT NULL,
+    money INT DEFAULT 1000
 );
 
 ALTER TABLE users ADD UNIQUE KEY uk_users_username (username);
