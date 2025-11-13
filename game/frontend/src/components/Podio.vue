@@ -48,7 +48,7 @@
       </section>
 
       <footer class="podio-actions">
-        <button class="btn btn-primary" @click="$emit('back')">Tornar a l'inici</button>
+        <button class="btn btn-primary" @click="gameStore.playClickSound(); $emit('back')">Tornar a l'inici</button>
       </footer>
     </div>
   </BaseScreen>
@@ -57,6 +57,9 @@
 <script setup>
 import { computed } from 'vue';
 import BaseScreen from './layout/BaseScreen.vue';
+import { useGameStore } from '../stores/gameStore';
+
+const gameStore = useGameStore();
 
 const props = defineProps({
   podiumData: {

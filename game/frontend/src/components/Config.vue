@@ -8,7 +8,7 @@
       <i class="fa-solid fa-gear"></i>
     </button>
  
-    <div v-if="isOpen" class="modal-overlay" @click="isOpen = false">
+    <div v-if="isOpen" class="modal-overlay" @click="gameStore.playClickSound(); isOpen = false">
       <div class="modal-card config-modal" @click.stop>
         <button class="btn-icon btn-icon--ghost close-button" @click="gameStore.playClickSound(); isOpen = false">
           <i class="fa-solid fa-xmark"></i>

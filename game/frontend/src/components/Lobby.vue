@@ -6,8 +6,8 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-primary lobby-button" @click="handleCreateRoom">Crear sala</button>
-      <button class="btn btn-primary lobby-button" @click="handleJoinRoom">Unirse sala</button>
+      <button class="btn btn-primary lobby-button" @click="gameStore.playClickSound(); handleCreateRoom()">Crear sala</button>
+      <button class="btn btn-primary lobby-button" @click="gameStore.playClickSound(); handleJoinRoom()">Unirse sala</button>
     </div>
   </BaseScreen>
 </template>
