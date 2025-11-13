@@ -6,7 +6,7 @@
         <span>Game Console</span>
       </div>
       <div class="console-controls">
-        <button @click="clearConsole" class="clear-btn" title="Limpiar consola">
+        <button @click="gameStore.playClickSound(); clearConsole()" class="clear-btn" title="Limpiar consola">
           <i class="fa-solid fa-trash"></i>
         </button>
       </div>
@@ -32,6 +32,9 @@
 
 <script setup>
 import { ref, nextTick, watch } from 'vue';
+import { useGameStore } from '../stores/gameStore';
+
+const gameStore = useGameStore();
 
 const props = defineProps({
   maxMessages: {

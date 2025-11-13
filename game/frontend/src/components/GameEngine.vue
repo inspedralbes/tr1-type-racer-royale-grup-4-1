@@ -137,9 +137,72 @@ import GameNotification from "./GameNotification.vue";
 import EliminatedScreen from "./EliminatedScreen.vue";
 import GameConsole from "./GameConsole.vue";
 import Keyboard from "./Keyboard.vue";
+import { useSoundEffect } from "../composables/useSoundEffect.js";
 
-const emit = defineEmits(["back"]);
+const emit = defineEmits(["back", "showPodium"]);
 const gameStore = useGameStore();
+
+// Initialize keyboard sound pool for simultaneous sounds
+const keyboardSoundPool = ref([]);
+const poolSize = 5; // Number of simultaneous sounds allowed
+
+function initKeyboardSoundPool() {
+  keyboardSoundPool.value = [];
+  for (let i = 0; i < poolSize; i++) {
+    const sound = useSoundEffect('/music/tecla.mp3', {
+      volume: 0.3
+    });
+    sound.init();
+    keyboardSoundPool.value.push(sound);
+  }
+}
+
+let currentSoundIndex = 0;
+function playKeyboardSound() {
+  const sound = keyboardSoundPool.value[currentSoundIndex];
+  if (sound) {
+    sound.play();
+    currentSoundIndex = (currentSoundIndex + 1) % poolSize;
+  }
+}
+
+// Initialize error sound pool for simultaneous error sounds
+const errorSoundPool = ref([]);
+const errorPoolSize = 3; // Number of simultaneous error sounds allowed
+
+function initErrorSoundPool() {
+  errorSoundPool.value = [];
+  for (let i = 0; i < errorPoolSize; i++) {
+    const sound = useSoundEffect('/music/error.mp3', {
+      volume: 0.4
+    });
+    sound.init();
+    errorSoundPool.value.push(sound);
+  }
+}
+
+let currentErrorSoundIndex = 0;
+function playErrorSound() {
+  const sound = errorSoundPool.value[currentErrorSoundIndex];
+  if (sound) {
+    sound.play();
+    currentErrorSoundIndex = (currentErrorSoundIndex + 1) % errorPoolSize;
+  }
+}
+
+// Initialize single sound effects
+const paragraphCompleteSound = useSoundEffect('/music/siguienteTexto.mp3', {
+  volume: 0.5
+});
+
+const gameEndSound = useSoundEffect('/music/finalPartida.mp3', {
+  volume: 0.6
+});
+
+function initSingleSounds() {
+  paragraphCompleteSound.init();
+  gameEndSound.init();
+}
 
 // Console reference
 const gameConsole = ref(null);
@@ -230,8 +293,8 @@ function startCountdown() {
 }
 
 function handleTimeout() {
-  console.log("Time's up!");
-
+  console.log("⏰ GameEngine: Time's up! Modo de juego:", gameMode.value);
+  
   // En modo muerte súbita, el tiempo agotado significa eliminación
   if (gameMode.value === "muerte-subita") {
     console.log("💀 Tiempo agotado en modo Muerte Súbita - Eliminando jugador");
@@ -258,7 +321,9 @@ function handleTimeout() {
     progress: Math.round(overallProgress.value),
   };
 
+  console.log("🎯 GameEngine: Enviando gameEnded al servidor:", finalResults);
   gameStore.manager.emit("gameEnded", finalResults);
+  addConsoleMessage('📊 Enviando resultados finales al servidor...', 'info');
 }
 const currentArticle = computed(() => {
   return (
@@ -384,6 +449,9 @@ function completeArticle(timeTaken) {
   article.completed = true;
   gameState.value.completedArticles++;
 
+  // Play paragraph completion sound
+  paragraphCompleteSound.play();
+
   const userResults = {
     username: gameStore.username,
     time: timeTaken,
@@ -431,10 +499,11 @@ watch(
       const targetChar = target[lastIndex];
       if (typedChar && typedChar !== targetChar) {
         gameState.value.totalErrors++;
-        console.log(
-          `❌ Error detectado! Total errores: ${gameState.value.totalErrors}, Modo: ${gameMode.value}`,
-        );
-
+        console.log(`❌ Error detectado! Total errores: ${gameState.value.totalErrors}, Modo: ${gameMode.value}`);
+        
+        // Play error sound
+        playErrorSound();
+        
         // Agregar mensaje de error a la consola
         addConsoleMessage(
           `❌ Error detectado! Total: ${gameState.value.totalErrors}`,
@@ -534,6 +603,8 @@ function handleKeyDown(event) {
   if (!article || article.completed) return;
 
   if (event.key === "Backspace") {
+    // Play keyboard sound for backspace
+    playKeyboardSound();
     article.inputText = article.inputText.slice(0, -1);
   } else if (event.key.length === 1) {
     // Validación para limitar espacios consecutivos
@@ -548,6 +619,8 @@ function handleKeyDown(event) {
       }
     }
 
+    // Play keyboard sound for valid character input
+    playKeyboardSound();
     article.inputText += event.key;
     startTimer();
     handleTextInput();
@@ -629,7 +702,23 @@ gameStore.manager.on("playerEliminated", (data) => {
   addConsoleMessage(`💀 ${data.username} ha sido eliminado`, "error");
 });
 
+// Escuchar cuando el juego termina para reproducir sonido y notificar al padre
+gameStore.manager.on("showPodium", (data) => {
+  console.log('🎉 GameEngine: Evento showPodium recibido, reproduciendo sonido y emitiendo a App.vue');
+  gameEndSound.play();
+  addConsoleMessage('🎉 ¡Juego terminado! Dirigiéndose al podio...', 'success');
+  
+  // Emitir evento al componente padre (App.vue) para manejar la navegación
+  emit('showPodium', data);
+});
+
+
 onMounted(() => {
+  // Initialize all sound systems
+  initKeyboardSoundPool();
+  initErrorSoundPool();
+  initSingleSounds();
+  
   document.addEventListener("keydown", handleKeyDown);
 
   // Debug: Verificar datos de la sala al montar
@@ -654,8 +743,7 @@ onMounted(() => {
         "warning",
       );
     }
-  }, 500);
-
+  }, 500);  
   document.addEventListener("keydown", handleKeyDown);
   loadArticles();
 });
@@ -665,6 +753,9 @@ onBeforeUnmount(() => {
   gameStore.manager.off("articlesData");
   gameStore.manager.off("playerMilestone");
   gameStore.manager.off("playerError");
+  gameStore.manager.off("eliminatedFromGame");
+  gameStore.manager.off("playerEliminated");
+  gameStore.manager.off("showPodium");
   //Cleanup after timer is over
   if (timerInterval.value) {
     clearInterval(timerInterval.value);

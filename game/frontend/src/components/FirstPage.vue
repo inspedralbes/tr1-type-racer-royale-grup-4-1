@@ -9,8 +9,8 @@
         alt="Portada de Journalism Race"
         class="newspaper-image"
       />
-      <button class="contract-overlay" @click="fillContract">Omplir contracte</button>
-      <button class="btn btn-primary login-overlay" @click="openBadge">Entrar a l'oficina</button>
+      <button class="contract-overlay" @click="gameStore.playClickSound(); fillContract()">Omplir contracte</button>
+      <button class="btn btn-primary login-overlay" @click="gameStore.playClickSound(); openBadge()">Entrar a l'oficina</button>
     </div>
 
     <Transition name="badge-slide">
@@ -49,7 +49,7 @@
           type="button"
           class="badge-submit"
           :disabled="isSubmitting"
-          @click="submitLogin"
+          @click="gameStore.playClickSound(); submitLogin()"
         >
           <i class="fas fa-angle-right"></i>
         </button>
@@ -92,7 +92,7 @@
           type="button"
           class="badge-submit"
           :disabled="isSubmitting"
-          @click="submitRegister"
+          @click="gameStore.playClickSound(); submitRegister()"
         >
           <i class="fas fa-angle-right"></i>
         </button>

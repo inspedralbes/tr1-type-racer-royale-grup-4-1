@@ -3,13 +3,13 @@
     <section class="card-paper menu-card">
       <h1 class="menu-title">Word Tetris</h1>
       <input class="input-field" v-model="username" placeholder="Introdueix el teu nom" />
-      <button class="btn btn-primary" @click="updateUsername">Guardar nom</button>
+      <button class="btn btn-primary" @click="store.playClickSound(); updateUsername()">Guardar nom</button>
     </section>
   </main>
   <main v-else-if="joinedRoom" class="menu-wrapper">
     <section class="card-paper menu-card">
       <h1 class="menu-title">Has entrat a la sala {{ roomName }}</h1>
-      <button class="btn btn-primary" :disabled="!isRoomFull" @click="toggleReady">
+      <button class="btn btn-primary" :disabled="!isRoomFull" @click="store.playClickSound(); toggleReady()">
         {{ ready ? "Preparat!" : "Encara no" }}
       </button>
     </section>
@@ -18,7 +18,7 @@
     <section class="card-paper menu-card">
       <h1 class="menu-title">Uneix-te a una sala</h1>
       <input class="input-field" v-model="roomName" placeholder="Nom de la sala" />
-      <button class="btn btn-primary" @click="joinRoomViaName">Entrar a la sala</button>
+      <button class="btn btn-primary" @click="store.playClickSound(); joinRoomViaName()">Entrar a la sala</button>
     </section>
   </main>
 </template>
