@@ -1,10 +1,10 @@
 <template>
-  <div class="keyboard">
-    <div v-for="(row, rowIndex) in keys" :key="rowIndex" class="row">
+  <div class="keyboard-grid">
+    <div v-for="(row, rowIndex) in keys" :key="rowIndex" class="keyboard-row">
       <button
         v-for="(key, colIndex) in row"
         :key="colIndex"
-        :class="key === activeKey ? 'active' : 'key'"
+        :class="['keyboard-key', { 'is-active': key === activeKey }]"
       >
         {{ key }}
       </button>
@@ -36,32 +36,16 @@ watch(
 );
 </script>
 <style scoped>
-.keyboard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 10vh;
+.keyboard-grid {
+  
+  padding-top: 2rem;
 }
-.key {
-  color: rgba(0, 0, 0, 0.5);
-  background-color: #323437;
-  border: 1px solid yellow;
-  font-size: 2.5em;
-  padding: 10px;
-  margin-left: 10px;
-  margin-bottom: 10px;
-  width: 50px;
-  border-radius: 10px;
+
+.keyboard-key {
+  text-transform: uppercase;
 }
-.active {
-  background-color: yellow;
-  color: rgba(0, 0, 0, 0.5);
-  border: 1px solid yellow;
-  font-size: 2.5em;
-  padding: 10px;
-  margin-left: 10px;
-  margin-bottom: 10px;
-  width: 50px;
-  border-radius: 10px;
+
+.keyboard-key.is-active {
+  pointer-events: none;
 }
 </style>

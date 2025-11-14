@@ -86,7 +86,3 @@ Para más detalles sobre la arquitectura, API y otros aspectos técnicos, consul
 
 ## Licencia
 Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
-
-
-
-
