@@ -167,16 +167,6 @@ onUnmounted(() => {
   background-color: var(--color-secondary);
 }
 
-/* Decorative background image */
-.bg-image {
-  position: absolute;
-  height: 100%;
-  left: 70%;
-  opacity: 0.2;
-  pointer-events: none;
-  z-index: 0;
-}
-
 /* Title section */
 .title-container {
   text-align: center;
@@ -276,12 +266,6 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.sala-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
 .sala-info-left {
   display: flex;
   flex-direction: column;
@@ -305,11 +289,6 @@ onUnmounted(() => {
   letter-spacing: 0.5px;
   box-shadow: var(--shadow-sm);
   width: fit-content;
-}
-
-.sala-capacidad {
-  font-size: 1rem;
-  color: var(--text-muted);
 }
 
 .player-column {

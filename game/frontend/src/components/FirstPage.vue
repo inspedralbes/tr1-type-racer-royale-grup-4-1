@@ -37,6 +37,7 @@
               autocomplete="username"
               placeholder="Escriu el teu usuari"
               :disabled="isSubmitting"
+              @keydown.enter="gameStore.playClickSound(); submitLogin()"
             />
 
             <input
@@ -47,6 +48,7 @@
               autocomplete="current-password"
               placeholder="Escriu la contrasenya"
               :disabled="isSubmitting"
+              @keydown.enter="gameStore.playClickSound(); submitLogin()"
             />
           </form>
         </div>
@@ -80,6 +82,7 @@
               autocomplete="username"
               placeholder="Escriu el teu usuari"
               :disabled="isSubmitting"
+              @keydown.enter="gameStore.playClickSound(); submitRegister()"
             />
 
             <input
@@ -90,6 +93,7 @@
               autocomplete="new-password"
               placeholder="Escriu la contrasenya"
               :disabled="isSubmitting"
+              @keydown.enter="gameStore.playClickSound(); submitRegister()"
             />
           </form>
         </div>
@@ -501,15 +505,5 @@ function submitRegister() {
   opacity: 1;
 }
 
-@media (max-width: 768px) {
-  .login-overlay {
-    top: 85%;
-  }
-
-  .contract-overlay {
-    top: 42%;
-    left: 38%;
-  }
-}
 </style>
 

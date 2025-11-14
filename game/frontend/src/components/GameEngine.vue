@@ -783,14 +783,6 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
-.container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
-  align-items: center;
-  width: 100%;
-}
-
 .game-layout {
   display: flex;
   gap: var(--spacing-xl);
@@ -820,10 +812,6 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   margin-left: calc(var(--spacing-md) * 0.5);
   margin-right: auto;
-}
-
-.full-text-container {
-  flex: 1;
 }
 
 .text-display {
@@ -1137,18 +1125,12 @@ onBeforeUnmount(() => {
   }
 
   .user-scoreboard,
-  .scoreboard,
-  .full-text-container {
+  .scoreboard {
     width: min(640px, 95vw);
   }
 }
 
 @media (max-width: 768px) {
-  .back-button {
-    top: var(--spacing-lg);
-    left: var(--spacing-lg);
-  }
-
   .text-display {
     font-size: 1.2rem;
     padding: var(--spacing-lg);

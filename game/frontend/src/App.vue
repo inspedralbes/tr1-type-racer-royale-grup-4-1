@@ -1,5 +1,5 @@
 <template>
-  <MoneyContainer v-if="store.userId && !startGame" />
+  <MoneyContainer v-if="store.userId && !startGame && !isFirstPageVisible" />
   <template v-if="showPodio">
     <Podio :podiumData="podiumData" @back="handleBackFromPodio" />
   </template>

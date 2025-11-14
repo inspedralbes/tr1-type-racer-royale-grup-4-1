@@ -640,12 +640,6 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.bet-amount {
-  font-size: 1.2rem;
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
-}
-
 .confirm-bet-btn {
   width: 100%;
 }
@@ -728,11 +722,6 @@ onUnmounted(() => {
   .betting-section,
   .actions {
     width: 100%;
-  }
-
-  .back-button {
-    top: var(--spacing-lg);
-    left: var(--spacing-lg);
   }
 }
 </style>
