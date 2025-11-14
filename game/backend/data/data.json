@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "text": "la tecnologia digital ha canviat completament la manera com treballem aprenem i ens comuniquem avui les empreses busquen professionals capaços dadaptarse rapidament als canvis constants",
+    "completed": false
+  },
+  {
+    "id": 2,
+    "text": "laprenentatge autonom es una de les claus del segle xxi cada persona te al seu abast recursos infinits a internet pero nomes aquells que mantenen la disciplina aconsegueixen progres real",
+    "completed": false
+  },
+  {
+    "id": 3,
+    "text": "el disseny web no es nomes una questio destetica es una forma de comunicacio visual que ajuda a transmetre un missatge de manera clara i efectiva a lusuari final",
+    "completed": false
+  },
+  {
+    "id": 4,
+    "text": "la programacio no tracta nomes descriure codi sino de resoldre problemes reals pensar en solucions creatives i construir eines que puguin millorar la vida de les persones",
+    "completed": false
+  },
+  {
+    "id": 5,
+    "text": "molts desenvolupadors comencen amb projectes petits pero el que realment marca la diferencia es la capacitat de mantenir la constancia fins assolir resultats grans",
+    "completed": false
+  },
+  {
+    "id": 6,
+    "text": "el mon del desenvolupament web es molt competitiu pero tambe ple dopcions per als qui saben diferenciarse amb idees originals i una bona execucio tecnica",
+    "completed": false
+  },
+  {
+    "id": 7,
+    "text": "la ciberseguretat sha convertit en una necessitat essencial en un mon on la informacio es el recurs mes valuos protegir les dades es responsabilitat de tothom",
+    "completed": false
+  },
+  {
+    "id": 8,
+    "text": "els frameworks moderns permeten desenvolupar aplicacions web amb mes rapidesa i ordre pero el coneixement profund dels fonaments del llenguatge continua essent vital",
+    "completed": false
+  },
+  {
+    "id": 9,
+    "text": "la inteligencia artificial esta transformant tots els sectors des de la medicina fins a leducacio obrint noves oportunitats i reptes etics per a la societat",
+    "completed": false
+  },
+  {
+    "id": 10,
+    "text": "els estudiants de programacio sovint senten frustracio quan les coses no surten com esperaven pero aquesta mateixa frustracio es el motor del seu creixement personal i professional",
+    "completed": false
+  },
+  {
+    "id": 11,
+    "text": "en un mon hiperconnectat la capacitat de desconnectar i pensar amb calma es un avantatge els millors desenvolupadors saben quan parar per veure els problemes des duna nova perspectiva",
+    "completed": false
+  },
+  {
+    "id": 12,
+    "text": "els projectes personals son la millor escola per a un programador es en aquests moments de llibertat creativa on saprèn de veritat a crear sense por de fallar",
+    "completed": false
+  }
+]
