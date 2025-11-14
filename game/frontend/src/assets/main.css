@@ -67,6 +67,16 @@
   --layout-fab-bottom: 6vh;
   --layout-fab-horizontal: 5vw;
 
+  /* Fondo de pantalla */
+  --bg-screen: var(--color-secondary);
+
+  /* Overlays */
+  --overlay-dark: rgba(45, 32, 16, 0.55);
+  --overlay-darker: rgba(0, 0, 0, 0.75);
+  --bg-loading: rgba(245, 238, 219, 0.88);
+  --btn-hover-light: rgba(255, 255, 255, 0.12);
+  --btn-border-light: rgba(255, 255, 255, 0.6);
+
   /* Consola */
   --console-bg: #ede2c7;
   --console-body-bg: #d6c9b0;
@@ -389,5 +399,60 @@ a {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Modo Oscuro */
+body.dark-mode {
+  /* Colores principales */
+  --color-primary: #a48460;
+  --color-primary-hover: #8ba59b;
+  --color-primary-light: #8ba59b;
+  --color-secondary: #6fb2ab;
+  --color-secondary-hover: #739287;
+  --color-success: #6ca07f;
+  --color-danger: #c9533f;
+  --color-warning: #e3a857;
+  --color-info: #4d7c7c;
+
+  /* Fondos */
+  --bg-body: #1a1510;
+  --bg-page: rgba(26, 21, 16, 0.9);
+  --bg-card: rgba(43, 34, 25, 0.95);
+  --bg-input: rgba(43, 34, 25, 0.85);
+  --bg-hover: rgba(111, 178, 171, 0.15);
+
+  /* Texto */
+  --text-primary: #e8dcc4;
+  --text-secondary: #f5eedb;
+  --text-muted: rgba(232, 220, 196, 0.6);
+  --text-dark: #1a1510;
+  --text-white: #f5eedb;
+
+  /* Sombras */
+  --shadow-sm: 2px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 3px 3px 0 rgba(0, 0, 0, 0.45);
+  --shadow-lg: 6px 6px 0 rgba(0, 0, 0, 0.5);
+  --shadow-xl: 10px 12px 0 rgba(0, 0, 0, 0.55);
+
+  /* Fondo de pantalla */
+  --bg-screen: #36514f;
+
+  /* Overlays */
+  --overlay-dark: rgba(0, 0, 0, 0.65);
+  --overlay-darker: rgba(0, 0, 0, 0.85);
+  --bg-loading: rgba(43, 34, 25, 0.88);
+  --btn-hover-light: rgba(232, 220, 196, 0.15);
+  --btn-border-light: rgba(232, 220, 196, 0.5);
+
+  /* Consola */
+  --console-bg: #2b2219;
+  --console-body-bg: #1a1510;
+  --console-text: #e8dcc4;
+  --console-muted: rgba(232, 220, 196, 0.5);
+  --console-info: #6fb2ab;
+  --console-warning: #e3a857;
+  --console-error: #c9533f;
+  --console-success: #6ca07f;
+  --console-milestone: #8ba59b;
 }
 

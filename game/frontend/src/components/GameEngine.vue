@@ -8,7 +8,7 @@
 
     <div v-else class="game-engine">
       <div v-if="gameState.isLoading" class="loading">
-        <p>Cargando artículos...</p>
+        <p>Carregant articles...</p>
       </div>
 
       <template v-else>
@@ -28,7 +28,7 @@
                 <span class="timer-seconds">{{ formattedSeconds }}</span>
               </div>
             </div>
-            <h3 class="user-scoreboard-title">Tu Progreso</h3>
+            <h3 class="user-scoreboard-title">El teu progrés</h3>
             <div class="user-scoreboard-content">
               <div class="player-entry current-user">
                 <div class="player-header">
@@ -68,9 +68,9 @@
             </div>
 
             <div v-else class="game-completed card-paper">
-              <h2>¡Todos los artículos completados!</h2>
+              <h2>Tots els articles completats!</h2>
               <p>
-                Excelente trabajo, periodista. Has terminado todas las sesiones.
+                Excel·lent feina, periodista. Has acabat totes les sessions.
               </p>
             </div>
 
@@ -79,7 +79,7 @@
 
           <!-- Scoreboard Section -->
           <div class="scoreboard card-paper scoreboard--right">
-            <h3 class="scoreboard-title">Room progress</h3>
+            <h3 class="scoreboard-title">Progrés de la sala</h3>
             <div class="scoreboard-content">
               <div
                 v-for="(score, index) in sortedScores"
@@ -96,7 +96,7 @@
                     <span
                       v-if="score.username === gameStore.username"
                       class="you-label"
-                      >(you)</span
+                      >(tu)</span
                     >
                   </span>
                   <span class="player-count"
@@ -115,7 +115,7 @@
               </div>
 
               <div v-if="sortedScores.length === 0" class="empty-scoreboard">
-                <p>Waiting for players...</p>
+                <p>Esperant jugadors...</p>
               </div>
             </div>
           </div>
@@ -133,7 +133,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useGameStore } from "../stores/gameStore";
-import GameNotification from "./GameNotification.vue";
 import EliminatedScreen from "./EliminatedScreen.vue";
 import GameConsole from "./GameConsole.vue";
 import Keyboard from "./Keyboard.vue";
@@ -276,17 +275,17 @@ function startCountdown() {
     if (timeRemaining.value > 0) {
       timeRemaining.value--;
 
-      // Avisos de tiempo restante
+      // Avisos de temps restant
       if (timeRemaining.value === 60) {
-        addConsoleMessage("⏰ ¡Queda 1 minuto!", "warning");
+        addConsoleMessage("⏰ Queda 1 minut!", "warning");
       } else if (timeRemaining.value === 30) {
-        addConsoleMessage("⚠️ ¡Solo quedan 30 segundos!", "warning");
+        addConsoleMessage("⚠️ Només queden 30 segons!", "warning");
       } else if (timeRemaining.value === 10) {
-        addConsoleMessage("🚨 ¡10 segundos restantes!", "error");
+        addConsoleMessage("🚨 10 segons restants!", "error");
       }
     } else {
       clearInterval(timerInterval.value);
-      addConsoleMessage("⏰ ¡Tiempo agotado!", "error");
+      addConsoleMessage("⏰ Temps esgotat!", "error");
       handleTimeout();
     }
   }, 1000);
@@ -297,9 +296,9 @@ function handleTimeout() {
   
   // En modo muerte súbita, el tiempo agotado significa eliminación
   if (gameMode.value === "muerte-subita") {
-    console.log("💀 Tiempo agotado en modo Muerte Súbita - Eliminando jugador");
+    console.log("💀 Temps esgotat en mode Mort Súbita - Eliminant jugador");
     addConsoleMessage(
-      "💀 ¡ELIMINADO! Tiempo agotado en modo Muerte Súbita",
+      "💀 ELIMINAT! Temps esgotat en mode Mort Súbita",
       "error",
     );
     isEliminated.value = true;
@@ -321,9 +320,9 @@ function handleTimeout() {
     progress: Math.round(overallProgress.value),
   };
 
-  console.log("🎯 GameEngine: Enviando gameEnded al servidor:", finalResults);
+  console.log("🎯 GameEngine: Enviant gameEnded al servidor:", finalResults);
   gameStore.manager.emit("gameEnded", finalResults);
-  addConsoleMessage('📊 Enviando resultados finales al servidor...', 'info');
+  addConsoleMessage('📊 Enviant resultats finals al servidor...', 'info');
 }
 const currentArticle = computed(() => {
   return (
@@ -512,14 +511,14 @@ watch(
       const targetChar = target[lastIndex];
       if (typedChar && typedChar !== targetChar) {
         gameState.value.totalErrors++;
-        console.log(`❌ Error detectado! Total errores: ${gameState.value.totalErrors}, Modo: ${gameMode.value}`);
+        console.log(`❌ Error detectat! Total errors: ${gameState.value.totalErrors}, Mode: ${gameMode.value}`);
         
         // Play error sound
         playErrorSound();
         
         // Agregar mensaje de error a la consola
         addConsoleMessage(
-          `❌ Error detectado! Total: ${gameState.value.totalErrors}`,
+          `❌ Error detectat! Total: ${gameState.value.totalErrors}`,
           "error",
         );
 
@@ -528,9 +527,9 @@ watch(
           gameMode.value === "muerte-subita" &&
           gameState.value.totalErrors === 1
         ) {
-          console.log("💀 Activando eliminación por modo Muerte Súbita");
+          console.log("💀 Activant eliminació per mode Mort Súbita");
           addConsoleMessage(
-            "💀 ¡ELIMINADO! Error en modo Muerte Súbita",
+            "💀 ELIMINAT! Error en mode Mort Súbita",
             "error",
           );
           handleSuddenDeathElimination();
@@ -572,12 +571,12 @@ watch(
         // Agregar mensaje de milestone a la consola
         if (currentPercent === 100) {
           addConsoleMessage(
-            `🎉 ¡Artículo ${gameState.value.currentIndex + 1} completado!`,
+            `🎉 Article ${gameState.value.currentIndex + 1} completat!`,
             "success",
           );
         } else {
           addConsoleMessage(
-            `🎯 ${currentPercent}% del artículo ${gameState.value.currentIndex + 1} completado`,
+            `🎯 ${currentPercent}% de l'article ${gameState.value.currentIndex + 1} completat`,
             "milestone",
           );
         }
@@ -602,7 +601,7 @@ function handleSuddenDeathElimination() {
   }
 
   // Agregar mensaje a la consola
-  addConsoleMessage("💀 Has sido eliminado del juego", "error");
+  addConsoleMessage("💀 Has estat eliminat del joc", "error");
 
   // Notificar al servidor sobre la eliminación
   gameStore.manager.emit("playerError", {
@@ -678,12 +677,12 @@ function handleUserScores(data) {
 gameStore.manager.on("playerMilestone", (data) => {
   if (data.percent === 100) {
     addConsoleMessage(
-      `📄 ${data.username} ha completado el artículo ${data.articleNumber}`,
+      `📄 ${data.username} ha completat l'article ${data.articleNumber}`,
       "success",
     );
   } else {
     addConsoleMessage(
-      `🎯 ${data.username} ha alcanzado el ${data.percent}% del artículo ${data.articleNumber}`,
+      `🎯 ${data.username} ha assolit el ${data.percent}% de l'article ${data.articleNumber}`,
       "milestone",
     );
   }
@@ -691,7 +690,7 @@ gameStore.manager.on("playerMilestone", (data) => {
 
 gameStore.manager.on("playerError", (data) => {
   addConsoleMessage(
-    `⚠️ ${data.username} lleva ${data.errorCount} errores`,
+    `⚠️ ${data.username} porta ${data.errorCount} errors`,
     "warning",
   );
 });
@@ -702,7 +701,7 @@ gameStore.manager.on("eliminatedFromGame", (data) => {
   isEliminated.value = true;
 
   // Agregar mensaje a la consola
-  addConsoleMessage("💀 Eliminación confirmada por el servidor", "error");
+  addConsoleMessage("💀 Eliminació confirmada pel servidor", "error");
 
   // Detener el temporizador
   if (timerInterval.value) {
@@ -712,14 +711,14 @@ gameStore.manager.on("eliminatedFromGame", (data) => {
 
 // Escuchar cuando otro jugador es eliminado
 gameStore.manager.on("playerEliminated", (data) => {
-  addConsoleMessage(`💀 ${data.username} ha sido eliminado`, "error");
+  addConsoleMessage(`💀 ${data.username} ha estat eliminat`, "error");
 });
 
 // Escuchar cuando el juego termina para reproducir sonido y notificar al padre
 gameStore.manager.on("showPodium", (data) => {
-  console.log('🎉 GameEngine: Evento showPodium recibido, reproduciendo sonido y emitiendo a App.vue');
+  console.log('🎉 GameEngine: Esdeveniment showPodium rebut, reproduint so i emetent a App.vue');
   gameEndSound.play();
-  addConsoleMessage('🎉 ¡Juego terminado! Dirigiéndose al podio...', 'success');
+  addConsoleMessage('🎉 Joc acabat! Direccionant-se al podi...', 'success');
   
   // Emitir evento al componente padre (App.vue) para manejar la navegación
   emit('showPodium', data);
@@ -749,10 +748,10 @@ onMounted(() => {
 
   // Mensaje inicial en la consola
   setTimeout(() => {
-    addConsoleMessage("🎮 Juego iniciado. ¡Buena suerte!", "info");
+    addConsoleMessage("🎮 Joc iniciat. Bona sort!", "info");
     if (gameMode.value === "muerte-subita") {
       addConsoleMessage(
-        "💀 Modo Muerte Súbita activado - ¡Cuidado con los errores!",
+        "💀 Mode Mort Súbita activat - Compte amb els errors!",
         "warning",
       );
     }
@@ -780,14 +779,14 @@ onBeforeUnmount(() => {
 .game-engine-wrapper {
   position: relative;
   min-height: 100vh;
-  background: var(--color-secondary);
+  background: var(--bg-screen);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .game-engine {
-  background: var(--color-secondary);
+  background: var(--bg-screen);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -844,7 +843,7 @@ onBeforeUnmount(() => {
 
 .correct-letter {
   color: var(--text-white);
-  background: var(--color-secondary);
+  background: var(--bg-screen);
 }
 
 .incorrect-letter {
@@ -1041,7 +1040,7 @@ onBeforeUnmount(() => {
 
 .progress-bar-fill {
   height: 100%;
-  background: var(--color-secondary);
+  background: var(--bg-screen);
   transition: width 0.5s ease;
 }
 

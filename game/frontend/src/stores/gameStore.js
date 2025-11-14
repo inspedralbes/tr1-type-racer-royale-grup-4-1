@@ -9,7 +9,6 @@ export const useGameStore = defineStore("rooms", () => {
   const money = ref(parseInt(localStorage.getItem('money')) || 0);
   const manager = new SocketManager();
   manager.connect();
-  const roomFull = ref(false);
   const rooms = ref([]);
   const roomScore = ref([]);
   
@@ -54,7 +53,6 @@ export const useGameStore = defineStore("rooms", () => {
 
     // Configurar listeners
     manager.on("connect", handleConnect);
-    manager.on("roomFull", (data) => (roomFull.value = data));
     manager.on("roomData", handleRoomData);
     manager.on("updateRooms", handleUpdateRooms);
     manager.on("leaderboardUpdateInRoom", handleScoresInRoom);
@@ -78,10 +76,6 @@ export const useGameStore = defineStore("rooms", () => {
 
   // Configurar los listeners cuando se crea el store
   setupSocketListeners();
-
-  function handleRoomFull(data) {
-    roomFull.value = data;
-  }
 
   function setUsername(name) {
     username.value = name;
@@ -164,8 +158,6 @@ export const useGameStore = defineStore("rooms", () => {
     }
   }
 
-  const isRoomFull = computed(() => roomFull.value);
-
   return {
     currentRoom,
     username,
@@ -179,9 +171,7 @@ export const useGameStore = defineStore("rooms", () => {
     updateMoney,
     setRoomName,
     setRooms,
-    isRoomFull,
     manager,
-    roomFull,
     roomScore,
     backgroundMusic,
     musicVolume,

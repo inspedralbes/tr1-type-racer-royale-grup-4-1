@@ -21,7 +21,7 @@
 
         <div class="profile-block badge-surface" @click="gameStore.playClickSound(); openFileSelector()">
           <div class="profile-image">
-            <img :src="profileImage" alt="Usuario" />
+            <img :src="profileImage" alt="Usuari" />
           </div>
           <div class="profile-cta">
             <span class="tag">
@@ -109,6 +109,12 @@ const userId = computed(() => gameStore.userId);
 
 onMounted(() => {
   loadUserProfile();
+  // Cargar modo oscuro
+  const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+  isDarkMode.value = savedDarkMode;
+  if (savedDarkMode) {
+    document.body.classList.add('dark-mode');
+  }
 });
 
 // Watch para recargar la imagen cuando cambie el userId
@@ -148,6 +154,7 @@ const loadUserProfile = () => {
 
 const toggleDarkMode = () => {
   document.body.classList.toggle('dark-mode', isDarkMode.value);
+  localStorage.setItem('darkMode', isDarkMode.value.toString());
 };
 
 const changeVolume = () => {
@@ -169,19 +176,19 @@ const handleFileSelect = async (event) => {
 
   // Validar tamaño (máximo 5MB)
   if (file.size > 5 * 1024 * 1024) {
-    showMessage('La imagen no debe superar 5MB', 'error');
+    showMessage('La imatge no ha de superar 5MB', 'error');
     return;
   }
 
   // Validar tipo de archivo
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   if (!validTypes.includes(file.type)) {
-    showMessage('Solo se permiten imágenes (jpg, png, gif, webp)', 'error');
+    showMessage('Només es permeten imatges (jpg, png, gif, webp)', 'error');
     return;
   }
 
   if (!userId.value) {
-    showMessage('Debes iniciar sesión para cambiar tu foto', 'error');
+    showMessage('Has d\'iniciar sessió per canviar la teva foto', 'error');
     return;
   }
 
@@ -212,7 +219,7 @@ const uploadImage = async (file) => {
     if (data.ok) {
       // Construir la URL completa de la imagen
       profileImage.value = `http://localhost:3000${data.imagePath}`;
-      showMessage('✅ Foto actualizada correctamente', 'success');
+      showMessage('✅ Foto actualitzada correctament', 'success');
       console.log('Nueva ruta de imagen:', profileImage.value);
       
       // Notificar al servidor via socket para actualizar la imagen en el lobby
@@ -221,12 +228,12 @@ const uploadImage = async (file) => {
         console.log('Evento updateProfileImage emitido al servidor');
       }
     } else {
-      showMessage('❌ ' + (data.message || 'Error al subir la imagen'), 'error');
+      showMessage('❌ ' + (data.message || 'Error en pujar la imatge'), 'error');
       console.error('Error en la respuesta:', data);
     }
   } catch (error) {
     console.error('Error al subir imagen:', error);
-    showMessage('❌ Error de conexión al subir la imagen', 'error');
+      showMessage('❌ Error de connexió en pujar la imatge', 'error');
   } finally {
     isUploading.value = false;
     // Limpiar el input
@@ -338,7 +345,7 @@ const showMessage = (message, type) => {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  background: rgba(245, 238, 219, 0.88);
+  background: var(--bg-loading);
   border-radius: inherit;
   backdrop-filter: blur(2px);
   color: var(--color-primary);
@@ -458,35 +465,5 @@ const showMessage = (message, type) => {
   .stats-grid {
     grid-template-columns: 1fr;
   }
-}
-</style>
-
-<style>
-body.dark-mode {
-  background: var(--color-night) !important;
-  color: var(--text-white) !important;
-}
-
-body.dark-mode .config-modal {
-  background: color-mix(in srgb, var(--color-night-card) 92%, transparent 8%) !important;
-  color: var(--text-white) !important;
-}
-
-body.dark-mode .modal-heading {
-  color: var(--color-warning) !important;
-}
-
-body.dark-mode .stats-card {
-  background: color-mix(in srgb, var(--color-night-card) 85%, transparent 15%) !important;
-  border-color: color-mix(in srgb, var(--color-warning) 30%, transparent 70%) !important;
-}
-
-body.dark-mode .modal-divider {
-  border-top-color: color-mix(in srgb, var(--color-warning) 55%, transparent 45%) !important;
-}
-
-body.dark-mode .toast {
-  background: color-mix(in srgb, var(--color-night-card) 80%, transparent 20%) !important;
-  color: var(--text-white) !important;
 }
 </style>

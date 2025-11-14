@@ -7,11 +7,10 @@
         <h1 class="title">Journalism Race</h1>
       </div>
       <div v-if="salasFiltradas.length === 0" class="no-salas-article">
-        <h2>No Rooms Available</h2>
+        <h2>No hi ha sales disponibles</h2>
         <p>
-          It seems the newsroom is empty today. No editors or writers are
-          currently hosting a session. Check back later — the presses will roll
-          again soon!
+          Sembla que la redacció està buida avui. No hi ha editors o redactors que estiguin
+          acollint una sessió. Torna més tard — les premses tornaran a rodar aviat!
         </p>
       </div>
 
@@ -27,10 +26,10 @@
             <div class="sala-info-left">
               <div class="sala-nombre">
                 {{ sala.nombre }}
-                <span v-if="sala.isFull" class="full-badge">LLENA</span>
+                <span v-if="sala.isFull" class="full-badge">PLENA</span>
               </div>
               <div v-if="sala.gameMode === 'muerte-subita'" class="gamemode-badge">
-                ☠️ Muerte Súbita | Entrada: 100💰
+                ☠️ Mort Súbita | Entrada: 100💰
               </div>
             </div>
             <div class="sala-playercount player-column">
@@ -49,7 +48,7 @@
         :disabled="!salaSeleccionada"
         @click="gameStore.playClickSound(); unirseASala()"
       >
-        <span class="button-text">ENTER</span>
+        <span class="button-text">ENTRAR</span>
       </button>
     </div>
   </BaseScreen>
@@ -89,13 +88,13 @@ const unirseASala = () => {
   const sala = salasFiltradas.value.find(s => s.id === salaSeleccionada.value);
   if (sala && sala.gameMode === 'muerte-subita') {
     if (!gameStore.userId) {
-      alert('Debes iniciar sesión para jugar en modo Muerte Súbita.');
+      alert('Has d\'iniciar sessió per jugar en mode Mort Súbita.');
       return;
     }
     
     // Configurar listeners para respuestas del servidor
     const handleJoinRoomFailed = (data) => {
-      alert(data.message || "Error al unirse a la sala");
+      alert(data.message || "Error al unir-se a la sala");
       gameStore.manager.off("joinRoomFailed", handleJoinRoomFailed);
       gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
     };
@@ -164,7 +163,7 @@ onUnmounted(() => {
   padding: var(--spacing-xl) 0;
   gap: var(--spacing-xl);
   overflow: hidden;
-  background-color: var(--color-secondary);
+  background-color: var(--bg-screen);
 }
 
 /* Title section */

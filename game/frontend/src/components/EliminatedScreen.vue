@@ -5,11 +5,11 @@
     <div class="elimination-container">
       <div class="skull-icon">💀</div>
       
-      <h1 class="title">¡ELIMINADO!</h1>
+      <h1 class="title">ELIMINAT!</h1>
       
       <div class="message-box">
         <p class="main-message">{{ mainMessage }}</p>
-        <p class="mode-name">MUERTE SÚBITA</p>
+        <p class="mode-name">MORT SÚBITA</p>
         <p class="sub-message">{{ subMessage }}</p>
       </div>
       
@@ -22,7 +22,7 @@
       
       <button class="back-button" @click="handleBackToLobby">
         <i class="fa-solid fa-arrow-left"></i>
-        <span>VOLVER AL LOBBY</span>
+        <span>TORNAR AL LOBBY</span>
       </button>
     </div>
   </div>
@@ -42,19 +42,19 @@ const props = defineProps({
 const emit = defineEmits(['back']);
 const gameStore = useGameStore();
 
-// Mensajes dinámicos basados en el motivo de eliminación
+// Missatges dinàmics basats en el motiu d'eliminació
 const mainMessage = computed(() => {
   if (props.eliminationReason === 'timeout') {
-    return 'Se te ha agotado el tiempo en modo';
+    return 'S\'ha esgotat el temps en mode';
   }
-  return 'Has cometido un error en modo';
+  return 'Has comès un error en mode';
 });
 
 const subMessage = computed(() => {
   if (props.eliminationReason === 'timeout') {
-    return 'El tiempo límite significa eliminación instantánea.';
+    return 'El temps límit significa eliminació instantània.';
   }
-  return 'Un solo error significa eliminación instantánea.';
+  return 'Un sol error significa eliminació instantània.';
 });
 
 const eliminationIcon = computed(() => {
