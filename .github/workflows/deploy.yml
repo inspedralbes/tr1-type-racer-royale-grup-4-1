@@ -25,9 +25,8 @@ jobs:
             cd ${{ secrets.VPS_PROJECT_PATH }}
             git fetch origin
             git checkout prod
-            git pull origin prod
-            cd game
-            docker compose down
+            git pull
+            docker compose down -v
             docker compose up -d --build
             docker compose ps
       
