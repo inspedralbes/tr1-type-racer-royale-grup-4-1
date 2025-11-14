@@ -107,9 +107,11 @@
 import { ref, watch } from "vue";
 import BaseScreen from "./layout/BaseScreen.vue";
 import { useGameStore } from "../stores/gameStore";
+import { useGameAlert } from "../composables/useGameAlert";
 
 const emit = defineEmits(["backToLobby", "roomCreated"]);
 const gameStore = useGameStore();
+const { showError, showWarning } = useGameAlert();
 
 const roomName = ref("");
 const selectedDifficulty = ref("easy");
@@ -139,14 +141,14 @@ function goBack() {
 function createRoom() {
   const name = roomName.value.trim();
   if (!name) {
-    alert("Si us plau, introdueix un nom de sala vàlid.");
+    showWarning("Si us plau, introdueix un nom de sala vàlid.");
     return;
   }
 
   // Verificar si tiene suficiente dinero para modo Muerte Súbita
   if (selectedGameMode.value === "muerte-subita") {
     if (!gameStore.userId) {
-      alert("Has d'iniciar sessió per jugar en mode Mort Súbita.");
+      showWarning("Has d'iniciar sessió per jugar en mode Mort Súbita.");
       return;
     }
     // El servidor verificará el dinero y deducirá la entrada
@@ -154,7 +156,7 @@ function createRoom() {
 
   // Configurar listeners para respuestas del servidor
   const handleRoomCreationFailed = (data) => {
-    alert(data.message || "Error en crear la sala");
+    showError(data.message || "Error en crear la sala. Torna-ho a provar.");
     gameStore.manager.off("roomCreationFailed", handleRoomCreationFailed);
     //Upon failure go back to the lobby
     goBack();

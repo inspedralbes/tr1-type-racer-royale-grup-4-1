@@ -125,9 +125,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import BaseScreen from './layout/BaseScreen.vue';
 import { useGameStore } from '../stores/gameStore';
+import { useGameAlert } from '../composables/useGameAlert';
 
 const emit = defineEmits(['back', 'startGame']);
 const gameStore = useGameStore();
+const { showError, showWarning } = useGameAlert();
 
 const maxJugadores = ref(4);
 const jugadores = ref([]);
@@ -258,7 +260,7 @@ const confirmBet = () => {
     
     // Verificar que el jugador tenga suficiente dinero para la diferencia
     if (difference > 0 && gameStore.money < difference) {
-      alert('No tens prou diners');
+      showError('No tens prou diners per fer aquesta aposta.');
       return;
     }
     
@@ -345,7 +347,7 @@ onMounted(() => {
         gameStore.setMoney(newMoney);
       }
     } else {
-      alert(message || 'Error al confirmar aposta');
+      showError(message || 'Error al confirmar aposta. Torna-ho a provar.');
       currentBet.value = confirmedBet.value;
     }
   });

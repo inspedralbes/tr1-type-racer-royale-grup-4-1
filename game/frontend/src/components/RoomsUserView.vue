@@ -58,9 +58,11 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import BaseScreen from "./layout/BaseScreen.vue";
 import { useGameStore } from "../stores/gameStore";
+import { useGameAlert } from "../composables/useGameAlert";
 
 const emit = defineEmits(["back", "joinedRoom"]);
 const gameStore = useGameStore();
+const { showError, showWarning } = useGameAlert();
 const maxJugadoresPorSala = ref(4);
 const salaSeleccionada = ref(null);
 
@@ -88,13 +90,13 @@ const unirseASala = () => {
   const sala = salasFiltradas.value.find(s => s.id === salaSeleccionada.value);
   if (sala && sala.gameMode === 'muerte-subita') {
     if (!gameStore.userId) {
-      alert('Has d\'iniciar sessió per jugar en mode Mort Súbita.');
+      showWarning('Has d\'iniciar sessió per jugar en mode Mort Súbita.');
       return;
     }
     
     // Configurar listeners para respuestas del servidor
     const handleJoinRoomFailed = (data) => {
-      alert(data.message || "Error al unir-se a la sala");
+      showError(data.message || "Error al unir-se a la sala. Torna-ho a provar.");
       gameStore.manager.off("joinRoomFailed", handleJoinRoomFailed);
       gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
     };

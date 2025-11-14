@@ -1,4 +1,5 @@
 <template>
+  <AlertContainer />
   <MoneyContainer v-if="store.userId && !startGame && !isFirstPageVisible" />
   <template v-if="showPodio">
     <Podio :podiumData="podiumData" @back="handleBackFromPodio" />
@@ -26,6 +27,7 @@ import HostCreateLobby from "./components/HostCreateLobby.vue";
 import UserLobby from "./components/UserLobby.vue";
 import MoneyContainer from "./components/MoneyContainer.vue";
 import Podio from "./components/Podio.vue";
+import AlertContainer from "./components/AlertContainer.vue";
 import { useBackgroundMusicAutoplay } from "@/composables/useBackgroundMusicAutoplay.js";
 import { useSoundEffect } from "@/composables/useSoundEffect.js";
   

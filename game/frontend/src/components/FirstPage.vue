@@ -116,10 +116,12 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 // import Config from "./Config.vue";
 import SocketManager from "../../services/socketManager";
 import { useGameStore } from '../stores/gameStore';
+import { useGameAlert } from '../composables/useGameAlert';
 
 const emit = defineEmits(['lobby']);
 const gameStore = useGameStore();
 const sm = new SocketManager();
+const { showError, showWarning, showInfo } = useGameAlert();
 
 const isNewspaperVisible = ref(true);
 const isBadgeVisible = ref(false);
@@ -150,6 +152,12 @@ const loginResultHandler = (res) => {
     emit('lobby');
   } else {
     console.warn('❌ Error de login:', res?.code || 'desconocido');
+    const errorMessage = res?.code === 'INVALID_CREDENTIALS' 
+      ? 'Credencials incorrectes. Verifica el teu usuari i contrasenya.'
+      : res?.code === 'USER_NOT_FOUND'
+      ? 'Usuari no trobat. Verifica el teu usuari.'
+      : 'Error al iniciar sessió. Torna-ho a provar.';
+    showError(errorMessage);
   }
 };
 
@@ -173,6 +181,12 @@ const registerResultHandler = (res) => {
     emit('lobby');
   } else {
     console.warn('❌ Error de registro:', res?.code || 'desconocido');
+    const errorMessage = res?.code === 'USER_ALREADY_EXISTS'
+      ? 'Aquest usuari ja existeix. Prova amb un altre nom.'
+      : res?.code === 'INVALID_USERNAME'
+      ? 'Nom d\'usuari no vàlid. Utilitza només lletres i números.'
+      : 'Error al registrar-se. Torna-ho a provar.';
+    showError(errorMessage);
   }
 };
 
@@ -196,7 +210,10 @@ function doRegister() {
       sm.callbacks['registerResult'] = undefined;
       emit('lobby');
     } else {
-      alert(`Error: ${res.code}`);
+      const errorMessage = res.code === 'USER_ALREADY_EXISTS'
+        ? 'Aquest usuari ja existeix. Prova amb un altre nom.'
+        : `Error: ${res.code}`;
+      showError(errorMessage);
       sm.callbacks['registerResult'] = undefined;
     }
   });
@@ -217,7 +234,10 @@ function doLogin() {
       sm.callbacks['loginResult'] = undefined;
       emit('lobby');
     } else {
-      alert(`Error: ${res.code}`);
+      const errorMessage = res.code === 'INVALID_CREDENTIALS'
+        ? 'Credencials incorrectes. Verifica el teu usuari i contrasenya.'
+        : `Error: ${res.code}`;
+      showError(errorMessage);
       sm.callbacks['loginResult'] = undefined;
     }
   });
@@ -246,7 +266,7 @@ function submitLogin() {
   const pass = password.value.trim();
 
   if (!user || !pass) {
-    console.warn('⚠️ Campos incompletos en el formulario de acceso');
+    showWarning('Si us plau, omple tots els camps per iniciar sessió.');
     return;
   }
 
@@ -268,12 +288,12 @@ function submitRegister() {
   const pass = registerPassword.value.trim();
 
   if (!user || !pass) {
-    console.warn('⚠️ Campos incompletos en el formulario de registro');
+    showWarning('Si us plau, omple tots els camps per registrar-te.');
     return;
   }
 
   if (pass.length < 4) {
-    console.warn('⚠️ Contraseña demasiado corta en el formulario de registro');
+    showWarning('La contrasenya ha de tenir almenys 4 caràcters.');
     return;
   }
 
