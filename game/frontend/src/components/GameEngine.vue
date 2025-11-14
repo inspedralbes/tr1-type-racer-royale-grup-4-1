@@ -148,8 +148,8 @@ const poolSize = 5; // Number of simultaneous sounds allowed
 function initKeyboardSoundPool() {
   keyboardSoundPool.value = [];
   for (let i = 0; i < poolSize; i++) {
-    const sound = useSoundEffect('/music/tecla.mp3', {
-      volume: 0.3
+    const sound = useSoundEffect("/music/tecla.mp3", {
+      volume: 0.3,
     });
     sound.init();
     keyboardSoundPool.value.push(sound);
@@ -172,8 +172,8 @@ const errorPoolSize = 3; // Number of simultaneous error sounds allowed
 function initErrorSoundPool() {
   errorSoundPool.value = [];
   for (let i = 0; i < errorPoolSize; i++) {
-    const sound = useSoundEffect('/music/error.mp3', {
-      volume: 0.4
+    const sound = useSoundEffect("/music/error.mp3", {
+      volume: 0.4,
     });
     sound.init();
     errorSoundPool.value.push(sound);
@@ -190,12 +190,12 @@ function playErrorSound() {
 }
 
 // Initialize single sound effects
-const paragraphCompleteSound = useSoundEffect('/music/siguienteTexto.mp3', {
-  volume: 0.5
+const paragraphCompleteSound = useSoundEffect("/music/siguienteTexto.mp3", {
+  volume: 0.5,
 });
 
-const gameEndSound = useSoundEffect('/music/finalPartida.mp3', {
-  volume: 0.6
+const gameEndSound = useSoundEffect("/music/finalPartida.mp3", {
+  volume: 0.6,
 });
 
 function initSingleSounds() {
@@ -253,7 +253,7 @@ watch(
 );
 
 // Timer state
-const timeRemaining = ref(30);
+const timeRemaining = ref(120);
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {
@@ -293,7 +293,7 @@ function startCountdown() {
 
 function handleTimeout() {
   console.log("⏰ GameEngine: Time's up! Modo de juego:", gameMode.value);
-  
+
   // En modo muerte súbita, el tiempo agotado significa eliminación
   if (gameMode.value === "muerte-subita") {
     console.log("💀 Temps esgotat en mode Mort Súbita - Eliminant jugador");
@@ -322,7 +322,7 @@ function handleTimeout() {
 
   console.log("🎯 GameEngine: Enviant gameEnded al servidor:", finalResults);
   gameStore.manager.emit("gameEnded", finalResults);
-  addConsoleMessage('📊 Enviant resultats finals al servidor...', 'info');
+  addConsoleMessage("📊 Enviant resultats finals al servidor...", "info");
 }
 const currentArticle = computed(() => {
   return (
@@ -473,7 +473,7 @@ function completeArticle(timeTaken) {
   } else {
     console.log("Todos los artículos completados");
     addConsoleMessage("🎉 ¡Todos los artículos completados!", "success");
-    
+
     // Send final results to server
     const finalResults = {
       username: gameStore.username,
@@ -482,9 +482,12 @@ function completeArticle(timeTaken) {
       progress: 100, // 100% porque completó todos los artículos
     };
 
-    console.log("🎯 GameEngine: Enviando gameEnded al servidor (todos completados):", finalResults);
+    console.log(
+      "🎯 GameEngine: Enviando gameEnded al servidor (todos completados):",
+      finalResults,
+    );
     gameStore.manager.emit("gameEnded", finalResults);
-    addConsoleMessage('📊 Enviando resultados finales al servidor...', 'info');
+    addConsoleMessage("📊 Enviando resultados finales al servidor...", "info");
   }
 }
 
@@ -511,11 +514,13 @@ watch(
       const targetChar = target[lastIndex];
       if (typedChar && typedChar !== targetChar) {
         gameState.value.totalErrors++;
-        console.log(`❌ Error detectat! Total errors: ${gameState.value.totalErrors}, Mode: ${gameMode.value}`);
-        
+        console.log(
+          `❌ Error detectat! Total errors: ${gameState.value.totalErrors}, Mode: ${gameMode.value}`,
+        );
+
         // Play error sound
         playErrorSound();
-        
+
         // Agregar mensaje de error a la consola
         addConsoleMessage(
           `❌ Error detectat! Total: ${gameState.value.totalErrors}`,
@@ -528,10 +533,7 @@ watch(
           gameState.value.totalErrors === 1
         ) {
           console.log("💀 Activant eliminació per mode Mort Súbita");
-          addConsoleMessage(
-            "💀 ELIMINAT! Error en mode Mort Súbita",
-            "error",
-          );
+          addConsoleMessage("💀 ELIMINAT! Error en mode Mort Súbita", "error");
           handleSuddenDeathElimination();
           return;
         }
@@ -716,21 +718,22 @@ gameStore.manager.on("playerEliminated", (data) => {
 
 // Escuchar cuando el juego termina para reproducir sonido y notificar al padre
 gameStore.manager.on("showPodium", (data) => {
-  console.log('🎉 GameEngine: Esdeveniment showPodium rebut, reproduint so i emetent a App.vue');
+  console.log(
+    "🎉 GameEngine: Esdeveniment showPodium rebut, reproduint so i emetent a App.vue",
+  );
   gameEndSound.play();
-  addConsoleMessage('🎉 Joc acabat! Direccionant-se al podi...', 'success');
-  
-  // Emitir evento al componente padre (App.vue) para manejar la navegación
-  emit('showPodium', data);
-});
+  addConsoleMessage("🎉 Joc acabat! Direccionant-se al podi...", "success");
 
+  // Emitir evento al componente padre (App.vue) para manejar la navegación
+  emit("showPodium", data);
+});
 
 onMounted(() => {
   // Initialize all sound systems
   initKeyboardSoundPool();
   initErrorSoundPool();
   initSingleSounds();
-  
+
   document.addEventListener("keydown", handleKeyDown);
 
   // Debug: Verificar datos de la sala al montar
@@ -755,7 +758,7 @@ onMounted(() => {
         "warning",
       );
     }
-  }, 500);  
+  }, 500);
   document.addEventListener("keydown", handleKeyDown);
   loadArticles();
 });
