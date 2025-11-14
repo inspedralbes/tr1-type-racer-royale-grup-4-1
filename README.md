@@ -32,15 +32,15 @@ Journalism Run! es un juego educativo de mecanografía con una temática period�
 
 ## Estado del Proyecto
 El proyecto se encuentra en fase avanzada de desarrollo con las siguientes características implementadas:
-- ✅ Sistema de usuarios (registro/login)
-- ✅ Mecánicas básicas del juego
-- ✅ Sistema de salas multijugador
-- ✅ Base de datos con artículos en diferentes niveles
-- ✅ Interfaz de usuario completa
-- ✅ Sistema de puntuación y ranking
-- 🚧 Mejoras en la gestión de usuarios
-- 🚧 Optimizaciones de rendimiento
-- 🚧 Despliegue en producción
+-  Sistema de usuarios (registro/login)
+-  Mecánicas básicas del juego
+-  Sistema de salas multijugador
+-  Base de datos con artículos en diferentes niveles
+-  Interfaz de usuario completa
+-  Sistema de puntuación y ranking
+-  Mejoras en la gestión de usuarios
+-  Optimizaciones de rendimiento
+-  Despliegue en producción
 
 ## Instrucciones de Instalación y Desarrollo
 
@@ -73,7 +73,11 @@ npm run dev
 cd backend
 npm install
 ```
+## BBDD
 
+<img width="1114" height="645" alt="BBDD drawio" src="https://github.com/user-attachments/assets/3c0df38e-e205-48f5-b6d7-5448aa410b94" />
+
+##
 El proyecto estará disponible en:
 http://journalismr.daw.inspedralbes.cat/
 
