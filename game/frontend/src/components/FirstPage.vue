@@ -312,7 +312,6 @@ function submitRegister() {
   gap: var(--spacing-xl);
   padding: var(--spacing-xl);
   text-align: center;
-  background: url('@/img/initialbg.png') no-repeat center center/cover;
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-lg);
   position: relative;
