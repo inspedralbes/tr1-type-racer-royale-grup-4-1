@@ -4,18 +4,18 @@ import { ref, computed } from "vue";
 
 export const useGameStore = defineStore("rooms", () => {
   const currentRoom = ref("");
-  const username = ref(localStorage.getItem('username') || "");
-  const userId = ref(localStorage.getItem('userId') || null);
-  const money = ref(parseInt(localStorage.getItem('money')) || 0);
+  const username = ref(localStorage.getItem("username") || "");
+  const userId = ref(localStorage.getItem("userId") || null);
+  const money = ref(parseInt(localStorage.getItem("money")) || 0);
   const manager = new SocketManager();
   manager.connect();
   const roomFull = ref(false);
   const rooms = ref([]);
   const roomScore = ref([]);
-  
+
   // Control de audio global
   const backgroundMusic = ref(null);
-  const musicVolume = ref(parseInt(localStorage.getItem('musicVolume')) || 30);
+  const musicVolume = ref(parseInt(localStorage.getItem("musicVolume")) || 30);
   const clickSound = ref(null);
 
   // Configurar listeners para eventos de socket
@@ -85,51 +85,56 @@ export const useGameStore = defineStore("rooms", () => {
 
   function setUsername(name) {
     username.value = name;
-    localStorage.setItem('username', name);
-    console.log('✅ Username guardado en Pinia y localStorage:', name);
+    localStorage.setItem("username", name);
+    console.log("✅ Username guardado en Pinia y localStorage:", name);
   }
 
   function setUserId(id) {
     userId.value = id;
-    localStorage.setItem('userId', id);
-    console.log('✅ UserId guardado en Pinia y localStorage:', id);
+    localStorage.setItem("userId", id);
+    console.log("✅ UserId guardado en Pinia y localStorage:", id);
   }
 
   function setMoney(amount) {
     money.value = amount;
-    localStorage.setItem('money', amount);
-    console.log('✅ Money guardado en Pinia y localStorage:', amount);
+    localStorage.setItem("money", amount);
+    console.log("✅ Money guardado en Pinia y localStorage:", amount);
   }
 
   async function fetchUserMoney() {
     if (!userId.value) return;
     try {
-      const response = await fetch(`http://localhost:3000/api/get-user-money/${userId.value}`);
+      const response = await fetch(
+        `http:journalismr.daw.inspedralbes.cat${userId.value}`,
+      );
       const data = await response.json();
       if (data.ok) {
         setMoney(data.money);
       }
     } catch (error) {
-      console.error('Error fetching user money:', error);
+      console.error("Error fetching user money:", error);
     }
   }
 
   async function updateMoney(amount) {
     if (!userId.value) return;
     try {
-      const response = await fetch('http://localhost:3000/api/update-user-money', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        "http://journalismr.daw.inspedralbes.cat/api/update-user-money",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: userId.value, amount }),
         },
-        body: JSON.stringify({ userId: userId.value, amount }),
-      });
+      );
       const data = await response.json();
       if (data.ok) {
         setMoney(data.money);
       }
     } catch (error) {
-      console.error('Error updating user money:', error);
+      console.error("Error updating user money:", error);
     }
   }
 
@@ -148,7 +153,7 @@ export const useGameStore = defineStore("rooms", () => {
 
   function setMusicVolume(volume) {
     musicVolume.value = volume;
-    localStorage.setItem('musicVolume', volume);
+    localStorage.setItem("musicVolume", volume);
     if (backgroundMusic.value) {
       backgroundMusic.value.setVolume(volume / 100);
     }
