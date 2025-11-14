@@ -10,8 +10,15 @@
     >
       <i class="fa-solid fa-gear"></i>
     </button>
- 
-    <div v-if="isOpen" class="modal-overlay" @click="gameStore.playClickSound(); isOpen = false">
+
+    <div
+      v-if="isOpen"
+      class="modal-overlay"
+      @click="
+        gameStore.playClickSound();
+        isOpen = false;
+      "
+    >
       <div class="modal-card config-modal" @click.stop>
         <button
           class="btn-icon btn-icon--ghost close-button"
@@ -69,7 +76,7 @@
             {{ uploadMessage }}
           </div>
         </Transition>
-      
+
         <hr class="modal-divider" />
 
         <div class="settings-group">
@@ -128,7 +135,7 @@ const uploadMessageClass = computed(() => {
 const username = computed(() => gameStore.username || "Jugador");
 
 // Imagen por defecto - apunta a la imagen default.png del backend
-const defaultImage = "http://journalismr.daw.inspedralbes.cat:3000/img/default.png";
+const defaultImage = "http://journalismr.daw.inspedralbes.cat/img/default.png";
 
 const profileImage = ref(defaultImage);
 
@@ -154,7 +161,7 @@ const loadUserProfile = () => {
     // Cargar la información del usuario desde el servidor
     const apiUrl =
       import.meta.env.MODE === "development"
-        ? "http://journalsimr.daw.inspedralbes.cat:3000/api/get-user-info"
+        ? "http://journalsimr.daw.inspedralbes.cat/api/get-user-info"
         : "/api/get-user-info";
 
     fetch(`${apiUrl}/${userId.value}`)
@@ -170,7 +177,7 @@ const loadUserProfile = () => {
           if (data.imagePath) {
             const baseUrl =
               import.meta.env.MODE === "development"
-                ? "http://journalsimr.daw.inspedralbes.cat:3000"
+                ? "http://journalsimr.daw.inspedralbes.cat"
                 : "";
             profileImage.value = `${baseUrl}${data.imagePath}`;
             console.log("Imagen de perfil cargada:", profileImage.value);
@@ -253,8 +260,8 @@ const uploadImage = async (file) => {
 
     const apiUrl =
       import.meta.env.MODE === "development"
-        ? "http://journalsimr.daw.inspedralbes.cat:3000/api/upload-profile-image"
-        : "/api/upload-profile-image";
+        ? "http://journalsimr.daw.inspedralbes.cat/api/upload-profile-image"
+        : "http://journalismr.daw.inspedralbes.cat/api/upload-profile-image";
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -268,8 +275,8 @@ const uploadImage = async (file) => {
       // Construir la URL completa de la imagen
       const baseUrl =
         import.meta.env.MODE === "development"
-          ? "http://journalsimr.daw.inspedralbes.cat:3000"
-          : "";
+          ? "http://journalsimr.daw.inspedralbes.cat"
+          : "http://journalsimr.daw.inspedralbes.cat";
       profileImage.value = `${baseUrl}${data.imagePath}`;
       showMessage("✅ Foto actualizada correctamente", "success");
       console.log("Nueva ruta de imagen:", profileImage.value);

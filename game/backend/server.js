@@ -15,6 +15,7 @@ const allowedOrigins = [
   "http://localhost:5173", // Vite dev server
   "http://localhost", // nginx local
   "http://127.0.0.1", // alternative localhost
+  "http://journalismr.daw.inspedralbes.cat", //Alternative prod
 ];
 
 const corsOptions = {
@@ -1078,7 +1079,7 @@ app.get("/api/get-user-info/:userId", (req, res) => {
     res.json({
       ok: true,
       username: payload.username,
-      imagePath: payload.img,
+      imagePath: `http://journalism.daw.inspedralbes.cat` + payload.img,
       money: payload.money,
     });
   });
