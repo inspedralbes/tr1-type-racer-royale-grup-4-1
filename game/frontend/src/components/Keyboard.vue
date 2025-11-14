@@ -37,7 +37,7 @@ watch(
 </script>
 <style scoped>
 .keyboard-grid {
-  margin-top: -50vh;
+  
   padding-top: 2rem;
 }
 

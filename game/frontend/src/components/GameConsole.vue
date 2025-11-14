@@ -6,7 +6,7 @@
         <span>Game Console</span>
       </div>
       <div class="console-controls">
-        <button @click="clearConsole" class="clear-btn" title="Limpiar consola">
+        <button @click="gameStore.playClickSound(); clearConsole()" class="clear-btn" title="Limpiar consola">
           <i class="fa-solid fa-trash"></i>
         </button>
       </div>
@@ -32,6 +32,9 @@
 
 <script setup>
 import { ref, nextTick, watch } from 'vue';
+import { useGameStore } from '../stores/gameStore';
+
+const gameStore = useGameStore();
 
 const props = defineProps({
   maxMessages: {
@@ -90,12 +93,13 @@ defineExpose({
 <style scoped>
 .game-console {
   width: 100%;
-  background: #1a1a1a;
-  border: 2px solid var(--color-primary);
-  border-radius: var(--radius-lg);
+  background: var(--console-bg);
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  font-family: 'Courier New', monospace;
   box-shadow: var(--shadow-md);
+  border: 3px solid var(--color-primary);
+  font-family: 'Onest', sans-serif;
+  margin-top: var(--spacing-md);
 }
 
 .console-header {
@@ -113,6 +117,8 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08rem;
 }
 
 .console-title i {
@@ -126,28 +132,32 @@ defineExpose({
 
 .clear-btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   color: var(--text-white);
-  padding: 0.25rem 0.5rem;
+  padding: 0.3rem 0.7rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
   transition: all var(--transition-base);
 }
 
 .clear-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 .console-body {
-  background: #1a1a1a;
-  color: #00ff00;
+  background: var(--console-body-bg);
+  color: var(--console-text);
   padding: var(--spacing-md);
   height: 200px;
   overflow-y: auto;
   font-size: 0.85rem;
-  line-height: 1.4;
+  line-height: 1.5;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) color-mix(in srgb, var(--bg-card) 85%, transparent 15%);
 }
 
 .console-body::-webkit-scrollbar {
@@ -155,7 +165,7 @@ defineExpose({
 }
 
 .console-body::-webkit-scrollbar-track {
-  background: #2a2a2a;
+  background: color-mix(in srgb, var(--bg-card) 85%, transparent 15%);
 }
 
 .console-body::-webkit-scrollbar-thumb {
@@ -169,7 +179,8 @@ defineExpose({
 
 .console-message {
   display: flex;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.3rem;
+  padding: 0.2rem 0;
   animation: fadeIn 0.3s ease-in;
 }
 
@@ -185,10 +196,12 @@ defineExpose({
 }
 
 .timestamp {
-  color: #888;
+  color: var(--console-muted);
   margin-right: var(--spacing-sm);
   flex-shrink: 0;
   min-width: 70px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
 }
 
 .message-content {
@@ -198,27 +211,27 @@ defineExpose({
 
 /* Tipos de mensajes */
 .console-message.info .message-content {
-  color: #00ff00;
+  color: var(--console-info);
 }
 
 .console-message.warning .message-content {
-  color: #ffaa00;
+  color: var(--console-warning);
 }
 
 .console-message.error .message-content {
-  color: #ff4444;
+  color: var(--console-error);
 }
 
 .console-message.success .message-content {
-  color: #44ff44;
+  color: var(--console-success);
 }
 
 .console-message.milestone .message-content {
-  color: #00aaff;
+  color: var(--console-milestone);
 }
 
 .console-empty {
-  color: #666;
+  color: var(--console-muted);
   font-style: italic;
   display: flex;
   align-items: center;
@@ -237,7 +250,7 @@ defineExpose({
 
 @keyframes errorPulse {
   0% { background: transparent; }
-  50% { background: rgba(255, 68, 68, 0.1); }
+  50% { background: color-mix(in srgb, var(--color-danger) 15%, transparent 85%); }
   100% { background: transparent; }
 }
 
@@ -247,7 +260,7 @@ defineExpose({
 
 @keyframes milestonePulse {
   0% { background: transparent; }
-  50% { background: rgba(0, 170, 255, 0.1); }
+  50% { background: color-mix(in srgb, var(--color-secondary) 20%, transparent 80%); }
   100% { background: transparent; }
 }
 </style>

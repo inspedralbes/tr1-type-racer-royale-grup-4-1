@@ -39,11 +39,10 @@ const props = defineProps({
 const emit = defineEmits(['home']);
 
 const gameStore = useGameStore();
-
-function handleHome() {
+const handleHome = () => {
   gameStore.playClickSound();
   emit('home');
-}
+};
 </script>
 
 <style scoped>

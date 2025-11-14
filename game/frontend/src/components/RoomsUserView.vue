@@ -35,8 +35,7 @@
             </div>
             <div class="sala-playercount player-column">
               <span class="player-count"
-                >{{ sala.jugadores }}/{{ maxJugadoresPorSala }}</span
-              >
+                >{{ sala.jugadores }}/{{ sala.maxPlayers }}</span>  <!-- ← MODIFICADO -->
             </div>
           </div>
         </button>
@@ -73,7 +72,8 @@ const salasFiltradas = computed(() =>
       id: sala.name,
       nombre: sala.name,
       jugadores: sala.players.length,
-      isFull: sala.players.length >= maxJugadoresPorSala.value,
+      maxPlayers: sala.maxPlayers || 4,
+      isFull: sala.players.length >= (sala.maxPlayers || 4),
       gameMode: sala.gameMode || 'normal',
     })),
 );
@@ -165,16 +165,6 @@ onUnmounted(() => {
   gap: var(--spacing-xl);
   overflow: hidden;
   background-color: var(--color-secondary);
-}
-
-/* Decorative background image */
-.bg-image {
-  position: absolute;
-  height: 100%;
-  left: 70%;
-  opacity: 0.2;
-  pointer-events: none;
-  z-index: 0;
 }
 
 /* Title section */
@@ -276,12 +266,6 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.sala-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
 .sala-info-left {
   display: flex;
   flex-direction: column;
@@ -305,11 +289,6 @@ onUnmounted(() => {
   letter-spacing: 0.5px;
   box-shadow: var(--shadow-sm);
   width: fit-content;
-}
-
-.sala-capacidad {
-  font-size: 1rem;
-  color: var(--text-muted);
 }
 
 .player-column {
