@@ -1,11 +1,12 @@
 <template>
-  <EliminatedScreen v-if="isEliminated" :eliminationReason="eliminationReason" @back="handleBack" />
-  <div v-else class="game-engine">
-    <button class="back-button" aria-label="Volver" @click="handleBack">
-      <i class="fa-solid fa-house"></i>
-    </button>
+  <div class="game-engine-wrapper">
+    <EliminatedScreen
+      v-if="isEliminated"
+      :eliminationReason="eliminationReason"
+      @back="handleBack"
+    />
 
-    <div class="container">
+    <div v-else class="game-engine">
       <div v-if="gameState.isLoading" class="loading">
         <p>Cargando artículos...</p>
       </div>
@@ -46,15 +47,16 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Game Console -->
             <div class="console-container">
               <GameConsole ref="gameConsole" :maxMessages="30" />
             </div>
           </div>
-          <!-- Text Display Section -->
-          <div v-if="!allCompleted" class="full-text-container">
-            <div class="text-display card-paper">
+
+          <!-- Typing Section -->
+          <div class="typing-area">
+            <div v-if="!allCompleted" class="text-display card-paper">
               <span
                 v-for="(letter, i) in currentArticle.inputText"
                 :key="'input-' + i"
@@ -64,17 +66,19 @@
               </span>
               <span class="remaining-text">{{ remainingText }}</span>
             </div>
-          </div>
 
-          <div v-else class="game-completed card-paper">
-            <h2>¡Todos los artículos completados!</h2>
-            <p>
-              Excelente trabajo, periodista. Has terminado todas las sesiones.
-            </p>
+            <div v-else class="game-completed card-paper">
+              <h2>¡Todos los artículos completados!</h2>
+              <p>
+                Excelente trabajo, periodista. Has terminado todas las sesiones.
+              </p>
+            </div>
+
+            <Keyboard class="typing-keyboard" :activeKey="activeKeyHighlight" />
           </div>
 
           <!-- Scoreboard Section -->
-          <div class="scoreboard card-paper">
+          <div class="scoreboard card-paper scoreboard--right">
             <h3 class="scoreboard-title">Room progress</h3>
             <div class="scoreboard-content">
               <div
@@ -118,6 +122,11 @@
         </div>
       </template>
     </div>
+
+    <div v-if="gameStore.userId" class="game-money">
+      <div class="money-icon">💰</div>
+      <div class="money-value">{{ formattedMoney }} $</div>
+    </div>
   </div>
 </template>
 
@@ -127,15 +136,79 @@ import { useGameStore } from "../stores/gameStore";
 import GameNotification from "./GameNotification.vue";
 import EliminatedScreen from "./EliminatedScreen.vue";
 import GameConsole from "./GameConsole.vue";
+import Keyboard from "./Keyboard.vue";
+import { useSoundEffect } from "../composables/useSoundEffect.js";
 
-const emit = defineEmits(["activeKey", "back"]);
+const emit = defineEmits(["back", "showPodium"]);
 const gameStore = useGameStore();
+
+// Initialize keyboard sound pool for simultaneous sounds
+const keyboardSoundPool = ref([]);
+const poolSize = 5; // Number of simultaneous sounds allowed
+
+function initKeyboardSoundPool() {
+  keyboardSoundPool.value = [];
+  for (let i = 0; i < poolSize; i++) {
+    const sound = useSoundEffect('/music/tecla.mp3', {
+      volume: 0.3
+    });
+    sound.init();
+    keyboardSoundPool.value.push(sound);
+  }
+}
+
+let currentSoundIndex = 0;
+function playKeyboardSound() {
+  const sound = keyboardSoundPool.value[currentSoundIndex];
+  if (sound) {
+    sound.play();
+    currentSoundIndex = (currentSoundIndex + 1) % poolSize;
+  }
+}
+
+// Initialize error sound pool for simultaneous error sounds
+const errorSoundPool = ref([]);
+const errorPoolSize = 3; // Number of simultaneous error sounds allowed
+
+function initErrorSoundPool() {
+  errorSoundPool.value = [];
+  for (let i = 0; i < errorPoolSize; i++) {
+    const sound = useSoundEffect('/music/error.mp3', {
+      volume: 0.4
+    });
+    sound.init();
+    errorSoundPool.value.push(sound);
+  }
+}
+
+let currentErrorSoundIndex = 0;
+function playErrorSound() {
+  const sound = errorSoundPool.value[currentErrorSoundIndex];
+  if (sound) {
+    sound.play();
+    currentErrorSoundIndex = (currentErrorSoundIndex + 1) % errorPoolSize;
+  }
+}
+
+// Initialize single sound effects
+const paragraphCompleteSound = useSoundEffect('/music/siguienteTexto.mp3', {
+  volume: 0.5
+});
+
+const gameEndSound = useSoundEffect('/music/finalPartida.mp3', {
+  volume: 0.6
+});
+
+function initSingleSounds() {
+  paragraphCompleteSound.init();
+  gameEndSound.init();
+}
 
 // Console reference
 const gameConsole = ref(null);
 
 // Function to add messages to console
-function addConsoleMessage(message, type = 'info') {
+function addConsoleMessage(message, type = "info") {
   if (gameConsole.value) {
     gameConsole.value.addMessage(message, type);
   }
@@ -153,28 +226,35 @@ const gameState = ref({
   completedArticles: 0,
 });
 
+const activeKeyHighlight = ref("");
+const formattedMoney = computed(() => gameStore.money.toLocaleString());
+
 // Track if player is eliminated (for sudden death mode)
 const isEliminated = ref(false);
-const eliminationReason = ref('error'); // 'error' or 'timeout'
+const eliminationReason = ref("error"); // 'error' or 'timeout'
 
 // Store game mode locally
-const gameMode = ref('normal');
+const gameMode = ref("normal");
 
 // Get current room's game mode
 const currentRoomData = computed(() => {
-  return gameStore.rooms.find(r => r.name === gameStore.currentRoom);
+  return gameStore.rooms.find((r) => r.name === gameStore.currentRoom);
 });
 
 // Watch for room data changes to update game mode
-watch(currentRoomData, (newRoom) => {
-  if (newRoom?.gameMode) {
-    gameMode.value = newRoom.gameMode;
-    console.log('🎮 Modo de juego detectado:', gameMode.value);
-  }
-}, { immediate: true });
+watch(
+  currentRoomData,
+  (newRoom) => {
+    if (newRoom?.gameMode) {
+      gameMode.value = newRoom.gameMode;
+      console.log("🎮 Modo de juego detectado:", gameMode.value);
+    }
+  },
+  { immediate: true },
+);
 
 // Timer state
-const timeRemaining = ref(180); // 120 seconds (2 minutes)
+const timeRemaining = ref(180);
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {
@@ -195,41 +275,44 @@ function startCountdown() {
   timerInterval.value = setInterval(() => {
     if (timeRemaining.value > 0) {
       timeRemaining.value--;
-      
+
       // Avisos de tiempo restante
       if (timeRemaining.value === 60) {
-        addConsoleMessage('⏰ ¡Queda 1 minuto!', 'warning');
+        addConsoleMessage("⏰ ¡Queda 1 minuto!", "warning");
       } else if (timeRemaining.value === 30) {
-        addConsoleMessage('⚠️ ¡Solo quedan 30 segundos!', 'warning');
+        addConsoleMessage("⚠️ ¡Solo quedan 30 segundos!", "warning");
       } else if (timeRemaining.value === 10) {
-        addConsoleMessage('🚨 ¡10 segundos restantes!', 'error');
+        addConsoleMessage("🚨 ¡10 segundos restantes!", "error");
       }
     } else {
       clearInterval(timerInterval.value);
-      addConsoleMessage('⏰ ¡Tiempo agotado!', 'error');
+      addConsoleMessage("⏰ ¡Tiempo agotado!", "error");
       handleTimeout();
     }
   }, 1000);
 }
 
 function handleTimeout() {
-  console.log("Time's up!");
+  console.log("⏰ GameEngine: Time's up! Modo de juego:", gameMode.value);
   
   // En modo muerte súbita, el tiempo agotado significa eliminación
-  if (gameMode.value === 'muerte-subita') {
-    console.log('💀 Tiempo agotado en modo Muerte Súbita - Eliminando jugador');
-    addConsoleMessage('💀 ¡ELIMINADO! Tiempo agotado en modo Muerte Súbita', 'error');
+  if (gameMode.value === "muerte-subita") {
+    console.log("💀 Tiempo agotado en modo Muerte Súbita - Eliminando jugador");
+    addConsoleMessage(
+      "💀 ¡ELIMINADO! Tiempo agotado en modo Muerte Súbita",
+      "error",
+    );
     isEliminated.value = true;
-    eliminationReason.value = 'timeout';
-    
+    eliminationReason.value = "timeout";
+
     // Notificar al servidor sobre la eliminación por tiempo
     gameStore.manager.emit("playerError", {
       errorCount: 1,
-      reason: "timeout"
+      reason: "timeout",
     });
     return;
   }
-  
+
   // Send final results to server (solo en modo normal)
   const finalResults = {
     username: gameStore.username,
@@ -238,7 +321,9 @@ function handleTimeout() {
     progress: Math.round(overallProgress.value),
   };
 
+  console.log("🎯 GameEngine: Enviando gameEnded al servidor:", finalResults);
   gameStore.manager.emit("gameEnded", finalResults);
+  addConsoleMessage('📊 Enviando resultados finales al servidor...', 'info');
 }
 const currentArticle = computed(() => {
   return (
@@ -327,43 +412,29 @@ function handleTextInput() {
   const article = currentArticle.value;
   if (!article) return;
 
-  // Track errors as before
-  const target = article.text;
   const newValue = article.inputText;
-  const oldValue = newValue.slice(0, -1);
 
-  if (newValue.length > oldValue.length) {
-    const lastIndex = newValue.length - 1;
-    const typedChar = newValue[lastIndex];
-    const targetChar = target[lastIndex];
-    if (typedChar && typedChar !== targetChar) {
-      gameState.value.totalErrors++;
-      if (gameState.value.totalErrors % 3 === 0) {
-        gameStore.manager.emit("playerError", {
-          errorCount: gameState.value.totalErrors,
-        });
-      }
-    }
+  // Calcular porcentaje del artículo actual basado en caracteres escritos
+  const currentPercent = Math.round(
+    (newValue.length / article.text.length) * 100,
+  );
 
-    const currentPercent = Math.round((newValue.length / target.length) * 100);
+  if (currentPercent < 100) {
+    gameStore.manager.emit("updateProgress", {
+      progress: currentPercent,
+    });
+  }
 
-    if (currentPercent < 100) {
-      gameStore.manager.emit("updateProgress", {
-        progress: currentPercent,
-      });
-    }
-
-    const milestones = [25, 50, 75, 100];
-    if (
-      milestones.includes(currentPercent) &&
-      !notifiedMilestones.value.has(currentPercent)
-    ) {
-      notifiedMilestones.value.add(currentPercent);
-      gameStore.manager.emit("playerMilestone", {
-        percent: currentPercent,
-        articleNumber: gameState.value.currentIndex + 1,
-      });
-    }
+  const milestones = [25, 50, 75, 100];
+  if (
+    milestones.includes(currentPercent) &&
+    !notifiedMilestones.value.has(currentPercent)
+  ) {
+    notifiedMilestones.value.add(currentPercent);
+    gameStore.manager.emit("playerMilestone", {
+      percent: currentPercent,
+      articleNumber: gameState.value.currentIndex + 1,
+    });
   }
 
   // ✅ Complete article when typed length reaches target length, ignoring mistakes
@@ -377,6 +448,9 @@ function completeArticle(timeTaken) {
   const article = currentArticle.value;
   article.completed = true;
   gameState.value.completedArticles++;
+
+  // Play paragraph completion sound
+  paragraphCompleteSound.play();
 
   const userResults = {
     username: gameStore.username,
@@ -427,19 +501,33 @@ watch(
         gameState.value.totalErrors++;
         console.log(`❌ Error detectado! Total errores: ${gameState.value.totalErrors}, Modo: ${gameMode.value}`);
         
-        // Agregar mensaje de error a la consola
-        addConsoleMessage(`❌ Error detectado! Total: ${gameState.value.totalErrors}`, 'error');
+        // Play error sound
+        playErrorSound();
         
+        // Agregar mensaje de error a la consola
+        addConsoleMessage(
+          `❌ Error detectado! Total: ${gameState.value.totalErrors}`,
+          "error",
+        );
+
         // Si es modo muerte súbita y es el primer error, eliminar al jugador
-        if (gameMode.value === 'muerte-subita' && gameState.value.totalErrors === 1) {
-          console.log('💀 Activando eliminación por modo Muerte Súbita');
-          addConsoleMessage('💀 ¡ELIMINADO! Error en modo Muerte Súbita', 'error');
+        if (
+          gameMode.value === "muerte-subita" &&
+          gameState.value.totalErrors === 1
+        ) {
+          console.log("💀 Activando eliminación por modo Muerte Súbita");
+          addConsoleMessage(
+            "💀 ¡ELIMINADO! Error en modo Muerte Súbita",
+            "error",
+          );
           handleSuddenDeathElimination();
           return;
         }
-        
+
         // Notificar a toda la sala cada 3 errores
         if (gameState.value.totalErrors % 3 === 0) {
+          // Agregar mensaje de error a la consola solo cada 3 errores
+          //addConsoleMessage(`❌ Error detectado! Total: ${gameState.value.totalErrors}`, 'error');
           gameStore.manager.emit("playerError", {
             errorCount: gameState.value.totalErrors,
           });
@@ -467,14 +555,20 @@ watch(
         !notifiedMilestones.value.has(currentPercent)
       ) {
         notifiedMilestones.value.add(currentPercent);
-        
+
         // Agregar mensaje de milestone a la consola
         if (currentPercent === 100) {
-          addConsoleMessage(`🎉 ¡Artículo ${gameState.value.currentIndex + 1} completado!`, 'success');
+          addConsoleMessage(
+            `🎉 ¡Artículo ${gameState.value.currentIndex + 1} completado!`,
+            "success",
+          );
         } else {
-          addConsoleMessage(`🎯 ${currentPercent}% del artículo ${gameState.value.currentIndex + 1} completado`, 'milestone');
+          addConsoleMessage(
+            `🎯 ${currentPercent}% del artículo ${gameState.value.currentIndex + 1} completado`,
+            "milestone",
+          );
         }
-        
+
         // Emitir evento al backend para que notifique a toda la sala
         gameStore.manager.emit("playerMilestone", {
           percent: currentPercent,
@@ -487,20 +581,20 @@ watch(
 
 function handleSuddenDeathElimination() {
   isEliminated.value = true;
-  eliminationReason.value = 'error';
-  
+  eliminationReason.value = "error";
+
   // Detener el temporizador
   if (timerInterval.value) {
     clearInterval(timerInterval.value);
   }
-  
+
   // Agregar mensaje a la consola
-  addConsoleMessage('💀 Has sido eliminado del juego', 'error');
-  
+  addConsoleMessage("💀 Has sido eliminado del juego", "error");
+
   // Notificar al servidor sobre la eliminación
   gameStore.manager.emit("playerError", {
     errorCount: 1,
-    reason: "error"
+    reason: "error",
   });
 }
 
@@ -509,6 +603,8 @@ function handleKeyDown(event) {
   if (!article || article.completed) return;
 
   if (event.key === "Backspace") {
+    // Play keyboard sound for backspace
+    playKeyboardSound();
     article.inputText = article.inputText.slice(0, -1);
   } else if (event.key.length === 1) {
     // Validación para limitar espacios consecutivos
@@ -523,10 +619,12 @@ function handleKeyDown(event) {
       }
     }
 
+    // Play keyboard sound for valid character input
+    playKeyboardSound();
     article.inputText += event.key;
     startTimer();
     handleTextInput();
-    emit("activeKey", event.key);
+    activeKeyHighlight.value = event.key.toLowerCase();
   }
 }
 
@@ -568,12 +666,12 @@ gameStore.manager.on("playerMilestone", (data) => {
   if (data.percent === 100) {
     addConsoleMessage(
       `📄 ${data.username} ha completado el artículo ${data.articleNumber}`,
-      'success'
+      "success",
     );
   } else {
     addConsoleMessage(
       `🎯 ${data.username} ha alcanzado el ${data.percent}% del artículo ${data.articleNumber}`,
-      'milestone'
+      "milestone",
     );
   }
 });
@@ -581,18 +679,18 @@ gameStore.manager.on("playerMilestone", (data) => {
 gameStore.manager.on("playerError", (data) => {
   addConsoleMessage(
     `⚠️ ${data.username} lleva ${data.errorCount} errores`,
-    'warning'
+    "warning",
   );
 });
 
 // Escuchar evento de eliminación del servidor
 gameStore.manager.on("eliminatedFromGame", (data) => {
-  console.log('💀 Servidor confirmó eliminación:', data);
+  console.log("💀 Servidor confirmó eliminación:", data);
   isEliminated.value = true;
-  
+
   // Agregar mensaje a la consola
-  addConsoleMessage('💀 Eliminación confirmada por el servidor', 'error');
-  
+  addConsoleMessage("💀 Eliminación confirmada por el servidor", "error");
+
   // Detener el temporizador
   if (timerInterval.value) {
     clearInterval(timerInterval.value);
@@ -601,32 +699,51 @@ gameStore.manager.on("eliminatedFromGame", (data) => {
 
 // Escuchar cuando otro jugador es eliminado
 gameStore.manager.on("playerEliminated", (data) => {
-  addConsoleMessage(`💀 ${data.username} ha sido eliminado`, 'error');
+  addConsoleMessage(`💀 ${data.username} ha sido eliminado`, "error");
+});
+
+// Escuchar cuando el juego termina para reproducir sonido y notificar al padre
+gameStore.manager.on("showPodium", (data) => {
+  console.log('🎉 GameEngine: Evento showPodium recibido, reproduciendo sonido y emitiendo a App.vue');
+  gameEndSound.play();
+  addConsoleMessage('🎉 ¡Juego terminado! Dirigiéndose al podio...', 'success');
+  
+  // Emitir evento al componente padre (App.vue) para manejar la navegación
+  emit('showPodium', data);
 });
 
 
 onMounted(() => {
+  // Initialize all sound systems
+  initKeyboardSoundPool();
+  initErrorSoundPool();
+  initSingleSounds();
+  
   document.addEventListener("keydown", handleKeyDown);
-  
+
   // Debug: Verificar datos de la sala al montar
-  console.log('🔍 GameEngine montado');
-  console.log('🔍 Sala actual:', gameStore.currentRoom);
-  console.log('🔍 Todas las salas:', gameStore.rooms);
-  const currentRoom = gameStore.rooms.find(r => r.name === gameStore.currentRoom);
-  console.log('🔍 Datos de sala actual:', currentRoom);
+  console.log("🔍 GameEngine montado");
+  console.log("🔍 Sala actual:", gameStore.currentRoom);
+  console.log("🔍 Todas las salas:", gameStore.rooms);
+  const currentRoom = gameStore.rooms.find(
+    (r) => r.name === gameStore.currentRoom,
+  );
+  console.log("🔍 Datos de sala actual:", currentRoom);
   if (currentRoom) {
-    gameMode.value = currentRoom.gameMode || 'normal';
-    console.log('🎮 Modo de juego inicial:', gameMode.value);
+    gameMode.value = currentRoom.gameMode || "normal";
+    console.log("🎮 Modo de juego inicial:", gameMode.value);
   }
-  
+
   // Mensaje inicial en la consola
   setTimeout(() => {
-    addConsoleMessage('🎮 Juego iniciado. ¡Buena suerte!', 'info');
-    if (gameMode.value === 'muerte-subita') {
-      addConsoleMessage('💀 Modo Muerte Súbita activado - ¡Cuidado con los errores!', 'warning');
+    addConsoleMessage("🎮 Juego iniciado. ¡Buena suerte!", "info");
+    if (gameMode.value === "muerte-subita") {
+      addConsoleMessage(
+        "💀 Modo Muerte Súbita activado - ¡Cuidado con los errores!",
+        "warning",
+      );
     }
-  }, 500);
-  
+  }, 500);  
   document.addEventListener("keydown", handleKeyDown);
   loadArticles();
 });
@@ -636,63 +753,78 @@ onBeforeUnmount(() => {
   gameStore.manager.off("articlesData");
   gameStore.manager.off("playerMilestone");
   gameStore.manager.off("playerError");
+  gameStore.manager.off("eliminatedFromGame");
+  gameStore.manager.off("playerEliminated");
+  gameStore.manager.off("showPodium");
   //Cleanup after timer is over
   if (timerInterval.value) {
     clearInterval(timerInterval.value);
   }
 });
-
 </script>
 
 <style scoped>
-.game-engine {
+.game-engine-wrapper {
   position: relative;
   min-height: 100vh;
   background: var(--color-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-2xl) var(--spacing-xl);
 }
 
-.back-button {
-  position: absolute;
-  top: var(--spacing-xl);
-  left: var(--spacing-xl);
-  z-index: 20;
-}
-
-.container {
+.game-engine {
+  background: var(--color-secondary);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
   align-items: center;
-  width: 100%;
+  justify-content: center;
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  box-sizing: border-box;
 }
 
 .game-layout {
   display: flex;
   gap: var(--spacing-xl);
-  width: min(1400px, 94vw);
+  width: min(1200px, 92vw);
   align-items: flex-start;
   justify-content: center;
+  padding: var(--spacing-md);
+  box-sizing: border-box;
 }
 
-.full-text-container {
-  flex: 1;
+.typing-area {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+}
+
+.typing-area .card-paper {
+  width: 100%;
+  padding: var(--spacing-lg);
+}
+
+.typing-keyboard {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  margin-left: calc(var(--spacing-md) * 0.5);
+  margin-right: auto;
 }
 
 .text-display {
-  font-size: clamp(1.2rem, 2vw, 2rem);
-  line-height: 1.6;
+  font-size: clamp(1rem, 1.8vw, 1.6rem);
+  line-height: 1.5;
   word-wrap: break-word;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg);
   border-radius: var(--radius-xl);
   border: 2px solid var(--color-primary);
   background: var(--bg-card);
   box-shadow: var(--shadow-md);
-  min-height: 120px;
-  max-height: 500px;
+  min-height: 110px;
+  max-height: 420px;
   overflow-y: auto;
   color: var(--color-primary);
 }
@@ -735,7 +867,9 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
 .timer-container.timer-warning {
@@ -791,14 +925,23 @@ onBeforeUnmount(() => {
   }
 }
 
+.scoreboard.card-paper,
+.user-scoreboard.card-paper {
+  padding: var(--spacing-lg);
+}
+
+.scoreboard--right {
+  margin-left: var(--spacing-xl);
+}
+
 .scoreboard {
-  width: clamp(240px, 22vw, 280px);
+  width: clamp(220px, 20vw, 250px);
   flex-shrink: 0;
 }
 
 .scoreboard-title {
   margin: 0 0 var(--spacing-md) 0;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: var(--font-weight-bold);
   text-align: center;
   color: var(--color-primary);
@@ -815,13 +958,23 @@ onBeforeUnmount(() => {
 .player-entry {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
-  border: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent 75%);
+  gap: var(--spacing-xs);
+  border: 2px solid
+    color-mix(in srgb, var(--color-primary) 25%, transparent 75%);
+  padding: var(--spacing-sm) var(--spacing-md);
 }
 
 .player-entry.is-leader {
-  background: color-mix(in srgb, var(--color-secondary) 65%, var(--bg-card) 35%);
-  border-color: color-mix(in srgb, var(--color-secondary) 55%, var(--color-primary) 45%);
+  background: color-mix(
+    in srgb,
+    var(--color-secondary) 65%,
+    var(--bg-card) 35%
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--color-secondary) 55%,
+    var(--color-primary) 45%
+  );
   box-shadow: var(--shadow-md);
 }
 
@@ -869,7 +1022,8 @@ onBeforeUnmount(() => {
   height: 24px;
   overflow: hidden;
   position: relative;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent 80%);
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 20%, transparent 80%);
 }
 
 .progress-bar-fill {
@@ -890,15 +1044,39 @@ onBeforeUnmount(() => {
   font-size: 1rem;
 }
 
+.game-money {
+  position: absolute;
+  right: 7.5vw;
+  bottom: 15vh;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--color-primary);
+  color: var(--text-white);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 3px solid var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.game-money .money-icon {
+  font-size: 1.6rem;
+}
+
+.game-money .money-value {
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-bold);
+}
+
 .user-scoreboard {
-  width: clamp(240px, 22vw, 280px);
+  width: clamp(220px, 20vw, 250px);
   flex-shrink: 0;
   align-self: flex-start;
 }
 
 .user-scoreboard-title {
   margin: 0 0 var(--spacing-md) 0;
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   font-weight: var(--font-weight-bold);
   text-align: center;
   color: var(--color-primary);
@@ -947,18 +1125,12 @@ onBeforeUnmount(() => {
   }
 
   .user-scoreboard,
-  .scoreboard,
-  .full-text-container {
+  .scoreboard {
     width: min(640px, 95vw);
   }
 }
 
 @media (max-width: 768px) {
-  .back-button {
-    top: var(--spacing-lg);
-    left: var(--spacing-lg);
-  }
-
   .text-display {
     font-size: 1.2rem;
     padding: var(--spacing-lg);
