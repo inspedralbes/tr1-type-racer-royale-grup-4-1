@@ -1,51 +1,44 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: backend
     env_file:
       - ./.env
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
+    expose:
+      - "3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
-      - DB_HOST=${DB_HOST}
+      - DB_HOST=db
       - DB_NAME=${DB_NAME}
-    command: nodemon server.js
+    command: node server.js
     depends_on:
       - db
-      - frontend
+    restart: unless-stopped
 
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development
-    command: npm run dev -- --host 0.0.0.0
-    depends_on:
-      - db
   db:
     image: mysql:8.0
+    container_name: db
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASS}
-      MYSQL_ROOT_PASSWORD: jMw3XxsM
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT}
     volumes:
-      - ./db/db_init:/docker-entrypoint-initdb.d
+      - ./db/db_init:/docker-entrypoint-initdb.d # MySQL will run all scripts here at first startup
       - ./db/db_data:/var/lib/mysql
-  adminer:
-    image: adminer
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
     ports:
-      - "8081:8080"
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
-      - db
+      - backend
+    restart: unless-stopped

@@ -3,23 +3,47 @@
     <button
       class="btn-icon config-trigger"
       aria-label="Configuración"
-      @click="gameStore.playClickSound(); isOpen = true"
+      @click="
+        gameStore.playClickSound();
+        isOpen = true;
+      "
     >
       <i class="fa-solid fa-gear"></i>
     </button>
- 
-    <div v-if="isOpen" class="modal-overlay" @click="gameStore.playClickSound(); isOpen = false">
+
+    <div
+      v-if="isOpen"
+      class="modal-overlay"
+      @click="
+        gameStore.playClickSound();
+        isOpen = false;
+      "
+    >
       <div class="modal-card config-modal" @click.stop>
-        <button class="btn-icon btn-icon--ghost close-button" @click="gameStore.playClickSound(); isOpen = false">
+        <button
+          class="btn-icon btn-icon--ghost close-button"
+          @click="
+            gameStore.playClickSound();
+            isOpen = false;
+          "
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
 
         <div class="modal-header">
           <h3 class="modal-heading">Configuració d'usuari</h3>
-          <p class="modal-subheading">Actualitza la teva credencial i ajusta l'experiència de la redacció.</p>
+          <p class="modal-subheading">
+            Actualitza la teva credencial i ajusta l'experiència de la redacció.
+          </p>
         </div>
 
-        <div class="profile-block badge-surface" @click="gameStore.playClickSound(); openFileSelector()">
+        <div
+          class="profile-block badge-surface"
+          @click="
+            gameStore.playClickSound();
+            openFileSelector();
+          "
+        >
           <div class="profile-image">
             <img :src="profileImage" alt="Usuari" />
           </div>
@@ -28,7 +52,9 @@
               <i class="fa-solid fa-camera"></i>
               Actualitzar foto
             </span>
-            <span class="profile-name" :title="username || 'Jugador'">{{ username || 'Jugador' }}</span>
+            <span class="profile-name" :title="username || 'Jugador'">{{
+              username || "Jugador"
+            }}</span>
           </div>
 
           <div v-if="isUploading" class="profile-loading">
@@ -37,10 +63,10 @@
           </div>
         </div>
 
-        <input 
-          type="file" 
-          ref="fileInput" 
-          @change="handleFileSelect" 
+        <input
+          type="file"
+          ref="fileInput"
+          @change="handleFileSelect"
           accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
           style="display: none"
         />
@@ -50,7 +76,7 @@
             {{ uploadMessage }}
           </div>
         </Transition>
-      
+
         <hr class="modal-divider" />
 
         <div class="settings-group">
@@ -59,7 +85,14 @@
           <div class="control-row">
             <label for="volume-control">Volum principal</label>
             <div class="slider-wrapper">
-              <input id="volume-control" type="range" v-model="volume" @input="changeVolume" min="0" max="100" />
+              <input
+                id="volume-control"
+                type="range"
+                v-model="volume"
+                @input="changeVolume"
+                min="0"
+                max="100"
+              />
               <span class="slider-value">{{ volume }}%</span>
             </div>
           </div>
@@ -79,8 +112,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
-import { useGameStore } from '../stores/gameStore';
+import { ref, onMounted, computed, watch } from "vue";
+import { useGameStore } from "../stores/gameStore";
 
 const gameStore = useGameStore();
 
@@ -89,18 +122,20 @@ const isDarkMode = ref(false);
 const volume = ref(gameStore.musicVolume);
 const fileInput = ref(null);
 const isUploading = ref(false);
-const uploadMessage = ref('');
-const uploadMessageType = ref('success');
+const uploadMessage = ref("");
+const uploadMessageType = ref("success");
 
 const uploadMessageClass = computed(() => {
-  return uploadMessageType.value === 'error' ? 'toast--error' : 'toast--success';
+  return uploadMessageType.value === "error"
+    ? "toast--error"
+    : "toast--success";
 });
 
 // Obtener username del Pinia store
-const username = computed(() => gameStore.username || 'Jugador');
+const username = computed(() => gameStore.username || "Jugador");
 
 // Imagen por defecto - apunta a la imagen default.png del backend
-const defaultImage = "http://localhost:3000/img/default.png";
+const defaultImage = "http://journalismr.daw.inspedralbes.cat/img/default.png";
 
 const profileImage = ref(defaultImage);
 
@@ -119,7 +154,7 @@ onMounted(() => {
 
 // Watch para recargar la imagen cuando cambie el userId
 watch(userId, (newUserId) => {
-  console.log('UserId cambió a:', newUserId);
+  console.log("UserId cambió a:", newUserId);
   if (newUserId) {
     profileImage.value = defaultImage; // Reset a imagen por defecto
     loadUserProfile();
@@ -128,12 +163,17 @@ watch(userId, (newUserId) => {
 
 const loadUserProfile = () => {
   if (userId.value) {
-    console.log('Cargando perfil de usuario para userId:', userId.value);
+    console.log("Cargando perfil de usuario para userId:", userId.value);
     // Cargar la información del usuario desde el servidor
-    fetch(`http://localhost:3000/api/get-user-info/${userId.value}`)
-      .then(response => response.json())
-      .then(data => {
-        console.log('Respuesta del servidor:', data);
+    const apiUrl =
+      import.meta.env.MODE === "development"
+        ? "http://journalismr.daw.inspedralbes.cat/api/get-user-info"
+        : "/api/get-user-info";
+
+    fetch(`${apiUrl}/${userId.value}`)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Respuesta del servidor:", data);
         if (data.ok) {
           // Actualizar username si viene del servidor
           if (data.username) {
@@ -141,13 +181,17 @@ const loadUserProfile = () => {
           }
           // Construir la URL completa de la imagen si existe
           if (data.imagePath) {
-            profileImage.value = `http://localhost:3000${data.imagePath}`;
-            console.log('Imagen de perfil cargada:', profileImage.value);
+            const baseUrl =
+              import.meta.env.MODE === "development"
+                ? "http://journalsimr.daw.inspedralbes.cat"
+                : "";
+            profileImage.value = `${baseUrl}${data.imagePath}`;
+            console.log("Imagen de perfil cargada:", profileImage.value);
           }
         }
       })
-      .catch(error => {
-        console.error('Error al cargar perfil de usuario:', error);
+      .catch((error) => {
+        console.error("Error al cargar perfil de usuario:", error);
       });
   }
 };
@@ -159,7 +203,7 @@ const toggleDarkMode = () => {
 
 const changeVolume = () => {
   gameStore.setMusicVolume(volume.value);
-  console.log('Volumen cambiado a:', volume.value);
+  console.log("Volumen cambiado a:", volume.value);
 };
 
 const openFileSelector = () => {
@@ -172,7 +216,14 @@ const handleFileSelect = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  console.log('Archivo seleccionado:', file.name, 'Tamaño:', file.size, 'Tipo:', file.type);
+  console.log(
+    "Archivo seleccionado:",
+    file.name,
+    "Tamaño:",
+    file.size,
+    "Tipo:",
+    file.type,
+  );
 
   // Validar tamaño (máximo 5MB)
   if (file.size > 5 * 1024 * 1024) {
@@ -181,7 +232,13 @@ const handleFileSelect = async (event) => {
   }
 
   // Validar tipo de archivo
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  const validTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+  ];
   if (!validTypes.includes(file.type)) {
     showMessage('Només es permeten imatges (jpg, png, gif, webp)', 'error');
     return;
@@ -197,48 +254,60 @@ const handleFileSelect = async (event) => {
 
 const uploadImage = async (file) => {
   isUploading.value = true;
-  uploadMessage.value = '';
+  uploadMessage.value = "";
 
-  console.log('Iniciando subida de imagen...');
+  console.log("Iniciando subida de imagen...");
 
   try {
     const formData = new FormData();
-    formData.append('image', file);
-    formData.append('userId', userId.value);
+    formData.append("image", file);
+    formData.append("userId", userId.value);
 
-    console.log('Enviando FormData al servidor...');
+    console.log("Enviando FormData al servidor...");
 
-    const response = await fetch('http://localhost:3000/api/upload-profile-image', {  
-      method: 'POST',
-      body: formData
+    const apiUrl =
+      import.meta.env.MODE === "development"
+        ? "http://journalismr.daw.inspedralbes.cat/api/upload-profile-image"
+        : "/api/upload-profile-image";
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      body: formData,
     });
 
     const data = await response.json();
-    console.log('Respuesta del servidor:', data);
+    console.log("Respuesta del servidor:", data);
 
     if (data.ok) {
       // Construir la URL completa de la imagen
-      profileImage.value = `http://localhost:3000${data.imagePath}`;
-      showMessage('✅ Foto actualitzada correctament', 'success');
-      console.log('Nueva ruta de imagen:', profileImage.value);
-      
+      const baseUrl =
+        import.meta.env.MODE === "development"
+          ? "http://journalsimr.daw.inspedralbes.cat"
+          : "";
+      profileImage.value = `${baseUrl}${data.imagePath}`;
+      showMessage("✅ Foto actualizada correctamente", "success");
+      console.log("Nueva ruta de imagen:", profileImage.value);
+
       // Notificar al servidor via socket para actualizar la imagen en el lobby
       if (gameStore.manager && userId.value) {
-        gameStore.manager.emit('updateProfileImage', userId.value);
-        console.log('Evento updateProfileImage emitido al servidor');
+        gameStore.manager.emit("updateProfileImage", userId.value);
+        console.log("Evento updateProfileImage emitido al servidor");
       }
     } else {
-      showMessage('❌ ' + (data.message || 'Error en pujar la imatge'), 'error');
-      console.error('Error en la respuesta:', data);
+      showMessage(
+        "❌ " + (data.message || "Error al subir la imagen"),
+        "error",
+      );
+      console.error("Error en la respuesta:", data);
     }
   } catch (error) {
-    console.error('Error al subir imagen:', error);
-      showMessage('❌ Error de connexió en pujar la imatge', 'error');
+    console.error("Error al subir imagen:", error);
+    showMessage("❌ Error de conexión al subir la imagen", "error");
   } finally {
     isUploading.value = false;
     // Limpiar el input
     if (fileInput.value) {
-      fileInput.value.value = '';
+      fileInput.value.value = "";
     }
   }
 };
@@ -248,7 +317,7 @@ const showMessage = (message, type) => {
   uploadMessageType.value = type;
   console.log(`[${type.toUpperCase()}] ${message}`);
   setTimeout(() => {
-    uploadMessage.value = '';
+    uploadMessage.value = "";
   }, 4000);
 };
 </script>
@@ -299,7 +368,9 @@ const showMessage = (message, type) => {
   gap: var(--spacing-md);
   padding: var(--spacing-md);
   cursor: pointer;
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
 .profile-block:hover {
@@ -312,8 +383,13 @@ const showMessage = (message, type) => {
   height: 90px;
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid color-mix(in srgb, var(--color-secondary) 55%, transparent 45%);
-  background: color-mix(in srgb, var(--bg-card) 70%, var(--color-secondary) 30%);
+  border: 3px solid
+    color-mix(in srgb, var(--color-secondary) 55%, transparent 45%);
+  background: color-mix(
+    in srgb,
+    var(--bg-card) 70%,
+    var(--color-secondary) 30%
+  );
   box-shadow: var(--shadow-sm);
   flex-shrink: 0;
 }
@@ -355,14 +431,17 @@ const showMessage = (message, type) => {
 .spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid color-mix(in srgb, var(--color-secondary) 35%, transparent 65%);
+  border: 3px solid
+    color-mix(in srgb, var(--color-secondary) 35%, transparent 65%);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .stats-grid {
@@ -447,7 +526,9 @@ const showMessage = (message, type) => {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 
 .fade-enter-from,
@@ -465,5 +546,55 @@ const showMessage = (message, type) => {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
+</style>
+
+<style>
+body.dark-mode {
+  background: var(--color-night) !important;
+  color: var(--text-white) !important;
+}
+
+body.dark-mode .config-modal {
+  background: color-mix(
+    in srgb,
+    var(--color-night-card) 92%,
+    transparent 8%
+  ) !important;
+  color: var(--text-white) !important;
+}
+
+body.dark-mode .modal-heading {
+  color: var(--color-warning) !important;
+}
+
+body.dark-mode .stats-card {
+  background: color-mix(
+    in srgb,
+    var(--color-night-card) 85%,
+    transparent 15%
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 30%,
+    transparent 70%
+  ) !important;
+}
+
+body.dark-mode .modal-divider {
+  border-top-color: color-mix(
+    in srgb,
+    var(--color-warning) 55%,
+    transparent 45%
+  ) !important;
+}
+
+body.dark-mode .toast {
+  background: color-mix(
+    in srgb,
+    var(--color-night-card) 80%,
+    transparent 20%
+  ) !important;
+  color: var(--text-white) !important;
 }
 </style>

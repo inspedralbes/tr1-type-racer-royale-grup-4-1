@@ -277,11 +277,11 @@ const confirmBet = () => {
 // Helper function to get profile image URL
 const getProfileImageUrl = (imagePath) => {
   // Si no hay imagen, devolver la imagen por defecto
-  if (!imagePath) return 'http://localhost:3000/img/default.png';
+  if (!imagePath) return 'http://journalismr.daw.inspedralbes.cat/img/default.png';
   // Si ya es una URL completa, devolverla tal cual
   if (imagePath.startsWith('http')) return imagePath;
   // Si es una ruta relativa, construir la URL completa
-  return `http://localhost:3000${imagePath}`;
+  return `http://journalismr.daw.inspedralbes.cat${imagePath}`;
 };
 
 onMounted(() => {

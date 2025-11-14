@@ -2,9 +2,9 @@ import { io } from "socket.io-client";
 
 //To see if it's with development mode or not
 const socketURL =
-  import.meta.env.MODE === "development"
-    ? "http://localhost:3000"
-    : "http://backend:3000";
+  import.meta.env.MODE === "development" 
+    ? "http://localhost:3000" 
+    : window.location.origin;
 
 export default class SocketManager {
   constructor() {
@@ -18,7 +18,7 @@ export default class SocketManager {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      timeout: 10000
+      timeout: 10000,
     });
 
     this.socket.on("connect", () => {
