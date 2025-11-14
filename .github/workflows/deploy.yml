@@ -38,7 +38,7 @@ jobs:
           key: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
-            cd ${{ secrets.VPS_PROJECT_PATH }}/game
+            cd ${{ secrets.VPS_PROJECT_PATH }}
             # Check if all containers are running
             if [ $(docker compose ps -q | wc -l) -eq 3 ]; then
               echo "All containers are running successfully"

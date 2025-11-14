@@ -91,7 +91,7 @@ const topPlayer = computed(() => props.podiumData.rankings[0] || {
   justify-content: center;
   min-height: 100vh;
   padding: var(--spacing-2xl) var(--spacing-xl);
-  background: var(--color-secondary);
+  background: var(--bg-screen);
 }
 
 .podio-card {

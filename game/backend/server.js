@@ -907,12 +907,12 @@ io.on("connection", (socket) => {
         if (b.articlesDone !== a.articlesDone) {
           return b.articlesDone - a.articlesDone;
         }
-        // Then by errors (fewer is better)
-        if (a.errors !== b.errors) {
-          return a.errors - b.errors;
+        // Then by progress (higher is better)
+        if (b.progress !== a.progress) {
+          return b.progress - a.progress;
         }
-        // Then by progress
-        return b.progress - a.progress;
+        // Finally by errors (fewer is better)
+        return a.errors - b.errors;
       });
 
       // Award prize money to winner
