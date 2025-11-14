@@ -262,7 +262,7 @@ io.on("connection", (socket) => {
     getUserImage(userId, (imgOk, imgPayload) => {
       if (imgOk && imgPayload.img) {
         player.profileImage =
-          `http://journalismr.daw.inspedralbes.cat/img/` + imgPayload.img;
+          `http://journalismr.daw.inspedralbes.cat` + imgPayload.img;
 
         if (player.room) {
           const room = rooms.find((r) => r.name === player.room);
