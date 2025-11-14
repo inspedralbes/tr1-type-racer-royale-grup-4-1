@@ -45,7 +45,7 @@
           "
         >
           <div class="profile-image">
-            <img :src="profileImage" alt="Usuario" />
+            <img :src="profileImage" alt="Usuari" />
           </div>
           <div class="profile-cta">
             <span class="tag">
@@ -144,6 +144,12 @@ const userId = computed(() => gameStore.userId);
 
 onMounted(() => {
   loadUserProfile();
+  // Cargar modo oscuro
+  const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+  isDarkMode.value = savedDarkMode;
+  if (savedDarkMode) {
+    document.body.classList.add('dark-mode');
+  }
 });
 
 // Watch para recargar la imagen cuando cambie el userId
@@ -191,7 +197,8 @@ const loadUserProfile = () => {
 };
 
 const toggleDarkMode = () => {
-  document.body.classList.toggle("dark-mode", isDarkMode.value);
+  document.body.classList.toggle('dark-mode', isDarkMode.value);
+  localStorage.setItem('darkMode', isDarkMode.value.toString());
 };
 
 const changeVolume = () => {
@@ -220,7 +227,7 @@ const handleFileSelect = async (event) => {
 
   // Validar tamaño (máximo 5MB)
   if (file.size > 5 * 1024 * 1024) {
-    showMessage("La imagen no debe superar 5MB", "error");
+    showMessage('La imatge no ha de superar 5MB', 'error');
     return;
   }
 
@@ -233,12 +240,12 @@ const handleFileSelect = async (event) => {
     "image/webp",
   ];
   if (!validTypes.includes(file.type)) {
-    showMessage("Solo se permiten imágenes (jpg, png, gif, webp)", "error");
+    showMessage('Només es permeten imatges (jpg, png, gif, webp)', 'error');
     return;
   }
 
   if (!userId.value) {
-    showMessage("Debes iniciar sesión para cambiar tu foto", "error");
+    showMessage('Has d\'iniciar sessió per canviar la teva foto', 'error');
     return;
   }
 
@@ -414,7 +421,7 @@ const showMessage = (message, type) => {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  background: rgba(245, 238, 219, 0.88);
+  background: var(--bg-loading);
   border-radius: inherit;
   backdrop-filter: blur(2px);
   color: var(--color-primary);

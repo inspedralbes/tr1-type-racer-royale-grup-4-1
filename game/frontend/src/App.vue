@@ -1,4 +1,5 @@
 <template>
+  <AlertContainer />
   <MoneyContainer v-if="store.userId && !startGame && !isFirstPageVisible" />
   <template v-if="showPodio">
     <Podio :podiumData="podiumData" @back="handleBackFromPodio" />
@@ -7,52 +8,46 @@
     <GameEngine @back="handleBackFromGame" @showPodium="handleShowPodium" />
   </template>
   <template v-else>
-    <FirstPage v-if="!showMainMenu && !showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
+    <FirstPage v-if="!showLobby && !showRoomsUserView && !showHostCreateLobby && !showUserLobby" @lobby="showLobby = true" />
     <Lobby v-else-if="showLobby" @back="showLobby = false" @joinRoom="handleJoinRoom" @createRoom="handleCreateRoom" />
     <HostCreateLobby v-else-if="showHostCreateLobby" @backToLobby="handleBackFromCreateLobby" @roomCreated="handleRoomCreated" />
     <RoomsUserView v-else-if="showRoomsUserView" @back="handleBackFromRooms" @joinedRoom="handleJoinedRoom" />
     <UserLobby v-else-if="showUserLobby" @back="handleBackFromUserLobby" @startGame="handleGameStart" />
-    <MainMenu v-else-if="showMainMenu" />
   </template>
 </template>
 
 <script setup>
 import { ref, nextTick, onMounted, onUnmounted, computed } from "vue";
 import GameEngine from "./components/GameEngine.vue";
-import MainMenu from "./components/MainMenu.vue";
 import { useGameStore } from "@/stores/gameStore.js";
 import FirstPage from "./components/FirstPage.vue";
 import Lobby from "./components/Lobby.vue";
-import Config from "./components/Config.vue"; 
 import RoomsUserView from "./components/RoomsUserView.vue";
 import HostCreateLobby from "./components/HostCreateLobby.vue";
 import UserLobby from "./components/UserLobby.vue";
 import MoneyContainer from "./components/MoneyContainer.vue";
 import Podio from "./components/Podio.vue";
+import AlertContainer from "./components/AlertContainer.vue";
 import { useBackgroundMusicAutoplay } from "@/composables/useBackgroundMusicAutoplay.js";
 import { useSoundEffect } from "@/composables/useSoundEffect.js";
   
 const startGame = ref(false);
-const showMainMenu = ref(false);
 const showLobby = ref(false);
-const showConfig = ref(false);
 const showHostCreateLobby = ref(false); 
 const showUserLobby = ref(false);
 const showPodio = ref(false);
 const podiumData = ref(null);
 const store = useGameStore();
-const manager = store.manager;
 const isFirstPageVisible = computed(
   () =>
     !startGame.value &&
-    !showMainMenu.value &&
     !showLobby.value &&
     !showRoomsUserView.value &&
     !showHostCreateLobby.value &&
     !showUserLobby.value
 );
 const showRoomsUserView = ref(false);
-manager.on("gameStart", handleGameStart);
+store.manager.on("gameStart", handleGameStart);
 
 // Inicializar música de fondo con autoplay agresivo
 const musicControl = useBackgroundMusicAutoplay('/music/mainTheme.wav', {
@@ -74,7 +69,7 @@ onMounted(() => {
   store.setClickSound(clickSoundControl);
   
   // Listen for podium navigation event from server
-  manager.on('showPodium', (data) => {
+  store.manager.on('showPodium', (data) => {
     console.log('🏆 App.vue: Evento showPodium recibido:', data);
     console.log('🏆 Estado actual - startGame:', startGame.value, 'showPodio:', showPodio.value);
     
@@ -177,7 +172,6 @@ function handleGameStart() {
   showRoomsUserView.value = false;
   showLobby.value = false;
   showHostCreateLobby.value = false;
-  showMainMenu.value = false;
   // Mostrar el juego
   startGame.value = true;
 }

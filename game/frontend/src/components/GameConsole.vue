@@ -3,10 +3,10 @@
     <div class="console-header">
       <div class="console-title">
         <i class="fa-solid fa-terminal"></i>
-        <span>Game Console</span>
+        <span>Consola del joc</span>
       </div>
       <div class="console-controls">
-        <button @click="gameStore.playClickSound(); clearConsole()" class="clear-btn" title="Limpiar consola">
+        <button @click="gameStore.playClickSound(); clearConsole()" class="clear-btn" title="Netejar consola">
           <i class="fa-solid fa-trash"></i>
         </button>
       </div>
@@ -24,7 +24,7 @@
       </div>
       
       <div v-if="messages.length === 0" class="console-empty">
-        <span class="prompt">></span> Esperando eventos del juego...
+        <span class="prompt">></span> Esperant esdeveniments del joc...
       </div>
     </div>
   </div>
@@ -75,7 +75,7 @@ const clearConsole = () => {
 };
 
 const formatTime = (timestamp) => {
-  return timestamp.toLocaleTimeString('es-ES', { 
+  return timestamp.toLocaleTimeString('ca-ES', { 
     hour12: false,
     hour: '2-digit',
     minute: '2-digit',
@@ -144,8 +144,8 @@ defineExpose({
 }
 
 .clear-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.6);
+  background: var(--btn-hover-light);
+  border-color: var(--btn-border-light);
 }
 
 .console-body {
@@ -174,7 +174,7 @@ defineExpose({
 }
 
 .console-body::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--color-primary) 80%, white 20%);
+  background: color-mix(in srgb, var(--color-primary) 80%, var(--text-white) 20%);
 }
 
 .console-message {

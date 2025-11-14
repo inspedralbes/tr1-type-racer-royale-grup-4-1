@@ -30,12 +30,12 @@
               class="select-field"
             >
               <option value="normal">Normal</option>
-              <option value="muerte-subita">Muerte Súbita</option>
+              <option value="muerte-subita">Mort Súbita</option>
             </select>
             <i class="fa-solid fa-chevron-down select-icon"></i>
           </div>
           <p v-if="selectedGameMode === 'muerte-subita'" class="gamemode-warning">
-            ☠️ Muerte Súbita: requereix 100💰 per jugador i força la dificultat
+            ☠️ Mort Súbita: requereix 100💰 per jugador i força la dificultat
             "Difícil".
           </p>
         </div>
@@ -56,7 +56,7 @@
             <i class="fa-solid fa-chevron-down select-icon"></i>
           </div>
           <p v-if="selectedGameMode === 'muerte-subita'" class="difficulty-note">
-            La dificultat queda bloquejada en "Difícil" per la Muerte Súbita.
+            La dificultat queda bloquejada en "Difícil" per la Mort Súbita.
           </p>
         </div>
 
@@ -107,9 +107,11 @@
 import { ref, watch } from "vue";
 import BaseScreen from "./layout/BaseScreen.vue";
 import { useGameStore } from "../stores/gameStore";
+import { useGameAlert } from "../composables/useGameAlert";
 
 const emit = defineEmits(["backToLobby", "roomCreated"]);
 const gameStore = useGameStore();
+const { showError, showWarning } = useGameAlert();
 
 const roomName = ref("");
 const selectedDifficulty = ref("easy");
@@ -139,14 +141,14 @@ function goBack() {
 function createRoom() {
   const name = roomName.value.trim();
   if (!name) {
-    alert("Por favor introduce un nombre de sala válido.");
+    showWarning("Si us plau, introdueix un nom de sala vàlid.");
     return;
   }
 
   // Verificar si tiene suficiente dinero para modo Muerte Súbita
   if (selectedGameMode.value === "muerte-subita") {
     if (!gameStore.userId) {
-      alert("Debes iniciar sesión para jugar en modo Muerte Súbita.");
+      showWarning("Has d'iniciar sessió per jugar en mode Mort Súbita.");
       return;
     }
     // El servidor verificará el dinero y deducirá la entrada
@@ -154,7 +156,7 @@ function createRoom() {
 
   // Configurar listeners para respuestas del servidor
   const handleRoomCreationFailed = (data) => {
-    alert(data.message || "Error al crear la sala");
+    showError(data.message || "Error en crear la sala. Torna-ho a provar.");
     gameStore.manager.off("roomCreationFailed", handleRoomCreationFailed);
     //Upon failure go back to the lobby
     goBack();
@@ -208,7 +210,7 @@ function createRoom() {
   justify-content: flex-start;
   gap: var(--spacing-lg);
   padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-2xl);
-  background: var(--color-secondary);
+  background: var(--bg-screen);
 }
 
 .hero {

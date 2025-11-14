@@ -96,7 +96,7 @@ function handleJoinRoom() {
   gap: 3rem;
   height: 100vh;
   width: 100%;
-  background: var(--color-secondary);
+  background: var(--bg-screen);
   font-family: 'Poppins', sans-serif;
   position: relative;
 }
@@ -182,7 +182,7 @@ function handleJoinRoom() {
 .rules-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-dark);
   display: flex;
   align-items: center;
   justify-content: center;

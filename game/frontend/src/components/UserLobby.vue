@@ -5,7 +5,7 @@
     </section>
     
     <div class="players-container card-paper">
-      <h2 class="subtitle">Jugadores en la sala ({{ jugadores.length }}/{{ maxJugadores }})</h2>
+      <h2 class="subtitle">Jugadors a la sala ({{ jugadores.length }}/{{ maxJugadores }})</h2>
       
       <div class="players-grid">
         <div 
@@ -24,7 +24,7 @@
           <div class="player-info">
             <span class="player-name" :title="jugador.username">{{ jugador.username }}</span>
             <span v-if="jugador.status === 'ready'" class="ready-badge">
-              <i class="fa-solid fa-check"></i> LISTO
+              <i class="fa-solid fa-check"></i> LLEST
             </span>
           </div>
         </div>
@@ -38,7 +38,7 @@
           <div class="player-number">{{ jugadores.length + slot }}</div>
           <div class="player-info">
             <i class="fa-solid fa-user-slash player-icon"></i>
-            <span class="player-name">Esperando...</span>
+            <span class="player-name">Esperant...</span>
           </div>
         </div>
       </div>
@@ -47,7 +47,7 @@
     <transition name="fade">
     <div v-if="showCountdown" class="countdown-overlay">
       <div class="countdown-number">{{ countdownValue }}</div>
-      <div class="countdown-text">¡Preparados!</div>
+      <div class="countdown-text">Preparats!</div>
     </div>
     </transition>
 
@@ -55,7 +55,7 @@
     <div class="actions-container">
       <!-- Betting Section -->
       <div class="betting-section card-paper card-paper--compact">
-        <div class="betting-title">Apuesta por ti mismo</div>
+        <div class="betting-title">Aposta per tu mateix</div>
         <div class="betting-controls">
           <button class="btn btn-ghost bet-btn" @click="gameStore.playClickSound(); decreaseBet()" :disabled="currentBet <= 0">-</button>
           <div class="bet-display">
@@ -78,10 +78,10 @@
           @click="gameStore.playClickSound(); confirmBet()"
           :disabled="currentBet === 0 || currentBet === confirmedBet"
         >
-          {{ confirmedBet > 0 ? 'Actualizar' : 'Confirmar' }}
+          {{ confirmedBet > 0 ? 'Actualitzar' : 'Confirmar' }}
         </button>
         <div v-if="confirmedBet > 0" class="bet-confirmed">
-          ✓ Apostado: {{ confirmedBet }} $
+          ✓ Apostat: {{ confirmedBet }} $
         </div>
       </div>
 
@@ -94,7 +94,7 @@
           :disabled="jugadores.length < maxJugadores"
         >
           <span>
-            <i class="fa-solid fa-check"></i> ESTOY LISTO
+            <i class="fa-solid fa-check"></i> ESTIC LLEST
           </span>
         </button>
         <button 
@@ -103,16 +103,16 @@
           @click="gameStore.playClickSound(); toggleReady()"
         >
           <span>
-            <i class="fa-solid fa-xmark"></i> CANCELAR
+            <i class="fa-solid fa-xmark"></i> CANCEL·LAR
           </span>
         </button>
         <div v-if="jugadores.length < maxJugadores" class="waiting-message">
-          Esperando {{ maxJugadores - jugadores.length }} jugador(es) más...
+          Esperant {{ maxJugadores - jugadores.length }} jugador(s) més...
         </div>
         <div v-if="totalPot > 0" class="pot-display">
           <div class="pot-icon">💰</div>
           <div class="pot-info">
-            <span class="pot-label">Bote Total</span>
+            <span class="pot-label">Bossa total</span>
             <span class="pot-amount">{{ totalPot }} $</span>
           </div>
         </div>
@@ -125,9 +125,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import BaseScreen from './layout/BaseScreen.vue';
 import { useGameStore } from '../stores/gameStore';
+import { useGameAlert } from '../composables/useGameAlert';
 
 const emit = defineEmits(['back', 'startGame']);
 const gameStore = useGameStore();
+const { showError, showWarning } = useGameAlert();
 
 const maxJugadores = ref(4);
 const jugadores = ref([]);
@@ -258,7 +260,7 @@ const confirmBet = () => {
     
     // Verificar que el jugador tenga suficiente dinero para la diferencia
     if (difference > 0 && gameStore.money < difference) {
-      alert('No tienes suficiente dinero');
+      showError('No tens prou diners per fer aquesta aposta.');
       return;
     }
     
@@ -345,7 +347,7 @@ onMounted(() => {
         gameStore.setMoney(newMoney);
       }
     } else {
-      alert(message || 'Error al confirmar apuesta');
+      showError(message || 'Error al confirmar aposta. Torna-ho a provar.');
       currentBet.value = confirmedBet.value;
     }
   });
@@ -383,7 +385,7 @@ onUnmounted(() => {
   flex-direction: column; 
   align-items: center;
   gap: var(--spacing-lg);
-  background: var(--color-secondary);
+  background: var(--bg-screen);
   font-family: 'Poppins', sans-serif;
 }
 
@@ -678,7 +680,7 @@ onUnmounted(() => {
 .countdown-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--overlay-darker);
   display: flex;
   flex-direction: column;
   align-items: center;

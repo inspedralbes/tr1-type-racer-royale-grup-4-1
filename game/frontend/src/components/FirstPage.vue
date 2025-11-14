@@ -21,6 +21,14 @@
 
     <Transition name="badge-slide">
       <div v-if="isBadgeVisible" class="badge-wrapper">
+        <button
+          type="button"
+          class="badge-back"
+          :disabled="isSubmitting"
+          @click="gameStore.playClickSound(); goBackFromBadge()"
+        >
+          <i class="fas fa-angle-left"></i>
+        </button>
         <div class="badge-content">
           <img
             src="@/img/carnetid.png"
@@ -66,6 +74,14 @@
 
     <Transition name="badge-slide">
       <div v-if="isRegisterVisible" class="badge-wrapper">
+        <button
+          type="button"
+          class="badge-back"
+          :disabled="isSubmitting"
+          @click="gameStore.playClickSound(); goBackFromRegister()"
+        >
+          <i class="fas fa-angle-left"></i>
+        </button>
         <div class="badge-content">
           <img
             src="@/img/contracte.png"
@@ -116,10 +132,12 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 // import Config from "./Config.vue";
 import SocketManager from "../../services/socketManager";
 import { useGameStore } from '../stores/gameStore';
+import { useGameAlert } from '../composables/useGameAlert';
 
 const emit = defineEmits(['lobby']);
 const gameStore = useGameStore();
 const sm = new SocketManager();
+const { showError, showWarning, showInfo } = useGameAlert();
 
 const isNewspaperVisible = ref(true);
 const isBadgeVisible = ref(false);
@@ -150,6 +168,12 @@ const loginResultHandler = (res) => {
     emit('lobby');
   } else {
     console.warn('❌ Error de login:', res?.code || 'desconocido');
+    const errorMessage = res?.code === 'INVALID_CREDENTIALS' 
+      ? 'Credencials incorrectes. Verifica el teu usuari i contrasenya.'
+      : res?.code === 'USER_NOT_FOUND'
+      ? 'Usuari no trobat. Verifica el teu usuari.'
+      : 'Error al iniciar sessió. Torna-ho a provar.';
+    showError(errorMessage);
   }
 };
 
@@ -173,6 +197,12 @@ const registerResultHandler = (res) => {
     emit('lobby');
   } else {
     console.warn('❌ Error de registro:', res?.code || 'desconocido');
+    const errorMessage = res?.code === 'USER_ALREADY_EXISTS'
+      ? 'Aquest usuari ja existeix. Prova amb un altre nom.'
+      : res?.code === 'INVALID_USERNAME'
+      ? 'Nom d\'usuari no vàlid. Utilitza només lletres i números.'
+      : 'Error al registrar-se. Torna-ho a provar.';
+    showError(errorMessage);
   }
 };
 
@@ -196,7 +226,10 @@ function doRegister() {
       sm.callbacks['registerResult'] = undefined;
       emit('lobby');
     } else {
-      alert(`Error: ${res.code}`);
+      const errorMessage = res.code === 'USER_ALREADY_EXISTS'
+        ? 'Aquest usuari ja existeix. Prova amb un altre nom.'
+        : `Error: ${res.code}`;
+      showError(errorMessage);
       sm.callbacks['registerResult'] = undefined;
     }
   });
@@ -217,7 +250,10 @@ function doLogin() {
       sm.callbacks['loginResult'] = undefined;
       emit('lobby');
     } else {
-      alert(`Error: ${res.code}`);
+      const errorMessage = res.code === 'INVALID_CREDENTIALS'
+        ? 'Credencials incorrectes. Verifica el teu usuari i contrasenya.'
+        : `Error: ${res.code}`;
+      showError(errorMessage);
       sm.callbacks['loginResult'] = undefined;
     }
   });
@@ -241,12 +277,28 @@ function openBadge() {
   password.value = '';
 }
 
+function goBackFromBadge() {
+  isBadgeVisible.value = false;
+  isNewspaperVisible.value = true;
+  username.value = '';
+  password.value = '';
+  isSubmitting.value = false;
+}
+
+function goBackFromRegister() {
+  isRegisterVisible.value = false;
+  isNewspaperVisible.value = true;
+  registerUsername.value = '';
+  registerPassword.value = '';
+  isSubmitting.value = false;
+}
+
 function submitLogin() {
   const user = username.value.trim();
   const pass = password.value.trim();
 
   if (!user || !pass) {
-    console.warn('⚠️ Campos incompletos en el formulario de acceso');
+    showWarning('Si us plau, omple tots els camps per iniciar sessió.');
     return;
   }
 
@@ -268,12 +320,12 @@ function submitRegister() {
   const pass = registerPassword.value.trim();
 
   if (!user || !pass) {
-    console.warn('⚠️ Campos incompletos en el formulario de registro');
+    showWarning('Si us plau, omple tots els camps per registrar-te.');
     return;
   }
 
   if (pass.length < 4) {
-    console.warn('⚠️ Contraseña demasiado corta en el formulario de registro');
+    showWarning('La contrasenya ha de tenir almenys 4 caràcters.');
     return;
   }
 
@@ -453,6 +505,7 @@ function submitRegister() {
   cursor: pointer;
   transition: transform var(--transition-base), box-shadow var(--transition-base), background var(--transition-base);
   box-shadow: var(--shadow-lg);
+  z-index: 21;
 }
 
 .badge-submit:hover {
@@ -465,11 +518,7 @@ function submitRegister() {
   color: var(--text-muted);
   cursor: not-allowed;
   box-shadow: none;
-}
-
-.badge-submit:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .badge-submit:hover:not(:disabled) {
@@ -482,6 +531,54 @@ function submitRegister() {
 }
 
 .badge-submit i {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.badge-back {
+  position: absolute;
+  left: clamp(28px, 7vw, 84px);
+  top: 48%;
+  transform: translateX(260%);
+  width: clamp(46px, 5.5vw, 70px);
+  height: clamp(46px, 5.5vw, 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--text-white);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform var(--transition-base), box-shadow var(--transition-base), background var(--transition-base);
+  box-shadow: var(--shadow-lg);
+  z-index: 21;
+}
+
+.badge-back:hover {
+  transform: translateX(260%) translateY(-4px);
+  background: color-mix(in srgb, var(--color-primary) 70%, var(--text-white) 30%);
+}
+
+.badge-back:disabled {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+.badge-back:hover:not(:disabled) {
+  transform: translateX(260%) scale(1.05);
+  box-shadow: 0 16px 28px rgba(93, 60, 28, 0.4);
+}
+
+.badge-back:active:not(:disabled) {
+  transform: translateX(260%) scale(0.95);
+}
+
+.badge-back i {
   font-size: clamp(1.4rem, 3vw, 2rem);
   font-weight: 900;
   line-height: 1;
