@@ -1083,7 +1083,7 @@ app.get("/api/get-user-info/:userId", (req, res) => {
     res.json({
       ok: true,
       username: payload.username,
-      imagePath: `http://journalism.daw.inspedralbes.cat` + payload.img,
+      imagePath: `http://journalismr.daw.inspedralbes.cat` + payload.img,
       money: payload.money,
     });
   });

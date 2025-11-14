@@ -161,7 +161,7 @@ const loadUserProfile = () => {
     // Cargar la información del usuario desde el servidor
     const apiUrl =
       import.meta.env.MODE === "development"
-        ? "http://journalsimr.daw.inspedralbes.cat/api/get-user-info"
+        ? "http://journalismr.daw.inspedralbes.cat/api/get-user-info"
         : "/api/get-user-info";
 
     fetch(`${apiUrl}/${userId.value}`)
