@@ -8,59 +8,73 @@
     </section>
 
     <div class="card-paper form-card">
-      <div class="form-field">
-        <label for="room-name">Nom de la sala</label>
-        <input
-          id="room-name"
-          v-model="roomName"
-          type="text"
-          placeholder="Escriu un nom memorable"
-          class="input-field"
-          @keypress.enter="createRoom"
-        />
-      </div>
-
-      <div class="form-field">
-        <label for="game-mode">Mode de joc</label>
-        <div class="select-wrapper">
-          <select
-            id="game-mode"
-            v-model="selectedGameMode"
-            class="select-field"
-          >
-            <option value="normal">Normal</option>
-            <option value="muerte-subita">Muerte Súbita</option>
-          </select>
-          <i class="fa-solid fa-chevron-down select-icon"></i>
+      <div class="options-grid">
+        <div class="form-field">
+          <label for="room-name">Nom de la sala</label>
+          <input
+            id="room-name"
+            v-model="roomName"
+            type="text"
+            placeholder="Escriu un nom memorable"
+            class="input-field"
+            @keypress.enter="createRoom"
+          />
         </div>
-        <p v-if="selectedGameMode === 'normal'" class="difficulty-note">
-          Mode estàndard sense aposta extra. Perfecte per reportatges
-          equilibrats.
-        </p>
-        <p v-else class="gamemode-warning">
-          ☠️ Muerte Súbita: requereix 100💰 per jugador i força la dificultat
-          "Difícil".
-        </p>
-      </div>
 
-      <div class="form-field">
-        <label for="difficulty">Dificultat</label>
-        <div class="select-wrapper">
-          <select
-            id="difficulty"
-            v-model="selectedDifficulty"
-            class="select-field"
-            :disabled="selectedGameMode === 'muerte-subita'"
-          >
-            <option value="easy">Fàcil</option>
-            <option value="medium">Mitjana</option>
-            <option value="hard">Difícil</option>
-          </select>
-          <i class="fa-solid fa-chevron-down select-icon"></i>
+        <div class="form-field">
+          <label for="game-mode">Mode de joc</label>
+          <div class="select-wrapper">
+            <select
+              id="game-mode"
+              v-model="selectedGameMode"
+              class="select-field"
+            >
+              <option value="normal">Normal</option>
+              <option value="muerte-subita">Muerte Súbita</option>
+            </select>
+            <i class="fa-solid fa-chevron-down select-icon"></i>
+          </div>
+          <p v-if="selectedGameMode === 'muerte-subita'" class="gamemode-warning">
+            ☠️ Muerte Súbita: requereix 100💰 per jugador i força la dificultat
+            "Difícil".
+          </p>
         </div>
-        <p v-if="selectedGameMode === 'muerte-subita'" class="difficulty-note">
-          La dificultat queda bloquejada en "Difícil" per la Muerte Súbita.
-        </p>
+
+        <div class="form-field">
+          <label for="difficulty">Dificultat</label>
+          <div class="select-wrapper">
+            <select
+              id="difficulty"
+              v-model="selectedDifficulty"
+              class="select-field"
+              :disabled="selectedGameMode === 'muerte-subita'"
+            >
+              <option value="easy">Fàcil</option>
+              <option value="medium">Mitjana</option>
+              <option value="hard">Difícil</option>
+            </select>
+            <i class="fa-solid fa-chevron-down select-icon"></i>
+          </div>
+          <p v-if="selectedGameMode === 'muerte-subita'" class="difficulty-note">
+            La dificultat queda bloquejada en "Difícil" per la Muerte Súbita.
+          </p>
+        </div>
+
+        <div class="form-field form-field--inline">
+          <label for="max-players">Jugadors</label>
+          <div class="select-wrapper">
+            <select
+              id="max-players"
+              v-model="maxPlayers"
+              class="select-field"
+            >
+              <option :value="2">2 jugadors</option>
+              <option :value="3">3 jugadors</option>
+              <option :value="4">4 jugadors</option>
+            </select>
+            <i class="fa-solid fa-chevron-down select-icon"></i>
+          </div>
+        </div>
       </div>
 
       <div class="form-actions">
@@ -100,6 +114,7 @@ const gameStore = useGameStore();
 const roomName = ref("");
 const selectedDifficulty = ref("easy");
 const selectedGameMode = ref("normal");
+const maxPlayers = ref(4);
 
 // Watch for game mode changes to auto-set difficulty
 watch(selectedGameMode, (newMode, oldMode) => {
@@ -160,10 +175,11 @@ function createRoom() {
   gameStore.manager.on("roomCreationFailed", handleRoomCreationFailed);
   gameStore.manager.on("moneyUpdated", handleMoneyUpdated);
 
-  // Emitir al servidor para crear la sala con nombre, dificultad y modo de juego
+  // Emitir al servidor para crear la sala con nombre, dificultad, maxPlayers, userId y username
   gameStore.manager.emit("createRoom", {
     name: name,
     difficulty: selectedDifficulty.value,
+    maxPlayers: maxPlayers.value,
     gameMode: selectedGameMode.value,
     userId: gameStore.userId,
     username: gameStore.username,
@@ -189,38 +205,45 @@ function createRoom() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--spacing-xl);
-  padding: var(--spacing-2xl) var(--spacing-xl);
-  background: url("@/img/bgimage.png") center/cover no-repeat;
-  text-align: center;
+  justify-content: flex-start;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-2xl);
+  background: var(--color-secondary);
 }
 
 .hero {
   max-width: min(520px, 90vw);
-  color: var(--text-white);
-  text-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-}
-
-.hero-title {
-  margin: 0 0 var(--spacing-sm);
-  font-family: "Playfair Display", serif;
-  font-size: clamp(2.4rem, 5vw, 3.2rem);
-  text-transform: uppercase;
-  color: var(--text-white);
-  letter-spacing: 0.08rem;
+  color: var(--color-primary);
+  text-shadow: var(--shadow-sm);
+  text-align: center;
+  margin-top: var(--spacing-xl);
 }
 
 .hero-subtitle {
   margin: 0;
   font-size: 1.1rem;
+  color: var(--color-primary);
 }
 
 .form-card {
-  width: min(520px, 92vw);
+  width: min(680px, 94vw);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  align-items: center;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-lg);
+  width: 100%;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
   text-align: left;
 }
 
@@ -246,6 +269,10 @@ function createRoom() {
   position: relative;
 }
 
+.form-field--inline .select-wrapper {
+  width: 100%;
+}
+
 .select-wrapper .select-field {
   width: 100%;
   padding-right: var(--spacing-xl);
@@ -264,6 +291,7 @@ function createRoom() {
   display: flex;
   justify-content: space-between;
   gap: var(--spacing-md);
+  width: 100%;
 }
 
 .form-actions .btn {
@@ -271,6 +299,10 @@ function createRoom() {
 }
 
 @media (max-width: 768px) {
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+
   .form-actions {
     flex-direction: column;
   }

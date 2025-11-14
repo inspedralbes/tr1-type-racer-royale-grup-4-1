@@ -16,12 +16,10 @@
           <div class="player-number">{{ index + 1 }}</div>
           <div class="player-avatar">
             <img 
-              v-if="jugador.profileImage" 
               :src="getProfileImageUrl(jugador.profileImage)" 
               :alt="jugador.username"
               class="avatar-img"
             />
-            <i v-else class="fa-solid fa-user player-icon"></i>
           </div>
           <div class="player-info">
             <span class="player-name" :title="jugador.username">{{ jugador.username }}</span>
@@ -61,7 +59,17 @@
         <div class="betting-controls">
           <button class="btn btn-ghost bet-btn" @click="gameStore.playClickSound(); decreaseBet()" :disabled="currentBet <= 0">-</button>
           <div class="bet-display">
-            <span class="bet-amount">{{ currentBet }} $</span>
+            <input 
+              type="number" 
+              v-model.number="currentBet" 
+              @input="validateBet"
+              @focus="$event.target.select()"
+              class="bet-input"
+              min="0"
+              :max="gameStore.money"
+              placeholder="0"
+            />
+            <span class="bet-currency">$</span>
           </div>
           <button class="btn btn-ghost bet-btn" @click="gameStore.playClickSound(); increaseBet()" :disabled="currentBet >= gameStore.money">+</button>
         </div>
@@ -144,6 +152,9 @@ const actualizarJugadores = (rooms) => {
   const salaActual = rooms.find(r => r.name === gameStore.currentRoom);
   if (salaActual) {
     jugadores.value = [...salaActual.players];
+    // CÓDIGO ANTERIOR: maxJugadores era siempre 4
+    // MODIFICADO: Ahora se actualiza con el maxPlayers de la sala (con fallback a 4)
+    maxJugadores.value = salaActual.maxPlayers || 4;
   } else {
     // Si la sala ya no existe, volver al lobby
     emit('back');
@@ -216,7 +227,31 @@ const decreaseBet = () => {
   }
 };
 
+const validateBet = () => {
+  // Asegurar que el valor sea un número válido
+  if (isNaN(currentBet.value) || currentBet.value === null || currentBet.value === '') {
+    currentBet.value = 0;
+    return;
+  }
+  
+  // Convertir a entero y eliminar decimales
+  currentBet.value = Math.floor(currentBet.value);
+  
+  // Limitar al dinero disponible
+  if (currentBet.value > gameStore.money) {
+    currentBet.value = gameStore.money;
+  }
+  
+  // No permitir valores negativos
+  if (currentBet.value < 0) {
+    currentBet.value = 0;
+  }
+};
+
 const confirmBet = () => {
+  // Validar antes de confirmar
+  validateBet();
+  
   if (currentBet.value > 0 && currentBet.value <= gameStore.money) {
     const previousBet = confirmedBet.value;
     const difference = currentBet.value - previousBet;
@@ -239,7 +274,8 @@ const confirmBet = () => {
 
 // Helper function to get profile image URL
 const getProfileImageUrl = (imagePath) => {
-  if (!imagePath) return '';
+  // Si no hay imagen, devolver la imagen por defecto
+  if (!imagePath) return 'http://localhost:3000/img/default.png';
   // Si ya es una URL completa, devolverla tal cual
   if (imagePath.startsWith('http')) return imagePath;
   // Si es una ruta relativa, construir la URL completa
@@ -253,6 +289,7 @@ onMounted(() => {
   const salaActual = gameStore.rooms.find(r => r.name === gameStore.currentRoom);
   if (salaActual) {
     jugadores.value = salaActual.players;
+    maxJugadores.value = salaActual.maxPlayers || 4;
   }
   
   // Escuchar actualizaciones de salas
@@ -498,12 +535,21 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  justify-content: flex-start;
   margin-top: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--bg-card);
   border: 2px solid color-mix(in srgb, var(--color-primary) 30%, var(--bg-body) 70%);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+}
+
+.pot-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: auto;
+  text-align: right;
 }
 
 .pot-icon {
@@ -552,17 +598,46 @@ onUnmounted(() => {
 
 .bet-display {
   flex: 1;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-lg);
   border: 2px solid var(--color-primary);
   background: var(--bg-card);
+  position: relative;
 }
 
-.bet-amount {
+.bet-input {
+  flex: 1;
+  width: 100%;
+  text-align: center;
   font-size: 1.2rem;
   font-weight: var(--font-weight-bold);
   color: var(--color-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'Poppins', sans-serif;
+}
+
+.bet-input::-webkit-inner-spin-button,
+.bet-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.bet-input[type=number] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.bet-currency {
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .confirm-bet-btn {
@@ -647,11 +722,6 @@ onUnmounted(() => {
   .betting-section,
   .actions {
     width: 100%;
-  }
-
-  .back-button {
-    top: var(--spacing-lg);
-    left: var(--spacing-lg);
   }
 }
 </style>

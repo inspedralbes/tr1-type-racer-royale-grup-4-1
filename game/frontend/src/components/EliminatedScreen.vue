@@ -235,11 +235,6 @@ function handleBackToLobby() {
   font-size: 1.5rem;
 }
 
-.stat-label {
-  color: var(--text-white);
-  font-weight: 600;
-}
-
 .stat-value {
   font-size: 2rem;
   font-weight: 900;
