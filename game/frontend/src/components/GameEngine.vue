@@ -254,7 +254,7 @@ watch(
 );
 
 // Timer state
-const timeRemaining = ref(180);
+const timeRemaining = ref(30);
 const timerInterval = ref(null);
 
 const formattedMinutes = computed(() => {
@@ -473,6 +473,19 @@ function completeArticle(timeTaken) {
     notifiedMilestones.value.clear();
   } else {
     console.log("Todos los artículos completados");
+    addConsoleMessage("🎉 ¡Todos los artículos completados!", "success");
+    
+    // Send final results to server
+    const finalResults = {
+      username: gameStore.username,
+      articlesCompleted: gameState.value.completedArticles,
+      totalErrors: gameState.value.totalErrors,
+      progress: 100, // 100% porque completó todos los artículos
+    };
+
+    console.log("🎯 GameEngine: Enviando gameEnded al servidor (todos completados):", finalResults);
+    gameStore.manager.emit("gameEnded", finalResults);
+    addConsoleMessage('📊 Enviando resultados finales al servidor...', 'info');
   }
 }
 
