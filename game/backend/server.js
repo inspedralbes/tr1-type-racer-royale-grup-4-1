@@ -1065,7 +1065,10 @@ app.get("/api/get-profile-image/:userId", (req, res) => {
         .status(404)
         .json({ ok: false, message: "Usuario no encontrado", code: payload });
     }
-    res.json({ ok: true, imagePath: payload.img });
+    res.json({
+      ok: true,
+      imagePath: `http://journalsimr.daw.inspedralbes.cat` + payload.img,
+    });
   });
 });
 
