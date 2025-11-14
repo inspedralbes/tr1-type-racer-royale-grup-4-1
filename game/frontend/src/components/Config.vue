@@ -596,4 +596,3 @@ body.dark-mode .toast {
   color: var(--text-white) !important;
 }
 </style>
-
