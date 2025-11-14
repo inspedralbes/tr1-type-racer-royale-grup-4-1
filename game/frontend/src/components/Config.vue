@@ -260,8 +260,8 @@ const uploadImage = async (file) => {
 
     const apiUrl =
       import.meta.env.MODE === "development"
-        ? "http://journalsimr.daw.inspedralbes.cat/api/upload-profile-image"
-        : "http://journalismr.daw.inspedralbes.cat/api/upload-profile-image";
+        ? "http://journalismr.daw.inspedralbes.cat/api/upload-profile-image"
+        : "/api/upload-profile-image";
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -276,7 +276,7 @@ const uploadImage = async (file) => {
       const baseUrl =
         import.meta.env.MODE === "development"
           ? "http://journalsimr.daw.inspedralbes.cat"
-          : "http://journalsimr.daw.inspedralbes.cat";
+          : "";
       profileImage.value = `${baseUrl}${data.imagePath}`;
       showMessage("✅ Foto actualizada correctamente", "success");
       console.log("Nueva ruta de imagen:", profileImage.value);
