@@ -110,7 +110,7 @@
           Esperant {{ maxJugadores - jugadores.length }} jugador(s) més...
         </div>
         <div v-if="totalPot > 0" class="pot-display">
-          <div class="pot-icon">💰</div>
+          <div class="pot-icon"><i class="fa-solid fa-coins"></i></div>
           <div class="pot-info">
             <span class="pot-label">Bossa total</span>
             <span class="pot-amount">{{ totalPot }} $</span>
@@ -398,10 +398,13 @@ onUnmounted(() => {
 
 .hero-title {
   margin: 0;
-  font-size: clamp(2.4rem, 5vw, 3.2rem);
   letter-spacing: 0.08rem;
   text-transform: uppercase;
-  color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--bg-body);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  display: inline-block;
 }
 
 .players-container {

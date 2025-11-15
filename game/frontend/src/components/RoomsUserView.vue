@@ -29,7 +29,7 @@
                 <span v-if="sala.isFull" class="full-badge">PLENA</span>
               </div>
               <div v-if="sala.gameMode === 'muerte-subita'" class="gamemode-badge">
-                ☠️ Mort Súbita | Entrada: 100💰
+                <i class="fa-solid fa-skull-crossbones"></i> Mort Súbita | Entrada: 100<i class="fa-solid fa-coins"></i>
               </div>
             </div>
             <div class="sala-playercount player-column">

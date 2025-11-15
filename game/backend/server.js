@@ -1219,6 +1219,10 @@ function updateUserImage(userId, imagePath, done) {
 }
 
 function registerUser(username, password, done) {
+  if (!username || !password) {
+    done(false, "INVALID_PAYLOAD");
+    return;
+  }
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
       done(false, "HASH_ERROR");
@@ -1232,7 +1236,7 @@ function registerUser(username, password, done) {
           return;
         }
         if (rows && rows.length > 0) {
-          done(false, "USER_EXISTS");
+          done(false, "USER_ALREADY_EXISTS");
           return;
         }
         const q2 = "INSERT INTO users (username, password) VALUES (?, ?)";

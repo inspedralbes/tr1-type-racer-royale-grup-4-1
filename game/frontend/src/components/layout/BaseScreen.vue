@@ -50,6 +50,7 @@ const handleHome = () => {
   position: relative;
   min-height: 100vh;
   width: 100%;
+  overflow-x: hidden;
 }
 
 .base-screen__home-button {

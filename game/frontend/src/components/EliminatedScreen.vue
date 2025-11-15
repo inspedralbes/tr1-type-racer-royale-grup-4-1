@@ -3,7 +3,7 @@
     <div class="scanlines"></div>
     
     <div class="elimination-container">
-      <div class="skull-icon">💀</div>
+      <div class="skull-icon"><i class="fa-solid fa-skull"></i></div>
       
       <h1 class="title">ELIMINAT!</h1>
       
@@ -15,8 +15,8 @@
       
       <div class="stats-container">
         <div class="stat-item">
-          <span class="stat-icon">{{ eliminationIcon }}</span>
-          <span class="stat-value error-count">{{ eliminationReason === 'timeout' ? '⏰' : '1' }}</span>
+          <span class="stat-icon" v-html="eliminationIcon"></span>
+          <span class="stat-value error-count" v-html="eliminationReason === 'timeout' ? '<i class=\'fa-solid fa-clock\'></i>' : '1'"></span>
         </div>
       </div>
       
@@ -59,9 +59,9 @@ const subMessage = computed(() => {
 
 const eliminationIcon = computed(() => {
   if (props.eliminationReason === 'timeout') {
-    return '⏰';
+    return '<i class="fa-solid fa-clock"></i>';
   }
-  return '❌';
+  return '<i class="fa-solid fa-xmark"></i>';
 });
 
 function handleBackToLobby() {
@@ -78,234 +78,167 @@ function handleBackToLobby() {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
-
 .eliminated-screen {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: radial-gradient(circle at top, color-mix(in srgb, var(--color-secondary) 60%, var(--bg-body) 40%), var(--color-primary));
+  background: var(--bg-screen);
   position: relative;
   overflow: hidden;
-  font-family: 'Poppins', sans-serif;
 }
 
-/* Scanlines effect */
 .scanlines {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.08),
-    rgba(0, 0, 0, 0.08) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-  pointer-events: none;
-  z-index: 1;
+  display: none;
 }
 
 .elimination-container {
   position: relative;
   z-index: 2;
   text-align: center;
-  padding: 3rem;
-  background: color-mix(in srgb, var(--bg-card) 78%, var(--color-secondary) 22%);
-  border: 4px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-primary) 55%);
-  border-radius: 20px;
-  box-shadow: 
-    0 0 30px rgba(91, 63, 27, 0.4),
-    0 0 60px rgba(139, 165, 155, 0.25),
-    inset 0 0 20px rgba(91, 63, 27, 0.15);
+  padding: var(--spacing-2xl);
+  background: var(--bg-card);
+  border: 3px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   max-width: 600px;
-  animation: slideIn 0.5s ease-out, pulse 2s ease-in-out infinite;
+  animation: slideIn 0.5s ease-out;
 }
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-50px) scale(0.9);
+    transform: translateY(-50px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 
-      0 0 30px rgba(91, 63, 27, 0.4),
-      0 0 60px rgba(139, 165, 155, 0.25),
-      inset 0 0 20px rgba(91, 63, 27, 0.15);
-  }
-  50% {
-    box-shadow: 
-      0 0 40px rgba(91, 63, 27, 0.5),
-      0 0 80px rgba(139, 165, 155, 0.35),
-      inset 0 0 30px rgba(91, 63, 27, 0.2);
+    transform: translateY(0);
   }
 }
 
 .skull-icon {
-  font-size: 5rem;
-  margin-bottom: 1rem;
-  animation: shake 0.6s ease-in-out;
-  filter: drop-shadow(0 0 18px rgba(91, 63, 27, 0.4));
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0) rotate(0deg); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-10px) rotate(-5deg); }
-  20%, 40%, 60%, 80% { transform: translateX(10px) rotate(5deg); }
+  font-size: 4rem;
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-primary);
 }
 
 .title {
-  font-size: 4rem;
-  font-weight: 900;
-  color: color-mix(in srgb, var(--color-danger) 65%, var(--color-primary) 35%);
-  margin: 0 0 2rem 0;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  margin: 0 0 var(--spacing-xl) 0;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  text-shadow: 
-    0 0 16px rgba(91, 63, 27, 0.35),
-    3px 3px 0 rgba(0, 0, 0, 0.35);
-  animation: flicker 3s infinite;
-}
-
-@keyframes flicker {
-  0%, 100% { opacity: 1; }
-  41%, 43% { opacity: 0.8; }
-  45%, 47% { opacity: 0.9; }
-  49% { opacity: 1; }
+  letter-spacing: 0.1em;
+  text-shadow: var(--shadow-sm);
 }
 
 .message-box {
-  background: color-mix(in srgb, var(--color-secondary) 20%, transparent 80%);
-  border: 2px solid color-mix(in srgb, var(--color-secondary) 35%, transparent 65%);
-  border-radius: 10px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  background: var(--bg-input);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
 }
 
 .main-message {
-  font-size: 1.3rem;
-  color: var(--color-primary);
-  margin: 0 0 0.5rem 0;
-  font-weight: 400;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+  font-weight: var(--font-weight-normal);
 }
 
 .mode-name {
-  font-size: 2rem;
-  font-weight: 900;
-  color: color-mix(in srgb, var(--color-danger) 55%, var(--color-primary) 45%);
-  margin: 0.5rem 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  margin: var(--spacing-sm) 0;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  text-shadow: 0 0 12px rgba(91, 63, 27, 0.45);
+  letter-spacing: 0.08rem;
 }
 
 .sub-message {
-  font-size: 1rem;
-  color: color-mix(in srgb, var(--text-muted) 70%, var(--text-white) 30%);
-  margin: 0.5rem 0 0 0;
-  font-style: italic;
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
+  margin: var(--spacing-sm) 0 0 0;
 }
 
 .stats-container {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: color-mix(in srgb, var(--bg-card) 60%, var(--bg-body) 40%);
-  border-radius: 10px;
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: var(--bg-input);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
 }
 
 .stat-item {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
-  font-size: 1.2rem;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-lg);
 }
 
 .stat-icon {
   font-size: 1.5rem;
+  color: var(--color-primary);
 }
 
 .stat-value {
   font-size: 2rem;
-  font-weight: 900;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
 }
 
 .error-count {
-  color: color-mix(in srgb, var(--color-danger) 60%, var(--color-primary) 40%);
-  text-shadow: 0 0 12px rgba(91, 63, 27, 0.4);
+  color: var(--text-primary);
 }
 
 .back-button {
-  background: linear-gradient(135deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-secondary) 55%, var(--color-primary) 45%) 100%);
+  background: var(--color-primary);
   color: var(--text-white);
-  border: 3px solid color-mix(in srgb, var(--text-white) 80%, transparent 20%);
-  border-radius: 12px;
-  padding: 1rem 3rem;
-  font-size: 1.3rem;
-  font-weight: 700;
+  border: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md) var(--spacing-2xl);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
   display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  box-shadow: 
-    0 4px 18px rgba(91, 63, 27, 0.35),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.18);
+  gap: var(--spacing-md);
+  box-shadow: var(--shadow-md);
 }
 
 .back-button:hover {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 80%, var(--color-secondary) 20%), var(--color-secondary));
   transform: translateY(-2px);
-  box-shadow: 
-    0 6px 24px rgba(91, 63, 27, 0.45),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-lg);
 }
 
 .back-button:active {
   transform: translateY(0);
-  box-shadow: 
-    0 2px 10px rgba(91, 63, 27, 0.3),
-    inset 0 2px 5px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-sm);
 }
 
 .back-button i {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .elimination-container {
-    padding: 2rem;
+    padding: var(--spacing-xl);
     max-width: 90%;
-  }
-  
-  .title {
-    font-size: 2.5rem;
   }
   
   .skull-icon {
     font-size: 3rem;
   }
   
-  .mode-name {
-    font-size: 1.5rem;
-  }
-  
   .back-button {
-    padding: 0.8rem 2rem;
-    font-size: 1rem;
+    padding: var(--spacing-sm) var(--spacing-xl);
+    font-size: var(--font-size-base);
   }
 }
 </style>

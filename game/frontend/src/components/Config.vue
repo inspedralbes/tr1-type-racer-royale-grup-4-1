@@ -72,8 +72,7 @@
         />
 
         <Transition name="fade">
-          <div v-if="uploadMessage" :class="['toast', uploadMessageClass]">
-            {{ uploadMessage }}
+          <div v-if="uploadMessage" :class="['toast', uploadMessageClass]" v-html="uploadMessage">
           </div>
         </Transition>
 
@@ -285,7 +284,7 @@ const uploadImage = async (file) => {
           ? "http://journalsimr.daw.inspedralbes.cat"
           : "";
       profileImage.value = `${baseUrl}${data.imagePath}`;
-      showMessage("✅ Foto actualizada correctamente", "success");
+      showMessage("Foto actualizada correctamente", "success");
       console.log("Nueva ruta de imagen:", profileImage.value);
 
       // Notificar al servidor via socket para actualizar la imagen en el lobby
@@ -295,14 +294,14 @@ const uploadImage = async (file) => {
       }
     } else {
       showMessage(
-        "❌ " + (data.message || "Error al subir la imagen"),
+        "<i class='fa-solid fa-xmark'></i> " + (data.message || "Error al subir la imagen"),
         "error",
       );
       console.error("Error en la respuesta:", data);
     }
   } catch (error) {
     console.error("Error al subir imagen:", error);
-    showMessage("❌ Error de conexión al subir la imagen", "error");
+    showMessage("<i class='fa-solid fa-xmark'></i> Error de conexión al subir la imagen", "error");
   } finally {
     isUploading.value = false;
     // Limpiar el input
@@ -375,7 +374,7 @@ const showMessage = (message, type) => {
 
 .profile-block:hover {
   transform: translateY(-4px);
-  box-shadow: 0 18px 38px rgba(91, 63, 27, 0.25);
+  box-shadow: var(--shadow-lg);
 }
 
 .profile-image {
@@ -550,51 +549,30 @@ const showMessage = (message, type) => {
 </style>
 
 <style>
-body.dark-mode {
-  background: var(--color-night) !important;
-  color: var(--text-white) !important;
-}
-
 body.dark-mode .config-modal {
-  background: color-mix(
-    in srgb,
-    var(--color-night-card) 92%,
-    transparent 8%
-  ) !important;
-  color: var(--text-white) !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
 }
 
 body.dark-mode .modal-heading {
-  color: var(--color-warning) !important;
+  color: var(--color-primary) !important;
 }
 
 body.dark-mode .stats-card {
-  background: color-mix(
-    in srgb,
-    var(--color-night-card) 85%,
-    transparent 15%
-  ) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--color-warning) 30%,
-    transparent 70%
-  ) !important;
+  background: var(--bg-input) !important;
+  border-color: var(--color-primary) !important;
 }
 
 body.dark-mode .modal-divider {
   border-top-color: color-mix(
     in srgb,
-    var(--color-warning) 55%,
-    transparent 45%
+    var(--color-primary) 30%,
+    transparent 70%
   ) !important;
 }
 
 body.dark-mode .toast {
-  background: color-mix(
-    in srgb,
-    var(--color-night-card) 80%,
-    transparent 20%
-  ) !important;
-  color: var(--text-white) !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
 }
 </style>

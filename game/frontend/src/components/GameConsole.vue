@@ -20,7 +20,7 @@
         :class="message.type"
       >
         <span class="timestamp">{{ formatTime(message.timestamp) }}</span>
-        <span class="message-content">{{ message.content }}</span>
+        <span class="message-content" v-html="message.content"></span>
       </div>
       
       <div v-if="messages.length === 0" class="console-empty">

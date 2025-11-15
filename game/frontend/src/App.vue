@@ -244,10 +244,17 @@ function handleBackFromPodio() {
 </script>
 
 <style>
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  height: 100%;
   font-family: 'Poppins', sans-serif;
   background: var(--bg-body);
   color: var(--text-primary);
+}
+
+#app {
+  height: 100vh;
+  overflow: hidden;
 }
 </style>

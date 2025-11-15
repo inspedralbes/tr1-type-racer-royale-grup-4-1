@@ -1,6 +1,6 @@
 <template>
   <div class="money-container">
-    <div class="money-icon">💰</div>
+    <div class="money-icon"><i class="fa-solid fa-coins"></i></div>
     <div class="money-amount">{{ formattedMoney }} $</div>
   </div>
 </template>

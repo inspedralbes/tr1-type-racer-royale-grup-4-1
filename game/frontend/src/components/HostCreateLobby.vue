@@ -35,7 +35,7 @@
             <i class="fa-solid fa-chevron-down select-icon"></i>
           </div>
           <p v-if="selectedGameMode === 'muerte-subita'" class="gamemode-warning">
-            ☠️ Mort Súbita: requereix 100💰 per jugador i força la dificultat
+            <i class="fa-solid fa-skull-crossbones"></i> Mort Súbita: requereix 100<i class="fa-solid fa-coins"></i> per jugador i força la dificultat
             "Difícil".
           </p>
         </div>
@@ -203,7 +203,8 @@ function createRoom() {
 <style scoped>
 .host-create-lobby {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -211,9 +212,26 @@ function createRoom() {
   gap: var(--spacing-lg);
   padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-2xl);
   background: var(--bg-screen);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.host-create-lobby::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: url('@/img/decorbg.png') no-repeat center center;
+  background-size: 90%;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .hero {
+  position: relative;
+  z-index: 1;
   max-width: min(520px, 90vw);
   color: var(--color-primary);
   text-shadow: var(--shadow-sm);
@@ -228,11 +246,16 @@ function createRoom() {
 }
 
 .form-card {
+  position: relative;
+  z-index: 1;
   width: min(680px, 94vw);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
   align-items: center;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .options-grid {

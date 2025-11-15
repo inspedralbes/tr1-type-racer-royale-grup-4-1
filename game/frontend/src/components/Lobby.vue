@@ -143,17 +143,19 @@ function handleJoinRoom() {
   font-family: 'Poppins', sans-serif;
   color: var(--color-primary);
   text-transform: capitalize;
-  text-shadow: var(--shadow-sm);
+
 }
 
 .greeting span:first-child {
   font-size: 2.1rem;
   font-weight: 700;
+  text-shadow: none !important;
 }
 
 .greeting span:last-child {
   font-size: 1.4rem;
   font-weight: 400;
+  text-shadow: none !important;
 }
 
 .rules-trigger {
