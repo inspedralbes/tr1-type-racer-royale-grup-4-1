@@ -151,33 +151,42 @@ function createRoom() {
       showWarning("Has d'iniciar sessió per jugar en mode Mort Súbita.");
       return;
     }
-    // El servidor verificará el dinero y deducirá la entrada
   }
 
   // Configurar listeners para respuestas del servidor
   const handleRoomCreationFailed = (data) => {
     showError(data.message || "Error en crear la sala. Torna-ho a provar.");
-    gameStore.manager.off("roomCreationFailed", handleRoomCreationFailed);
-    //Upon failure go back to the lobby
+    cleanupListeners();
     goBack();
   };
 
   const handleMoneyUpdated = (data) => {
     gameStore.setMoney(data.newMoney);
-    gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
+    // Para modo muerte súbita, después de actualizar el dinero, proceder con la creación
+    if (selectedGameMode.value === "muerte-subita") {
+      handleRoomCreated();
+    }
   };
 
   const handleRoomCreated = () => {
+    cleanupListeners();
     emit("roomCreated", name);
+  };
+
+  const cleanupListeners = () => {
     gameStore.manager.off("roomCreationFailed", handleRoomCreationFailed);
     gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
   };
 
   // Configurar listeners temporales
   gameStore.manager.on("roomCreationFailed", handleRoomCreationFailed);
-  gameStore.manager.on("moneyUpdated", handleMoneyUpdated);
+  
+  // Solo configurar el listener de dinero para modo muerte súbita
+  if (selectedGameMode.value === "muerte-subita") {
+    gameStore.manager.on("moneyUpdated", handleMoneyUpdated);
+  }
 
-  // Emitir al servidor para crear la sala con nombre, dificultad, maxPlayers, userId y username
+  // Emitir al servidor para crear la sala
   gameStore.manager.emit("createRoom", {
     name: name,
     difficulty: selectedDifficulty.value,
@@ -187,15 +196,9 @@ function createRoom() {
     username: gameStore.username,
   });
 
-  // Si no es modo muerte súbita, emitir inmediatamente
+  // Si no es modo muerte súbita, proceder inmediatamente
   if (selectedGameMode.value !== "muerte-subita") {
     handleRoomCreated();
-  } else {
-    // Para muerte súbita, esperar confirmación del servidor
-    setTimeout(() => {
-      // Si no hay error después de 2 segundos, asumir éxito
-      handleRoomCreated();
-    }, 2000);
   }
 }
 </script>

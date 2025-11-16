@@ -97,32 +97,40 @@ const unirseASala = () => {
     // Configurar listeners para respuestas del servidor
     const handleJoinRoomFailed = (data) => {
       showError(data.message || "Error al unir-se a la sala. Torna-ho a provar.");
-      gameStore.manager.off("joinRoomFailed", handleJoinRoomFailed);
-      gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
+      cleanupListeners();
     };
 
     const handleMoneyUpdated = (data) => {
       gameStore.setMoney(data.newMoney);
+      cleanupListeners();
+      // Continuar con la unión a la sala después de actualizar el dinero
+      proceedToJoinRoom();
+    };
+
+    const cleanupListeners = () => {
       gameStore.manager.off("joinRoomFailed", handleJoinRoomFailed);
       gameStore.manager.off("moneyUpdated", handleMoneyUpdated);
-      // Continuar con la unión a la sala
-      proceedToJoinRoom();
     };
 
     // Configurar listeners temporales
     gameStore.manager.on("joinRoomFailed", handleJoinRoomFailed);
     gameStore.manager.on("moneyUpdated", handleMoneyUpdated);
-  }
-  
-  gameStore.setRoomName(salaSeleccionada.value);
-  gameStore.manager.emit("joinRoom", {
-    roomName: salaSeleccionada.value,
-    userId: gameStore.userId,
-    username: gameStore.username
-  });
-  
-  // Si no es modo muerte súbita, proceder inmediatamente
-  if (!sala || sala.gameMode !== 'muerte-subita') {
+    
+    // Emitir joinRoom para modo muerte súbita y esperar respuesta del servidor
+    gameStore.setRoomName(salaSeleccionada.value);
+    gameStore.manager.emit("joinRoom", {
+      roomName: salaSeleccionada.value,
+      userId: gameStore.userId,
+      username: gameStore.username
+    });
+  } else {
+    // Para modo normal, proceder inmediatamente
+    gameStore.setRoomName(salaSeleccionada.value);
+    gameStore.manager.emit("joinRoom", {
+      roomName: salaSeleccionada.value,
+      userId: gameStore.userId,
+      username: gameStore.username
+    });
     proceedToJoinRoom();
   }
 };
