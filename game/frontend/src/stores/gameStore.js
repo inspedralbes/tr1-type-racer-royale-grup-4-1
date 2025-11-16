@@ -99,7 +99,7 @@ export const useGameStore = defineStore("rooms", () => {
     if (!userId.value) return;
     try {
       const response = await fetch(
-        `http:journalismr.daw.inspedralbes.cat${userId.value}`,
+        `http://journalismr.daw.inspedralbes.cat/api/get-user-money/${userId.value}`,
       );
       const data = await response.json();
       if (data.ok) {
