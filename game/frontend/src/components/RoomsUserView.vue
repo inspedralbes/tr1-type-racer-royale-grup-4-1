@@ -34,7 +34,7 @@
             </div>
             <div class="sala-playercount player-column">
               <span class="player-count"
-                >{{ sala.jugadores }}/{{ sala.maxPlayers }}</span>  <!-- ← MODIFICADO -->
+                >{{ sala.jugadores }}/{{ sala.maxPlayers }}</span>
             </div>
           </div>
         </button>

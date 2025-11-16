@@ -361,8 +361,7 @@ io.on("connection", (socket) => {
         player.status = "waiting";
         room.players.push(player);
 
-        // CÓDIGO ANTERIOR: if (room.players.length === ROOM_CAPACITY) {
-        // MODIFICADO: Usar room.maxPlayers para validación dinámica de capacidad
+        // Verificar si la sala está llena usando la capacidad configurada
         if (room.players.length === (room.maxPlayers || 4)) {
           room.isFull = true;
           io.to(roomName).emit("roomFull", true);
@@ -431,8 +430,7 @@ io.on("connection", (socket) => {
 
   socket.on("isRoomFull", (roomName) => {
     let room = rooms.find((r) => r.name === roomName);
-    // CÓDIGO ANTERIOR: let roomFull = room ? room.players.length >= ROOM_CAPACITY : false;
-    // MODIFICADO: Usar room.maxPlayers para verificar si está llena
+    // Verificar si la sala está llena comparando con la capacidad máxima
     let roomFull = room ? room.players.length >= (room.maxPlayers || 4) : false;
     socket.emit("roomFull", roomFull);
   });
