@@ -1,5 +1,7 @@
 # JournalismRace
 
+<a href="https://deepwiki.com/inspedralbes/tr1-type-racer-royale-grup-4-1"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+
 ## Integrants de l'Equip
 - Pashnin, Kirill		
 - Vera Mackliff, Paula Arlette		
