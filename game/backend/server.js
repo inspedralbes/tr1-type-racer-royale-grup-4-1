@@ -7,6 +7,8 @@ const bcrypt = require("bcrypt");
 const multer = require("multer");
 const fs = require("fs");
 const cors = require("cors");
+const { randomBytes } = require("node:crypto");
+const demoMode = process.env.DEMO_MODE === "true";
 const app = express();
 const server = http.createServer(app);
 
@@ -36,6 +38,12 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+if (demoMode) {
+  app.use((req, res, next) => {
+    res.set("X-Robots-Tag", "noindex");
+    next();
+  });
+}
 
 // Socket.IO configuration
 const io = new Server(server, {
@@ -108,7 +116,8 @@ app.use("/img", express.static(path.join(__dirname, "img")));
 const mysqlconfig = {
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
-  password: process.env.DB_PASS || "",
+  password: process.env.DB_PASSWORD || process.env.DB_PASS || "",
+  ...(process.env.DB_SSL === "true" && { ssl: { rejectUnauthorized: true, minVersion: "TLSv1.2" } }),
   database: process.env.DB_NAME || "typing_game",
   port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
 };
@@ -130,8 +139,15 @@ pool.getConnection((err, connection) => {
   }
 });
 
+app.get("/up", (req, res) => {
+  pool.query("SELECT 1", (err) => {
+    res.status(err ? 503 : 200).json({ ok: !err });
+  });
+});
+
 // Debug HTTP endpoint to save a result without using sockets
 app.post("/debug/save-result", (req, res) => {
+  if (demoMode) return res.sendStatus(404);
   const payload = req.body || {};
   const username = payload.username;
   const time = payload.time;
@@ -176,8 +192,36 @@ io.on("connection", (socket) => {
 
   players.push(newPlayer);
 
+  if (demoMode) {
+    const objectEvents = new Set([
+      "createRoom", "updateProgress", "playerMilestone", "playerError",
+      "placeBet", "userResults", "gameEnded",
+    ]);
+    socket.use(([event, payload], next) => {
+      if (event === "joinRoom" && (!payload || !["string", "object"].includes(typeof payload))) return;
+      if (objectEvents.has(event) && (!payload || typeof payload !== "object")) return;
+      if (event !== "register" && !newPlayer.userId) return;
+      next();
+    });
+  }
+
   socket.on("register", (userData) => {
+    if (!demoMode && (!userData?.username || !userData?.password)) {
+      return socket.emit("registerResult", { ok: false, code: "INVALID_PAYLOAD" });
+    }
+    if (demoMode) {
+      if (newPlayer.userId) {
+        return socket.emit("registerResult", { ok: true, userId: newPlayer.userId, username: newPlayer.username });
+      }
+      if (socket.data.demoRegistration) return;
+      socket.data.demoRegistration = true;
+      userData = {
+        username: "Demo-" + randomBytes(5).toString("hex"),
+        password: randomBytes(24).toString("hex"),
+      };
+    }
     registerUser(userData.username, userData.password, (ok, payload) => {
+      if (!ok) socket.data.demoRegistration = false;
       if (ok) {
         const player = players.find((p) => p.id === socket.id);
         if (player) {
@@ -209,7 +253,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("login", (userData) => {
-    if (!userData || !userData.username || !userData.password) {
+    if (demoMode || !userData || !userData.username || !userData.password) {
       socket.emit("loginResult", { ok: false, code: "INVALID_PAYLOAD" });
       return;
     }
@@ -249,7 +293,7 @@ io.on("connection", (socket) => {
   socket.on("saveUsername", (username) => {
     let player = players.find((p) => p.id === socket.id);
     if (!player) return;
-    player.username = username;
+    if (!demoMode) player.username = username;
     player.status = "not-joined";
     io.emit("updatePlayerData", players);
     io.emit("roomData", rooms);
@@ -281,8 +325,8 @@ io.on("connection", (socket) => {
       roomName = data;
     } else {
       roomName = data.roomName;
-      userId = data.userId;
-      username = data.username;
+      userId = demoMode ? newPlayer.userId : data.userId;
+      username = demoMode ? newPlayer.username : data.username;
     }
 
     let room = rooms.find((r) => r.name === roomName);
@@ -439,12 +483,13 @@ io.on("connection", (socket) => {
 
   socket.on("createRoom", (data) => {
     const roomName = data.name;
+    if (demoMode && (typeof roomName !== "string" || !roomName.trim() || roomName.length > 60)) return;
     const difficulty = data.difficulty;
     const maxPlayers = data.maxPlayers || 4; // ← AÑADIDO: Capacidad configurable (2-4, por defecto 4)
     console.log(`Creating room ${roomName} with difficulty ${difficulty}`);
     const gameMode = data.gameMode || "normal";
-    const userId = data.userId;
-    const username = data.username;
+    const userId = demoMode ? newPlayer.userId : data.userId;
+    const username = demoMode ? newPlayer.username : data.username;
 
     let roomExists = rooms.find((r) => r.name === roomName);
     if (!roomExists) {
@@ -546,8 +591,9 @@ io.on("connection", (socket) => {
 
   socket.on("getArticles", () => {
     const player = players.find((p) => p.id === socket.id);
-    const room = player.room;
-    const roomDificulty = rooms.find((r) => r.name === room).difficulty;
+    const activeRoom = rooms.find((r) => r.name === player?.room);
+    if (!activeRoom) return;
+    const roomDificulty = activeRoom.difficulty;
     console.log(
       `Getting articles for room ${player.room} with difficulty ${roomDificulty}`,
     );
@@ -1022,7 +1068,10 @@ io.on("connection", (socket) => {
 // ============================================================================
 // RUTAS HTTP - IMÁGENES
 // ============================================================================
-app.post("/api/upload-profile-image", upload.single("image"), (req, res) => {
+app.post("/api/upload-profile-image", (req, res, next) => {
+  if (demoMode) return res.sendStatus(403);
+  next();
+}, upload.single("image"), (req, res) => {
   try {
     if (!req.file) {
       return res
@@ -1067,7 +1116,7 @@ app.get("/api/get-profile-image/:userId", (req, res) => {
     }
     res.json({
       ok: true,
-      imagePath: `http://journalsimr.daw.inspedralbes.cat` + payload.img,
+      imagePath: payload.img,
     });
   });
 });
@@ -1083,7 +1132,7 @@ app.get("/api/get-user-info/:userId", (req, res) => {
     res.json({
       ok: true,
       username: payload.username,
-      imagePath: `http://journalismr.daw.inspedralbes.cat` + payload.img,
+      imagePath: payload.img,
       money: payload.money,
     });
   });
@@ -1102,6 +1151,7 @@ app.get("/api/get-user-money/:userId", (req, res) => {
 });
 
 app.post("/api/update-user-money", (req, res) => {
+  if (demoMode) return res.sendStatus(403);
   const { userId, amount } = req.body;
   if (!userId || amount == null) {
     return res
@@ -1347,4 +1397,5 @@ function updateUserMoney(userId, amount, done) {
   });
 }
 
-server.listen(3000, () => console.log("Server running on port 3000"));
+const port = Number(process.env.PORT || 3000);
+server.listen(port, "0.0.0.0", () => console.log("Server listening on", port));

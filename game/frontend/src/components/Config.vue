@@ -135,7 +135,7 @@ const uploadMessageClass = computed(() => {
 const username = computed(() => gameStore.username || "Jugador");
 
 // Imagen por defecto - apunta a la imagen default.png del backend
-const defaultImage = "http://journalismr.daw.inspedralbes.cat/img/default.png";
+const defaultImage = "/img/default.png";
 
 const profileImage = ref(defaultImage);
 
@@ -165,10 +165,7 @@ const loadUserProfile = () => {
   if (userId.value) {
     console.log("Cargando perfil de usuario para userId:", userId.value);
     // Cargar la información del usuario desde el servidor
-    const apiUrl =
-      import.meta.env.MODE === "development"
-        ? "http://journalismr.daw.inspedralbes.cat/api/get-user-info"
-        : "/api/get-user-info";
+    const apiUrl = "/api/get-user-info";
 
     fetch(`${apiUrl}/${userId.value}`)
       .then((response) => response.json())
@@ -181,11 +178,7 @@ const loadUserProfile = () => {
           }
           // Construir la URL completa de la imagen si existe
           if (data.imagePath) {
-            const baseUrl =
-              import.meta.env.MODE === "development"
-                ? "http://journalsimr.daw.inspedralbes.cat"
-                : "";
-            profileImage.value = `${baseUrl}${data.imagePath}`;
+            profileImage.value = data.imagePath;
             console.log("Imagen de perfil cargada:", profileImage.value);
           }
         }
@@ -265,10 +258,7 @@ const uploadImage = async (file) => {
 
     console.log("Enviando FormData al servidor...");
 
-    const apiUrl =
-      import.meta.env.MODE === "development"
-        ? "http://journalismr.daw.inspedralbes.cat/api/upload-profile-image"
-        : "/api/upload-profile-image";
+    const apiUrl = "/api/upload-profile-image";
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -280,11 +270,7 @@ const uploadImage = async (file) => {
 
     if (data.ok) {
       // Construir la URL completa de la imagen
-      const baseUrl =
-        import.meta.env.MODE === "development"
-          ? "http://journalsimr.daw.inspedralbes.cat"
-          : "";
-      profileImage.value = `${baseUrl}${data.imagePath}`;
+      profileImage.value = data.imagePath;
       showMessage("✅ Foto actualizada correctamente", "success");
       console.log("Nueva ruta de imagen:", profileImage.value);
 

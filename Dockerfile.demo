@@ -1,0 +1,18 @@
+FROM node:24-bookworm-slim AS frontend
+WORKDIR /app
+COPY game/frontend/package*.json ./
+RUN npm ci
+COPY game/frontend/ ./
+ENV VITE_DEMO_MODE=true
+RUN npm run build
+
+FROM node:24-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production DEMO_MODE=true DB_NAME=journalismrace_demo DB_PORT=4000 DB_SSL=true PORT=10000
+COPY game/backend/package*.json ./
+RUN npm ci --omit=dev
+COPY game/backend/server.js game/backend/seed-demo.cjs ./
+COPY game/backend/img/default.png ./img/default.png
+COPY game/db/db_init/init.sql ./init.sql
+COPY --from=frontend /app/dist ./dist
+CMD ["sh", "-c", "node seed-demo.cjs && exec node server.js"]

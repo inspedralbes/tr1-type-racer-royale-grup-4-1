@@ -97,7 +97,7 @@ onMounted(() => {
     
     // Update user money after game ends
     if (store.userId) {
-      fetch(`http://localhost:3000/api/get-user-money/${store.userId}`)
+      fetch(`/api/get-user-money/${store.userId}`)
         .then(res => res.json())
         .then(data => {
           if (data.ok) {
@@ -211,7 +211,7 @@ function handleShowPodium(data) {
   
   // Update user money after game ends
   if (store.userId) {
-    fetch(`http://localhost:3000/api/get-user-money/${store.userId}`)
+    fetch(`/api/get-user-money/${store.userId}`)
       .then(res => res.json())
       .then(data => {
         if (data.ok) {

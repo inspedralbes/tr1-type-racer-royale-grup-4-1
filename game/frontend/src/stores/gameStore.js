@@ -114,7 +114,7 @@ export const useGameStore = defineStore("rooms", () => {
     if (!userId.value) return;
     try {
       const response = await fetch(
-        "http://journalismr.daw.inspedralbes.cat/api/update-user-money",
+        "/api/update-user-money",
         {
           method: "POST",
           headers: {

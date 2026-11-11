@@ -10,10 +10,13 @@
         class="newspaper-image"
       />
       <div class="newspaper-actions">
-        <button class="btn btn-primary newspaper-btn" @click="fillContract">
+        <button v-if="demoMode" class="btn btn-primary newspaper-btn" :disabled="isSubmitting" @click="enterDemo">
+          Jugar a la demo
+        </button>
+        <button v-if="!demoMode" class="btn btn-primary newspaper-btn" @click="fillContract">
           Omplir contracte
         </button>
-        <button class="btn btn-primary newspaper-btn" @click="openBadge">
+        <button v-if="!demoMode" class="btn btn-primary newspaper-btn" @click="openBadge">
           Entrar a l'oficina
         </button>
       </div>
@@ -136,7 +139,8 @@ import { useGameAlert } from '../composables/useGameAlert';
 
 const emit = defineEmits(['lobby']);
 const gameStore = useGameStore();
-const sm = new SocketManager();
+const demoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+const sm = demoMode ? gameStore.manager : new SocketManager();
 const { showError, showWarning, showInfo } = useGameAlert();
 
 const isNewspaperVisible = ref(true);
@@ -147,6 +151,11 @@ const password = ref('');
 const registerUsername = ref('');
 const registerPassword = ref('');
 const isSubmitting = ref(false);
+
+function enterDemo() {
+  isSubmitting.value = true;
+  sm.emit('register', {});
+}
 
 const loginResultHandler = (res) => {
   isSubmitting.value = false;
@@ -181,7 +190,7 @@ const registerResultHandler = (res) => {
   isSubmitting.value = false;
 
   if (res?.ok) {
-    const cleanUsername = registerUsername.value.trim();
+    const cleanUsername = demoMode ? res.username : registerUsername.value.trim();
     gameStore.setUserId(res.userId);
     if (cleanUsername) {
       gameStore.setUsername(cleanUsername);
@@ -262,10 +271,10 @@ function doLogin() {
 
 onBeforeUnmount(() => {
   if (sm.callbacks['loginResult'] === loginResultHandler) {
-    delete sm.callbacks['loginResult'];
+    sm.off('loginResult');
   }
   if (sm.callbacks['registerResult'] === registerResultHandler) {
-    delete sm.callbacks['registerResult'];
+    sm.off('registerResult');
   }
 });
 
